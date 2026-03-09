@@ -1,0 +1,35 @@
+version: "3.2"
+
+services:
+  # 商城 | store
+  sun-panel-server-store:
+    image: 'enianteam-docker.pkg.coding.net/sun-panel/pay/sun-pay:0.1.1-beta24-07-01'
+    container_name: sun-panel-server-store
+    volumes:
+    - ./store_data:/app/conf
+    - ./store_log:/app/runtime/runlog
+    ports:
+    - 3088:3088
+    restart: always
+
+  # 服务端 | server
+  sun-panel-server:
+    image: 'enianteam-docker.pkg.coding.net/sun-panel/pay/sun-pay-auth-server:0.1.1-beta24-07-02'
+    container_name: sun-panel-server
+    volumes:
+    - ./server_data:/app/conf
+    - ./server_log:/app/runtime/runlog
+    ports:
+    - 3089:3005
+    restart: always
+  # redis:
+  #   image: redis:latest
+  #   # ports:
+  #   #   - "6379:6379"
+  #   volumes:
+  #     - ./redis/data:/data
+
+networks:
+  default:
+    external:
+      name: 1panel-network # 1panel 面板

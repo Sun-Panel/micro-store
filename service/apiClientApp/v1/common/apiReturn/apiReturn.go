@@ -1,0 +1,168 @@
+package apiReturn
+
+import (
+	"sun-panel/apiBrowserExtensionClient/v1/common/apiReturn"
+	"sun-panel/apiClientApp/v1/common/base"
+	"sun-panel/global"
+	"sun-panel/lib/cmn"
+	"time"
+
+	"github.com/gin-gonic/gin"
+)
+
+const ERROR_CODE_SUCCESS = 0 // 错误码 无任何错误
+
+const (
+	// 验证器类
+
+	ERROR_CODE_VERIFICATION_MUST = 1101 // 错误码 验证器类：必须需要验证或者验证数据为空
+	ERROR_CODE_VERIFICATION_FAIL = 1102 // 错误码 验证器类：验证失败，验证错误
+
+	// 数据类
+
+	ERROR_CODE_DATA_DATABASE         = 1200 // 错误码 数据类：数据库报错
+	ERROR_CODE_DATA_RECORD_NOT_FOUND = 1202 // 错误码 数据类：数据记录未找到
+)
+
+func ApiReturn(ctx *gin.Context, code int, msg string, data interface{}) {
+	returnData := map[string]interface{}{
+		"code": code,
+		"msg":  msg,
+	}
+	if data != nil {
+		returnData["data"] = data
+	}
+	ctx.JSON(200, returnData)
+}
+
+// 返回成功
+func SuccessData(ctx *gin.Context, data interface{}) {
+	ApiReturn(ctx, 0, "OK", data)
+}
+
+// 返回列表
+// func SuccessListData(ctx *gin.Context, list interface{}, count int64) {
+// 	ApiReturn(ctx, 0, "OK", gin.H{
+// 		"list":  list,
+// 		"count": count,
+// 	})
+// }
+
+// 返回成功，没有data数据
+func Success(ctx *gin.Context) {
+	ApiReturn(ctx, 0, "OK", nil)
+}
+
+// 返回列表数据
+func ListData(ctx *gin.Context, list interface{}, count int64) {
+	data := map[string]interface{}{
+		"list":  list,
+		"count": count,
+	}
+	ApiReturn(ctx, 0, "OK", data)
+}
+
+// 返回错误 需要个性化定义的错误|带返回数据的错误
+func ErrorCode(ctx *gin.Context, code int, errMsg string, data interface{}) {
+	ApiReturn(ctx, code, errMsg, data)
+}
+
+// 返回错误 普通提示错误
+func Error(ctx *gin.Context, errMsg string) {
+	ErrorCode(ctx, -1, errMsg, nil)
+}
+
+// 返回错误 需要个性化定义的错误|带返回数据的错误
+func ErrorNoAccess(ctx *gin.Context) {
+	ErrorCode(ctx, 1005, global.Lang.Get("common.no_access"), nil)
+}
+
+// 返回错误 参数错误
+func ErrorParamFomat(ctx *gin.Context, errMsg string) {
+	Error(ctx, global.Lang.GetAndInsert("common.api_error_param_format", "[", errMsg, "]"))
+	// Error(ctx, "参数错误")
+}
+
+// // 返回错误 数据库
+func ErrorDatabase(ctx *gin.Context, errMsg string) {
+	// Error(ctx, global.Lang.GetAndInsert("common.db_error", "[", errMsg, "]"))
+	ErrorByCodeAndMsg(ctx, 1200, errMsg)
+
+}
+
+// 返回错误 数据记录未找到
+func ErrorDataNotFound(ctx *gin.Context) {
+	// ErrorCode(ctx, ERROR_CODE_DATA_RECORD_NOT_FOUND, "未找到数据记录", nil)
+	ErrorByCode(ctx, -1)
+}
+
+func ErrorClientNotFound(ctx *gin.Context) {
+	ErrorByCode(ctx, 1016)
+}
+
+func ErrorByCode(ctx *gin.Context, code int) {
+	msg := "Server error"
+	if v, ok := GetErrorMsgByCode(code); ok {
+		msg = v
+	}
+	ErrorCode(ctx, code, msg, nil)
+}
+
+// 使用错误码的错误并附加错误信息
+func ErrorByCodeAndMsg(ctx *gin.Context, code int, msg string) {
+	if v, ok := GetErrorMsgByCode(code); ok {
+		msg = v
+	}
+	ErrorCode(ctx, code, msg, nil)
+}
+
+func ErrorNotLogin(ctx *gin.Context) {
+	msg := "Server error"
+	if v, ok := GetErrorMsgByCode(1001); ok {
+		msg = v
+	}
+	ErrorCode(ctx, 1001, msg, nil)
+}
+
+func GetErrorMsgByCode(code int) (string, bool) {
+	if v, ok := ErrorCodeMap[code]; ok {
+		return v.Error(), true
+	} else {
+		return "", false
+	}
+}
+
+// [废弃] 使用 ErrorWithNumReturnErrStr 结合 logger 替代，这样可以打印出具体行号
+// func ErrorWithNum(ctx *gin.Context, err error) {
+// 	errNum := time.Now().Format("20060102150405") + cmn.BuildRandCode(5, "0123456789")
+
+// 	returnData := map[string]interface{}{
+// 		"code":     -1,
+// 		"msg":      "errorNum:" + errNum,
+// 		"errorNum": errNum,
+// 	}
+// 	global.Logger.Error("ErrNum:"+errNum, "-", err)
+// 	ctx.JSON(200, returnData)
+// }
+
+func ErrorWithNumReturnErrStr(ctx *gin.Context, err error) string {
+	errNum := time.Now().Format("20060102150405") + cmn.BuildRandCode(5, "0123456789")
+	msg := "errorNum:" + errNum
+	returnData := map[string]interface{}{
+		"code":     -1,
+		"msg":      msg,
+		"errorNum": errNum,
+	}
+	ctx.JSON(200, returnData)
+	return "ERROR-NUM_" + errNum + ":" + err.Error()
+}
+
+func SuccessDataDw(ctx *gin.Context, data interface{}) {
+	secretKey := base.GetVersionSecretKey(ctx)
+	respData, respErr := base.GetRequestResp(secretKey, data)
+	if respErr != nil {
+		global.Logger.Errorln(apiReturn.ErrorWithNumReturnErrStr(ctx, respErr), "respData:", cmn.AnyToJsonStr(data))
+		return
+	}
+	SuccessData(ctx, respData)
+}

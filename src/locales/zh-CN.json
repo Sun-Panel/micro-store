@@ -1,0 +1,371 @@
+{
+  "adminSettingUsers": {
+    "EditpasswordPlaceholder": "请输入新密码，留空密码不变",
+    "alertText": "账号之间的数据不互通",
+    "appName": "账号管理",
+    "currentUseUsername": "当前账号",
+    "deletePromptContent": "你确定删除{name}({username})？",
+    "formRules": {
+      "passwordLimit": "6-20个字符",
+      "roleRequired": "请选择角色",
+      "usernameRequired": "请输入账号且大于5个字符"
+    },
+    "passwordPlaceholder": "请输入密码",
+    "pblicText": "公开",
+    "role": "角色",
+    "setOrUnsetPublicMode": "设置/取消公开访问",
+    "userCountText": "共{count}位用户"
+  },
+  "api": {
+    "loginExpires": "登录状态已过期，请重新登录"
+  },
+  "apiErrorCode": {
+    "1000": "未登录",
+    "1003": "用户名或密码错误",
+    "1004": "账号已停用或未激活",
+    "1005": "当前无权限操作",
+    "1006": "账号不存在",
+    "1007": "旧密码错误",
+    "1009": "图形验证码错误",
+    "1200": "数据库出错",
+    "1201": "请至少保留一个",
+    "1202": "未找到数据记录",
+    "1300": "上传失败",
+    "1301": "上传失败，不被支持的文件格式",
+    "1400": "参数格式错误"
+  },
+  "appLauncher": {
+    "title": "系统应用"
+  },
+  "apps": {
+    "about": {
+      "QQGroup": "QQ交流群：",
+      "QR": "二维码(推荐)",
+      "addQQGroupUrl": "点击添加",
+      "appName": "关于",
+      "author": "作者：",
+      "checkUpdate": "检查新版本",
+      "discussions": "交流社区：",
+      "donate": "🧧打赏",
+      "frontVersionText": "前端版本号",
+      "issue": "建议反馈：",
+      "viewUpdateLog": "点此查看更新说明"
+    },
+    "baseSettings": {
+      "appName": "风格设置",
+      "bottomMargin": "下边距",
+      "clock": "时钟组件",
+      "clockSecondShow": "显示秒",
+      "configFailed": "配置保存失败,{message}",
+      "configSaved": "配置已保存",
+      "contentArea": "内容区域",
+      "customFooter": "自定义页脚",
+      "customImageAddress": "展开图片链接输入框",
+      "detailIcon": "详情图标",
+      "hideDescription": "隐藏描述信息",
+      "hideTitle": "隐藏标题",
+      "leftRightMargin": "左右边距",
+      "mask": "遮罩",
+      "maxWidth": "最大宽度",
+      "netModeChangeButtonShow": "显示网络模式切换按钮",
+      "publicVisitModeShow": "公开模式允许显示",
+      "resetWarnText": "确定要重置这些样式吗？",
+      "searchBar": "搜索栏组件",
+      "searchBarSearchItem": "允许搜索栏搜索项目",
+      "searchBarShow": "配置已保存",
+      "show": "显示",
+      "showTitle": "显示标题",
+      "smallIcon": "小图标",
+      "systemMonitorStatus": "系统状态组件",
+      "textContent": "文本内容",
+      "topMargin": "上边距",
+      "uploadOrDragText": "点击上传替换图片或拖拽到框内",
+      "vague": "模糊",
+      "wallpaper": "壁纸"
+    },
+    "common": {
+      "notFound": "抱歉，应用加载失败，请尝试刷新页面或者清除浏览器缓存"
+    },
+    "exportImport": {
+      "appName": "导出导入",
+      "errorConfigFileFormat": "配置文件格式不正确，无法导入",
+      "errorConfigFileLow": "配置文件版本过低，无法兼容",
+      "export": "导出配置",
+      "fileModified": "文件被修改过，谨慎导入",
+      "import": "导入配置",
+      "moduleIcon": "图标配置",
+      "moduleStyle": "样式配置",
+      "selectExportData": "请选择要导出的配置数据",
+      "selectImportData": "请选择要导入的配置数据",
+      "softwareVersionLow": "当前软件版本可能过旧，很有可能无法兼容该配置文件，请谨慎导入。推荐将软件更新到新版后再次导入",
+      "tip": "导入图标配置数据不会清空现有图标数据",
+      "transmuteStandard": "浏览器书签转换工具",
+      "warnConfigFileLow": "配置文件版本过低，但是兼容"
+    },
+    "itemGroupManage": {
+      "appName": "分组管理",
+      "deleteWarnText": "你确定删除此分组[{name}]，删除后此分组应用图标将丢失？",
+      "groupName": "分组名称"
+    },
+    "uploadsFileManager": {
+      "alertText": "你可以在这里管理你上传过的壁纸和图标",
+      "appName": "上传文件管理",
+      "copyFailed": "复制失败",
+      "copyLink": "复制链接",
+      "copySuccess": "链接复制成功，可以在图标地址栏",
+      "deleteWarningText": "删除后无法恢复，你确定要继续吗？",
+      "fileName": "原文件名",
+      "infoTitle": "文件详情",
+      "nothingText": "你还没有上传过任何图片",
+      "path": "文件路径",
+      "setWallpaper": "设置为壁纸",
+      "uploadTime": "上传时间"
+    },
+    "userInfo": {
+      "appName": "我的信息",
+      "theme": "主题",
+      "themeStyle": {
+        "auto": "跟随系统 ",
+        "dark": "深色 ",
+        "light": "浅色 "
+      }
+    }
+  },
+  "authorize": {
+    "authorizeInfo": "授权详情",
+    "changeDays": "变更天数",
+    "loadHistoryRecord": "加载历史记录",
+    "proRedemptionCode": "PRO兑换码",
+    "redemptionCodeEntrance": "兑换码入口"
+  },
+  "common": {
+    "PayBuy": "付费购买",
+    "action": "操作",
+    "add": "添加",
+    "addSuccess": "添加成功",
+    "amount": "金额",
+    "appName": "Sun-Panel",
+    "backgroundColor": "背景颜色",
+    "cancel": "取消",
+    "confirm": "确定",
+    "continue": "继续",
+    "delete": "删除",
+    "deleteConfirm": "你确定要删除吗？",
+    "deleteConfirmByName": "你确定要删除{name}吗？",
+    "deleteFail": "删除失败",
+    "deleteSuccess": "删除成功",
+    "description": "描述信息",
+    "detail": "详情",
+    "download": "下载",
+    "edit": "编辑",
+    "editFail": "编辑失败",
+    "editSuccess": "编辑成功",
+    "emailVerificationCodeSent": "邮箱验证码已经发送",
+    "expiredTime": "过期时间",
+    "export": "导出",
+    "exportSuccess": "导出成功",
+    "failed": "操作失败",
+    "goods": "商品",
+    "historyRecord": "历史记录",
+    "icon": "图标",
+    "image": "图片",
+    "import": "导入",
+    "importSuccess": "导入成功",
+    "inputPlaceholder": "请输入",
+    "inputPlaceholderByText": "请输入{text}",
+    "language": "语言",
+    "leastOne": "请至少保留一项",
+    "loadingFailRefresh": "加载失败，请尝试刷新页面后再试一次",
+    "logout": "退出登录",
+    "networkError": "网络错误，请稍后重试",
+    "nikeName": "昵称",
+    "no": "否",
+    "noData": "暂无数据",
+    "note": "备注",
+    "password": "密码",
+    "paypalOrCreditCard": "PayPal / 信用卡",
+    "queryFailedWaitRetry": "查询失败，请稍后再试",
+    "redeem": "兑换",
+    "redeemCodeExpired": "兑换码已过期",
+    "redeemCodeNotExist": "兑换码不存在",
+    "redeemCodeUsed": "兑换码已被使用",
+    "refreshPage": "请刷新页面",
+    "repeatLater": "请稍后重试",
+    "reset": "重置",
+    "role": {
+      "admin": "管理",
+      "regularUser": "普通"
+    },
+    "save": "保存",
+    "saveFail": "保存失败",
+    "saveSort": "保存排序",
+    "saveSuccess": "保存成功",
+    "serverError": "服务器错误",
+    "show": "显示",
+    "sort": "排序",
+    "style": "风格",
+    "success": "操作成功",
+    "text": "文字",
+    "textColor": "文字颜色",
+    "time": "时间",
+    "title": "标题",
+    "unknownError": "未知错误",
+    "uploadFail": "上传失败",
+    "username": "账号",
+    "verify": "验证",
+    "warning": "警告",
+    "yes": "是"
+  },
+  "components": {
+    "pay": {
+      "confirmOrder": "确认订单",
+      "goToOrderInfoPage": "查看订单",
+      "helpPayText": "是否已经完成付款，或者没有跳转到付款页面？",
+      "openPayPage": "打开支付页面",
+      "selectPayPlatform": "选择支付方式",
+      "serviceFeeWarning": "可能包含服务费具体金额请以付款页面的金额为准",
+      "waitOther": "请期待更多支付方式..."
+    }
+  },
+  "deskModule": {
+    "clock": {
+      "fri": "星期五",
+      "mon": "星期一",
+      "sat": "星期六",
+      "sun": "星期日",
+      "thu": "星期四",
+      "tue": "星期二",
+      "wed": "星期三"
+    },
+    "searchBox": {
+      "inputPlaceholder": "请输入搜索内容",
+      "openWithNewOpen": "新窗口打开"
+    },
+    "systemMonitor": {
+      "cpuState": "CPU状态",
+      "diskMountPoint": "挂载点",
+      "diskState": "磁盘状态",
+      "memoryState": "内存状态",
+      "progressColor": "主色",
+      "progressRailColor": "副色",
+      "systemState": "系统状态"
+    }
+  },
+  "form": {
+    "required": "必填项"
+  },
+  "goToPay": "立即付款",
+  "iconItem": {
+    "add": "添加项目",
+    "currentPageLayerOpen": "当前页面弹窗打开",
+    "currentPageOpen": "当前页面打开",
+    "edit": "修改项目",
+    "getGroupFail": "分组信息获取失败",
+    "getIcon": "获取图标",
+    "geticonFail": "图标获取失败",
+    "iconGroup": "分组",
+    "inputIconName": "请输入图标名称",
+    "inputIconUrlOrUpload": "输入图标地址或上传",
+    "lanUrl": "内网地址",
+    "lanUrlInputPlaceholder": "http(s)://（内网模式，会跳转该地址）",
+    "newWindowOpen": "新窗口打开",
+    "onlineIcon": "在线图标",
+    "onlineIconLibrary": "在线图标库",
+    "openMethod": "打开方式",
+    "selectUpload": "本地上传",
+    "url": "地址"
+  },
+  "login": {
+    "captchaCodePlaceholder": "请输入图像验证码",
+    "forgetPassword": "忘记密码?",
+    "login": "登录",
+    "loginButton": "登录",
+    "passwordPlaceholder": "密码",
+    "register": "注册",
+    "usernamePlaceholder": "账号",
+    "welcomeMessage": "欢迎回来！"
+  },
+  "menu": {
+    "community": "社区/交流",
+    "demo": "演示",
+    "document": "文档",
+    "myMessage": "我的消息",
+    "myOrder": "我的订单",
+    "prAuthorizeInfo": "PRO 授权信息",
+    "upgradePRO": "升级PRO",
+    "userInfo": "个人信息"
+  },
+  "oAuth2": {
+    "logoutAgainLogin": "账号异常，请先退出，然后再次登录",
+    "reLogin": "请尝试重新登录"
+  },
+  "order": {
+    "createOrderTime": "创建时间",
+    "goToOrderHome": "前往订单首页",
+    "goodsActivityLabel": "活动",
+    "goodsDescription": "描述信息",
+    "goodsInfo": "商品信息",
+    "goodsSnapshot": "商品快照",
+    "goodsTitle": "标题",
+    "openThePaymentPage": "打开付款页面",
+    "orderDetail": "订单详情",
+    "orderInfo": "订单信息",
+    "orderNo": "订单编号",
+    "orderStatus": "订单状态",
+    "payAmount": "支付金额",
+    "payPlatform": "支付平台",
+    "paySuccessTime": "付款时间",
+    "queryOrderStatus": "查询更新订单支付状态",
+    "queryOrderStatusFailed": "支付状态查询失败",
+    "queryOrderStatusSuccess": "支付状态查询成功",
+    "serviceFeeTip": "如果支付金额与商品金额不一致，是因为该付款方式需要收取部分服务费所导致",
+    "status": {
+      "close": "已关闭",
+      "complete": "已完成",
+      "paySuccess": "已支付",
+      "payWait": "未支付",
+      "unknown": "未知"
+    },
+    "userInfo": "用户信息"
+  },
+  "orser": {
+  },
+  "packageStore": {
+    "createOrderFail": "订单创建失败，请刷新页面后重试",
+    "createOrderNow": "立即下单",
+    "createPlatformOrderFail": "该平台订单创建失败，请稍后再试或者更换其他平台",
+    "excessMaxLimit": "已经超出该商品购买订单数的最大限制，请看看其他商品吧",
+    "goodsNoUsePayPlatform": "商品暂时不支持此方式付款，请更换其他方式付款"
+  },
+  "panelHome": {
+    "changeToLanModel": "切换为内网模式",
+    "changeToLanModelSuccess": "已经切换到内网模式（模式状态仅保存在本地）",
+    "changeToWanModel": "切换为公网模式",
+    "changeToWanModelSuccess": "已经切换到公网模式（模式状态仅保存在本地）",
+    "goToLogin": "前往登录",
+    "openLanUrl": "打开局域网地址",
+    "openWanUrl": "打开公网地址"
+  },
+  "payStatus": {
+  },
+  "proAuthorize": {
+    "redeemDescription": "兑换成功后立即生效，不可撤销"
+  },
+  "puthorize": {
+  },
+  "settingUserInfo": {
+    "confirmLogoutText": "你确定要退出登录吗？",
+    "confirmPassword": "确认新密码",
+    "confirmPasswordInconsistentMsg": "两次密码不一致",
+    "logout": "退出登录",
+    "logoutSuccess": "您已经安全退出，期待与你再次相见！",
+    "newPassword": "新密码",
+    "oldPassword": "旧密码",
+    "updatePassword": "修改密码"
+  },
+  "thirdApp": {
+    "oAuth2": {
+      "agreeAuthLogin": "同意授权登录到 {appName}"
+    }
+  }
+}

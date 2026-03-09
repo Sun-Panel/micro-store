@@ -1,0 +1,369 @@
+{
+  "adminSettingUsers": {
+    "EditpasswordPlaceholder": "Enter new password, leave blank to keep the current password",
+    "alertText": "Data between accounts is not shared",
+    "appName": "Account management",
+    "currentUseUsername": "Current username",
+    "deletePromptContent": "Are you sure you want to delete {name} ({username})?",
+    "formRules": {
+      "passwordLimit": "6-20 characters",
+      "roleRequired": "Please select a role",
+      "usernameRequired": "Enter username with at least 5 characters"
+    },
+    "passwordPlaceholder": "Enter password",
+    "pblicText": "Public",
+    "role": "Role",
+    "setOrUnsetPublicMode": "Set/Unset public access",
+    "userCountText": "Total {count} users"
+  },
+  "api": {
+    "loginExpires": "Login status has expired, please login again"
+  },
+  "apiErrorCode": {
+    "1000": "Not logged in",
+    "1003": "wrong user name or password",
+    "1004": "Account has been deactivated or inactivated",
+    "1005": "Currently no permission to operate",
+    "1006": "Account does not exist",
+    "1007": "Old password error",
+    "1009": "captcha error",
+    "1200": "database error",
+    "1201": "Please keep at least one",
+    "1202": "Data record not found",
+    "1300": "Upload failed",
+    "1301": "Upload failed, unsupported file format",
+    "1400": "Parameter format error"
+  },
+  "appLauncher": {
+    "title": "System Applications"
+  },
+  "apps": {
+    "about": {
+      "QQGroup": "QQ Group:",
+      "QR": "QR Code(recommend)",
+      "addQQGroupUrl": "Click to join",
+      "appName": "About",
+      "author": "Author:",
+      "checkUpdate": "Check for new version",
+      "discussions": "Discussions:",
+      "donate": "☕Donate",
+      "frontVersionText": "Front-end version number",
+      "issue": "Feedback:",
+      "viewUpdateLog": "Click here to view update log"
+    },
+    "baseSettings": {
+      "appName": "Style Settings",
+      "bottomMargin": "Bottom margin",
+      "clock": "Clock component",
+      "clockSecondShow": "Show seconds",
+      "configFailed": "Configuration save failed, {message}",
+      "configSaved": "Configuration saved",
+      "contentArea": "Content area",
+      "customFooter": "Custom footer",
+      "customImageAddress": "Expand image link input box",
+      "detailIcon": "Detail icon",
+      "hideDescription": "Hide description information",
+      "hideTitle": "Hide title",
+      "leftRightMargin": "Left-right margin",
+      "mask": "Mask",
+      "maxWidth": "Max width",
+      "netModeChangeButtonShow": "Show network mode switch button",
+      "publicVisitModeShow": "Allow public mode display",
+      "resetWarnText": "Are you sure you want to reset these styles?",
+      "searchBar": "Search bar component",
+      "searchBarSearchItem": "Allow search bar to search items",
+      "searchBarShow": "Configuration saved",
+      "show": "Show",
+      "showTitle": "Show title",
+      "smallIcon": "Small icon",
+      "systemMonitorStatus": "System status component",
+      "textContent": "Text content",
+      "topMargin": "Top margin",
+      "uploadOrDragText": "Click to upload or drag and drop into the box to replace the image",
+      "vague": "Blur",
+      "wallpaper": "Wallpaper"
+    },
+    "common": {
+      "notFound": "Sorry, the application failed to load. Please try refreshing the page or clearing the browser cache."
+    },
+    "exportImport": {
+      "appName": "Export/Import",
+      "errorConfigFileFormat": "The configuration file format is incorrect and cannot be imported",
+      "errorConfigFileLow": "The configuration file version is too low and cannot be compatible",
+      "export": "Export configuration",
+      "fileModified": "The file has been modified, import with caution",
+      "import": "Import configuration",
+      "moduleIcon": "Icon configuration",
+      "moduleStyle": "Style configuration",
+      "selectExportData": "Select the configuration data to export",
+      "selectImportData": "Select the configuration data to import",
+      "softwareVersionLow": "The current software version may be too old and may not be compatible with this configuration file. It is recommended to update the software to the latest version before importing again.",
+      "tip": "Importing icon configuration data will not clear existing icon data",
+      "transmuteStandard": "Transmute Standard",
+      "warnConfigFileLow": "The configuration file version is too low but compatible"
+    },
+    "itemGroupManage": {
+      "appName": "Group Management",
+      "deleteWarnText": "Are you sure you want to delete this group [{name}]? The application icons in this group will be lost after deletion.",
+      "groupName": "Group name"
+    },
+    "uploadsFileManager": {
+      "alertText": "Here you can manage wallpapers and icons you have uploaded.",
+      "appName": "Upload File Management",
+      "copyFailed": "Copy failed",
+      "copyLink": "Copy link",
+      "copySuccess": "Link copied successfully. You can paste it in the address bar.",
+      "deleteWarningText": "Cannot be recovered after deletion. Are you sure you want to continue?",
+      "fileName": "Original file name",
+      "infoTitle": "File details",
+      "nothingText": "You haven't uploaded any images yet.",
+      "path": "File path",
+      "setWallpaper": "Set as wallpaper",
+      "uploadTime": "Upload time"
+    },
+    "userInfo": {
+      "appName": "My Information",
+      "theme": "Theme",
+      "themeStyle": {
+        "auto": "Follow the system ",
+        "dark": "Dark ",
+        "light": "Light "
+      }
+    }
+  },
+  "authorize": {
+    "authorizeInfo": "Authorization details",
+    "changeDays": "Change days",
+    "loadHistoryRecord": "Load history",
+    "proRedemptionCode": "PRO redemption code",
+    "redemptionCodeEntrance": "Redemption code entrance"
+  },
+  "common": {
+    "PayBuy": "Pay to buy",
+    "action": "Action",
+    "add": "Add",
+    "addSuccess": "Added successfully",
+    "amount": "Amount",
+    "appName": "Sun-Panel",
+    "backgroundColor": "Background color",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "continue": "Continue",
+    "delete": "Delete",
+    "deleteConfirm": "Are you sure you want to delete?",
+    "deleteConfirmByName": "Are you sure you want to delete {name}?",
+    "deleteFail": "Delete failed",
+    "deleteSuccess": "Deleted successfully",
+    "description": "Description",
+    "detail": "Details",
+    "download": "Download",
+    "edit": "Edit",
+    "editFail": "Edit failed",
+    "editSuccess": "Edited successfully",
+    "emailVerificationCodeSent": "Email verification code has been sent",
+    "expiredTime": "Expiration",
+    "export": "Export",
+    "exportSuccess": "Exported successfully",
+    "failed": "Operation failed",
+    "goods": "Goods",
+    "historyRecord": "History record",
+    "icon": "Icon",
+    "image": "Image",
+    "import": "Import",
+    "importSuccess": "Imported successfully",
+    "inputPlaceholder": "Please enter",
+    "inputPlaceholderByText": "Please enter {text}",
+    "language": "Language",
+    "leastOne": "Please keep at least one",
+    "loadingFailRefresh": "Loading failed, please try refreshing the page and try again",
+    "logout": "Log out",
+    "networkError": "Network error, please try again later",
+    "nikeName": "Nickname",
+    "no": "No",
+    "noData": "No data available",
+    "note": "Note",
+    "password": "Password",
+    "paypalOrCreditCard": "PayPal/Credit Card",
+    "queryFailedWaitRetry": "Query failed, please try again later",
+    "redeem": "Redeem",
+    "redeemCodeNotExist": "Redemption code does not exist",
+    "redeemCodeUsed": "The redemption code has been used",
+    "refreshPage": "Please refresh the page",
+    "repeatLater": "Please try again later",
+    "reset": "Reset",
+    "role": {
+      "admin": "Admin",
+      "regularUser": "Regular"
+    },
+    "save": "Save",
+    "saveFail": "Save failed",
+    "saveSort": "Save sort",
+    "saveSuccess": "Saved successfully",
+    "serverError": "Server error",
+    "show": "Show",
+    "sort": "Sort",
+    "style": "Style",
+    "success": "Operation successful",
+    "text": "Text",
+    "textColor": "Text color",
+    "time": "Time",
+    "title": "Title",
+    "unknownError": "Unknown error",
+    "uploadFail": "Upload failed",
+    "username": "Username",
+    "verify": "Verify",
+    "warning": "Warning",
+    "yes": "Yes"
+  },
+  "components": {
+    "pay": {
+      "confirmOrder": "Confirm Order",
+      "goToOrderInfoPage": "View order details",
+      "helpPayText": "Has the payment been completed, or has it not jumped to the payment page?",
+      "openPayPage": "Open payment page",
+      "selectPayPlatform": "Select Payment Method",
+      "serviceFeeWarning": "Service fees may be included. Please refer to the amount on the payment page for the specific amount.",
+      "waitOther": "Please look forward to more payment methods..."
+    }
+  },
+  "deskModule": {
+    "clock": {
+      "fri": "Friday",
+      "mon": "Monday",
+      "sat": "Saturday",
+      "sun": "Sunday",
+      "thu": "Thursday",
+      "tue": "Tuesday",
+      "wed": "Wednesday"
+    },
+    "searchBox": {
+      "inputPlaceholder": "Enter search content",
+      "openWithNewOpen": "Open in new window"
+    },
+    "systemMonitor": {
+      "cpuState": "CPU status",
+      "diskMountPoint": "Mount point",
+      "diskState": "Disk status",
+      "memoryState": "Memory status",
+      "progressColor": "Main color",
+      "progressRailColor": "Secondary color",
+      "systemState": "System status"
+    }
+  },
+  "form": {
+    "required": "Required field"
+  },
+  "goToPay": "Go and pay",
+  "iconItem": {
+    "add": "Add item",
+    "currentPageLayerOpen": "Open in current page as layer",
+    "currentPageOpen": "Open in current page",
+    "edit": "Edit item",
+    "getGroupFail": "Failed to get group information",
+    "getIcon": "Get icon",
+    "geticonFail": "Failed to get icon",
+    "iconGroup": "Group",
+    "inputIconName": "Enter icon name",
+    "inputIconUrlOrUpload": "Enter icon URL or upload",
+    "lanUrl": "LAN URL",
+    "lanUrlInputPlaceholder": "http(s):// (LAN mode, will redirect to this address)",
+    "newWindowOpen": "Open in new window",
+    "onlineIcon": "Online icon",
+    "onlineIconLibrary": "Online icon library",
+    "openMethod": "Open method",
+    "selectUpload": "Local upload",
+    "url": "URL"
+  },
+  "login": {
+    "captchaCodePlaceholder": "Please enter the image verification code",
+    "forgetPassword": "Forget the password?",
+    "login": "Log in",
+    "loginButton": "Login",
+    "passwordPlaceholder": "Password",
+    "register": "Register",
+    "usernamePlaceholder": "Username",
+    "welcomeMessage": "Welcome back!"
+  },
+  "menu": {
+    "community": "Community",
+    "demo": "Demo",
+    "document": "Document",
+    "myMessage": "Mmessage",
+    "myOrder": "My Order",
+    "prAuthorizeInfo": "PRO authorize information",
+    "upgradePRO": "Upgrade PRO",
+    "userInfo": "Personal information"
+  },
+  "oAuth2": {
+    "logoutAgainLogin": "The account is abnormal, please log out first and then log in again.",
+    "reLogin": "Please try logging in again"
+  },
+  "order": {
+    "goToOrderHome": "Go to order home page",
+    "goodsActivityLabel": "Activity",
+    "goodsDescription": "Description",
+    "goodsInfo": "Goods Info",
+    "goodsSnapshot": "Goods snapshot",
+    "goodsTitle": "Title",
+    "openThePaymentPage": "Open payment page",
+    "orderDetail": "Order details",
+    "orderInfo": "Order Info",
+    "orderNo": "Order number",
+    "orderStatus": "Order Status",
+    "payAmount": "Payment amount",
+    "payPlatform": "Payment platform",
+    "paySuccessTime": "Payment time",
+    "queryOrderStatus": "Query and update order payment status",
+    "queryOrderStatusFailed": "Payment status query failed",
+    "queryOrderStatusSuccess": "Payment status query successful",
+    "serviceFeeTip": "If the payment amount is inconsistent with the product amount, it is because the payment method requires a partial service fee.",
+    "status": {
+      "close": "Closed",
+      "complete": "Complete",
+      "paySuccess": "Payment successful",
+      "payWait": "Unpaid",
+      "unknown": "Unknown"
+    },
+    "userInfo": "User Info"
+  },
+  "orser": {
+  },
+  "packageStore": {
+    "createOrderFail": "Order creation failed, please refresh the page and try again",
+    "createOrderNow": "Create order now",
+    "createPlatformOrderFail": "The platform order creation failed, please try again later or change to another platform",
+    "excessMaxLimit": "The maximum purchase order limit for this product has been exceeded. Please look at other products.",
+    "goodsNoUsePayPlatform": "The product does not support this method of payment for the time being. Please use other payment methods."
+  },
+  "panelHome": {
+    "changeToLanModel": "Switch to LAN mode",
+    "changeToLanModelSuccess": "Switched to LAN mode (mode status saved locally)",
+    "changeToWanModel": "Switch to WAN mode",
+    "changeToWanModelSuccess": "Switched to WAN mode (mode status saved locally)",
+    "goToLogin": "Go to login",
+    "openLanUrl": "Open LAN URL",
+    "openWanUrl": "Open WAN URL"
+  },
+  "payStatus": {
+  },
+  "proAuthorize": {
+    "redeemDescription": "It takes effect immediately after the redemption is successful and cannot be revoked."
+  },
+  "puthorize": {
+  },
+  "settingUserInfo": {
+    "confirmLogoutText": "Are you sure you want to logout?",
+    "confirmPassword": "Confirm new password",
+    "confirmPasswordInconsistentMsg": "Passwords do not match",
+    "logout": "Logout",
+    "logoutSuccess": "You have safely logged out. Looking forward to seeing you again!",
+    "newPassword": "New password",
+    "oldPassword": "Old password",
+    "updatePassword": "Change password"
+  },
+  "thirdApp": {
+    "oAuth2": {
+      "agreeAuthLogin": "Agree to authorize login to {appName}"
+    }
+  }
+}
