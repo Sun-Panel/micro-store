@@ -1,7 +1,6 @@
 package apiReturn
 
 import (
-	"sun-panel/apiBrowserExtensionClient/v1/common/apiReturn"
 	"sun-panel/apiClientApp/v1/common/base"
 	"sun-panel/global"
 	"sun-panel/lib/cmn"
@@ -161,7 +160,7 @@ func SuccessDataDw(ctx *gin.Context, data interface{}) {
 	secretKey := base.GetVersionSecretKey(ctx)
 	respData, respErr := base.GetRequestResp(secretKey, data)
 	if respErr != nil {
-		global.Logger.Errorln(apiReturn.ErrorWithNumReturnErrStr(ctx, respErr), "respData:", cmn.AnyToJsonStr(data))
+		// global.Logger.Errorln(apiReturn.ErrorWithNumReturnErrStr(ctx, respErr), "respData:", cmn.AnyToJsonStr(data))
 		return
 	}
 	SuccessData(ctx, respData)

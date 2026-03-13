@@ -4,11 +4,8 @@ import (
 	"sun-panel/global"
 
 	"sun-panel/router/admin"
-	"sun-panel/router/browserExtension"
-	"sun-panel/router/clientAuth"
 	"sun-panel/router/oauth2"
 	"sun-panel/router/openness"
-	"sun-panel/router/proAuthorize"
 	sunstore "sun-panel/router/sunStore"
 	"sun-panel/router/system"
 
@@ -25,17 +22,12 @@ func InitRouters(addr string) error {
 	system.Init(routerGroup)
 	admin.Init(routerGroup)
 	openness.Init(routerGroup)
-	proAuthorize.Init(routerGroup)
-	clientAuth.Init(routerGroup)
 	oauth2.Init(routerGroup)
 
 	// SunStore
 	sunStoreRouterGroup := rootRouter.Group("sunStore/api")
 	sunstore.InitWebhook(sunStoreRouterGroup)
 	sunstore.InitApi(sunStoreRouterGroup)
-
-	browsserExtensionGroup := rootRouter.Group("beApi")
-	browserExtension.Init(browsserExtensionGroup)
 
 	// WEB文件服务
 	{

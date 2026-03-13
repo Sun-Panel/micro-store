@@ -121,7 +121,7 @@ func (l LoginApi) Login(c *gin.Context) {
 		info.Token = bToken
 	}
 	info.Password = ""
-	info.ReferralCode = ""
+	// info.ReferralCode = ""
 
 	// global.UserToken.SetDefault(bToken, info)
 	cToken := uuid.NewString() + "-" + cmn.Md5(cmn.Md5("userId"+strconv.Itoa(int(info.ID))))
@@ -137,6 +137,14 @@ func (l LoginApi) Login(c *gin.Context) {
 
 // 授权登录端点
 // 警告：此接口为半公开模式，获取登录信息请一定判断是否为登录状态
+// 
+// 使用新的 OAuth2 模块示例：
+// 1. 替换 sunapi := sunStore.NewSunStoreApi(apiHost, clientId, clientSecret)
+//    为: oauthClient, err := biz.SunStore.GetOAuth2Client()
+//
+// 2. 替换 sunapi.GetAccessToken(sunStore.AccessTokenResquest{Code: req.Code})
+//    为: tokenResp, err := biz.SunStore.GetAccessTokenByCode(req.Code)
+//    然后使用 tokenResp.AccessToken
 func (l *LoginApi) OAuth2CodeLogin(c *gin.Context) {
 	req := OAuth2CodeLoginReq{}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -145,20 +153,29 @@ func (l *LoginApi) OAuth2CodeLogin(c *gin.Context) {
 	}
 
 	// 获取基本的配置信息
-	clientId, clientSecret := biz.SunStore.GetClientIdAndSecret()
 	apiHost := biz.SunStore.ApiHost()
 
 	// 获取 access_token 和 openid
-	sunapi := sunStore.NewSunStoreApi(apiHost, clientId, clientSecret)
-	accessToken, err := sunapi.GetAccessToken(sunStore.AccessTokenResquest{
-		Code: req.Code,
-	})
+	// 使用新的 OAuth2 模块
+	tokenResp, err := biz.SunStore.GetAccessTokenByCode(req.Code)
 	if err != nil {
 		// 获取access_token失败
 		global.Logger.Errorln("获取access_token失败", err.Error())
 		apiReturn.ErrorByCodeAndMsg(c, -2, err.Error())
 		return
 	}
+
+	// 添加调试日志
+	global.Logger.Debugf("🎫 授权码换 Token 结果: Code=%s, AccessToken=%s, TokenType=%s, ExpiresIn=%d",
+		req.Code, tokenResp.AccessToken, tokenResp.TokenType, tokenResp.ExpiresIn)
+
+	// 将 TokenResponse 转换为兼容的 AccessTokenResponse 格式
+	accessToken := sunStore.AccessTokenResponse{
+		AccessToken: tokenResp.AccessToken,
+		Scope:       tokenResp.Scope,
+	}
+
+	global.Logger.Debugf("🔄 转换后的 AccessToken: %s", accessToken.AccessToken)
 
 	// 根据 access_token 获取主平台账号信息（包括邮箱等信息）
 	// 如果已登录取出登录的用户信息
@@ -244,19 +261,22 @@ func (l *LoginApi) OAuth2CodeBind(c *gin.Context) {
 	}
 
 	// 获取基本的配置信息
-	clientId, clientSecret := biz.SunStore.GetClientIdAndSecret()
 	apiHost := biz.SunStore.ApiHost()
 
 	// 获取 access_token 和 openid
-	sunapi := sunStore.NewSunStoreApi(apiHost, clientId, clientSecret)
-	accessToken, err := sunapi.GetAccessToken(sunStore.AccessTokenResquest{
-		Code: req.Code,
-	})
+	// 使用新的 OAuth2 模块
+	tokenResp, err := biz.SunStore.GetAccessTokenByCode(req.Code)
 	if err != nil {
 		// 获取access_token失败
 		global.Logger.Errorln("获取access_token失败", err.Error())
 		apiReturn.ErrorByCodeAndMsg(c, -2, err.Error())
 		return
+	}
+
+	// 将 TokenResponse 转换为兼容的 AccessTokenResponse 格式
+	accessToken := sunStore.AccessTokenResponse{
+		AccessToken: tokenResp.AccessToken,
+		Scope:       tokenResp.Scope,
 	}
 
 	// 根据 access_token 获取主平台账号信息（包括邮箱等信息）

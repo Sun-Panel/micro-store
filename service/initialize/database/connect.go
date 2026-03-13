@@ -116,20 +116,15 @@ func CreateDatabase(driver string, db *gorm.DB) error {
 
 	// 创建数据表
 	err := db.AutoMigrate(
+		// 基础表
 		&models.User{},
 		&models.SystemSetting{},
 		&models.UserConfig{},
 		&models.File{},
-		&models.ProAuthorize{},
-		&models.ChangeProRecord{},
-		&models.SoftwareClient{},
-		&models.Version{},
-		&models.VersionSecret{},
-		&models.BrowserExtensionClient{},
-		&models.HistoryClientStatistics{},
-		&models.HistoryClientVersionStatistics{},
 		&models.RedeemCode{},
-		// &models.ThirdApp{},
+
+		// 其他业务表
+
 	)
 
 	return err

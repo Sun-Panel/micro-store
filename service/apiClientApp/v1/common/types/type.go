@@ -1,7 +1,6 @@
 package types
 
 import (
-	"sun-panel/models"
 	"time"
 )
 
@@ -72,30 +71,4 @@ type RenewTempAuthResp struct {
 
 type PingReq struct {
 	TokenBase
-}
-
-type PingResp struct {
-	RespBase
-	ProExpiration *time.Time // pro授权过期时间
-}
-
-type CheckVersionReq struct {
-	Base
-	VersionType models.VersionType // 查询版本的类型
-}
-
-type VersionInfo struct {
-	Version      string
-	Type         models.VersionType
-	ReleaseTime  time.Time
-	Description  string
-	DownloadURL  string
-	PageUrl      string
-	IsActive     bool
-	IsRolledBack bool
-}
-type CheckVersionResp struct {
-	RespBase
-	VersionInfo    *VersionInfo
-	IsNoNewVersion bool
 }

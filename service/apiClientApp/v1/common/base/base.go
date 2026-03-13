@@ -3,8 +3,6 @@ package base
 import (
 	"encoding/json"
 	"math"
-	"sun-panel/apiClientApp/v1/common/types"
-	"sun-panel/biz"
 	"sun-panel/global"
 	"sun-panel/lib/AES"
 	"sun-panel/models"
@@ -113,39 +111,6 @@ func GetRequestResp(sceretKey string, param interface{}) (any, error) {
 	} else {
 		return EncryptParam(sceretKey, &param)
 	}
-}
-
-func GetProAuthExpiration(userId uint) (*time.Time, error) {
-	info, err := biz.ProAuthorize.GetProAuthorizeByUserId(userId)
-	if err != nil {
-		// 没有授权记录时返回默认过期时间
-		defaultTime, _ := time.Parse("2006-01-02 15:04:05", "1000-01-01 00:00:00")
-		return &defaultTime, nil
-	}
-	return &info.ExpiredTime, nil
-}
-
-func GetRespBase(token string) types.RespBase {
-	return types.RespBase{
-		Timestamp: time.Now().Unix(),
-		Token:     token,
-	}
-}
-
-func IsCheckSoftwareClient(newSoftwareClient, oldSoftwareClient models.SoftwareClient) bool {
-	if newSoftwareClient.ClientId != oldSoftwareClient.ClientId {
-		return false
-	}
-
-	if newSoftwareClient.MacAddress != oldSoftwareClient.MacAddress {
-		return false
-	}
-
-	if newSoftwareClient.LastIp != oldSoftwareClient.LastIp {
-		return false
-	}
-
-	return true
 }
 
 func CheckTimestamp(timestamp int64) bool {

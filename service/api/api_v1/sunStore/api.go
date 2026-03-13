@@ -6,7 +6,6 @@ import (
 	"sun-panel/global"
 	"sun-panel/lib/cmn"
 	"sun-panel/models"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -139,24 +138,24 @@ func (api *Api) OnlyProGoodsBuyQualificationCheck(c *gin.Context) {
 		return
 	}
 
-	// 查询用户关联的ProAuthorize信息
-	var proAuth models.ProAuthorize
-	if err := global.Db.Where("user_id = ?", user.ID).First(&proAuth).Error; err != nil {
-		global.Logger.Errorln("ProAuthorize not found", err)
-		apiResp.ErrorResponse(c, apiResp.ErrCodeNoPurchaseQualification, "Authorization information not found")
-		return
-	}
+	// // 查询用户关联的ProAuthorize信息
+	// var proAuth models.ProAuthorize
+	// if err := global.Db.Where("user_id = ?", user.ID).First(&proAuth).Error; err != nil {
+	// 	global.Logger.Errorln("ProAuthorize not found", err)
+	// 	apiResp.ErrorResponse(c, apiResp.ErrCodeNoPurchaseQualification, "Authorization information not found")
+	// 	return
+	// }
 
-	// 检查过期时间是否小于30天
-	expiredTime := proAuth.ExpiredTime
-	now := time.Now()
-	diff := expiredTime.Sub(now)
+	// // 检查过期时间是否小于30天
+	// expiredTime := proAuth.ExpiredTime
+	// now := time.Now()
+	// diff := expiredTime.Sub(now)
 
 	// 如果剩余时间小于30天，则没有购买资格
-	if diff < 30*24*time.Hour {
-		apiResp.ErrorResponse(c, apiResp.ErrCodeNoPurchaseQualification, "PRO is valid for less than 30 days")
-		return
-	}
+	// if diff < 30*24*time.Hour {
+	// 	apiResp.ErrorResponse(c, apiResp.ErrCodeNoPurchaseQualification, "PRO is valid for less than 30 days")
+	// 	return
+	// }
 
 	apiResp.SuccessResponse(c, OrderQualificationApiResp{Qualification: true})
 }

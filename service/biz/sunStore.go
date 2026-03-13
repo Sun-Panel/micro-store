@@ -1,11 +1,13 @@
 package biz
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sun-panel/global"
 	"sun-panel/lib/sunStore"
 	"sun-panel/lib/sunStore/openApi"
+	"github.com/sunjingliang/oauth2-go/client"
 	"time"
 )
 
@@ -75,9 +77,76 @@ func (s *SunStoreType) ClientApiAuthLogin(apiHost, clientId, clientSecret string
 
 // 获取主平台的用户信息根据 accessToken
 func (s *SunStoreType) GetMainPlatformUserInfo(apiHost, accessToken string) (openApi.UserInfoResp, error) {
+	global.Logger.Debugf("🔍 调用主平台 API: %s/openApi/v1/u/user/getCurrentUserInfo", apiHost)
+	// 安全地记录 Access Token（避免切片越界）
+	tokenPreview := accessToken
+	if len(accessToken) > 20 {
+		tokenPreview = accessToken[:20]
+	}
+	global.Logger.Debugf("🔑 使用 Access Token: %s...", tokenPreview)
+	
 	userOpenApi := openApi.NewUser(openApi.NewOpenApi(apiHost, accessToken))
 	openUser, _, err := userOpenApi.GetCurrentUserInfo()
+	
+	if err != nil {
+		global.Logger.Errorf("❌ 调用主平台 API 失败: %v", err)
+	}
+	
 	return openUser, err
+}
+
+// ==================== 新的 OAuth2 客户端方法 ====================
+
+// GetOAuth2Client 获取 OAuth2 客户端实例
+func (s *SunStoreType) GetOAuth2Client() (*client.OAuth2Client, error) {
+	clientID, clientSecret := s.GetClientIdAndSecret()
+	apiHost := s.ApiHost()
+
+	config := &client.Config{
+		AuthServerURL: apiHost,
+		APIServerURL:  apiHost,
+		ClientID:      clientID,
+		ClientSecret:  clientSecret,
+		Timeout:       30,
+	}
+
+	return client.NewOAuth2Client(config)
+}
+
+// GetAccessTokenByCode 使用授权码获取 Access Token（新方法）
+func (s *SunStoreType) GetAccessTokenByCode(code string) (*client.TokenResponse, error) {
+	oauthClient, err := s.GetOAuth2Client()
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := context.Background()
+	tokenResp, err := oauthClient.GetAccessTokenByCode(ctx, code)
+	if err != nil {
+		return nil, err
+	}
+
+	// 添加调试日志
+	global.Logger.Debugf("📥 OAuth2 Token 响应: AccessToken=%s, TokenType=%s, ExpiresIn=%d, Scope=%s",
+		tokenResp.AccessToken, tokenResp.TokenType, tokenResp.ExpiresIn, tokenResp.Scope)
+
+	return tokenResp, nil
+}
+
+// GetClientCredentialsToken 使用客户端凭证模式获取 Token（新方法）
+func (s *SunStoreType) GetClientCredentialsToken() (*client.TokenResponse, error) {
+	oauthClient, err := s.GetOAuth2Client()
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := context.Background()
+	return oauthClient.GetClientCredentialsToken(ctx)
+}
+
+// GetAPIClient 获取 API 客户端
+func (s *SunStoreType) GetAPIClient() *client.APIClient {
+	return client.NewAPIClient(s.ApiHost(), 30)
 }
 
 // 获取主平台的用户信息根据，如果用户信息不存在本地将创建用户

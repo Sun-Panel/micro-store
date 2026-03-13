@@ -3,7 +3,6 @@ package clientCache
 type ClientCacheType struct {
 	BlacklistIP   *BlacklistIP
 	AccountOnline *AccountOnline
-	HistoryCache  *HistoryCacheStruct
 	PingRateCache *PingRateCache
 }
 
@@ -11,6 +10,5 @@ type ClientCacheType struct {
 func (c *ClientCacheType) Init() {
 	c.BlacklistIP = NewBlacklistIP()
 	c.AccountOnline = NewAccountOnline()
-	c.HistoryCache = NewHistoryCache()
 	c.PingRateCache = NewPingRateCache()
 }

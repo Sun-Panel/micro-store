@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import type { DropdownOption } from 'naive-ui'
-import { NBadge, NButton, NDrawer, NDrawerContent, NDropdown, NImage, useMessage } from 'naive-ui'
-import { onMounted, onUnmounted, ref } from 'vue'
-
 import type { RouteLocationRaw } from 'vue-router'
-import { router } from '@/router'
-import { useAppStore, useAuthStore, useUserStore } from '@/store'
+import { NBadge, NButton, NDrawer, NDrawerContent, NDropdown, NImage, useMessage } from 'naive-ui'
+
+import { onMounted, onUnmounted, ref } from 'vue'
 import { logout } from '@/api'
-import { t } from '@/locales'
 import { getHomeBase, getLoginConfig } from '@/api/openness'
 import { SvgIconOnline } from '@/components/common'
+import { t } from '@/locales'
+import { router } from '@/router'
+import { useAppStore, useAuthStore, useUserStore } from '@/store'
 
 const userStore = useUserStore()
 const authStore = useAuthStore()
@@ -135,12 +135,16 @@ function handleGoToPage(option: RouteLocationRaw) {
   router.push(option)
 }
 
-const handleResize = () => {
+function handleResize() {
   if (window.innerWidth > 800)
     isMobile.value = false
 
   else
     isMobile.value = true
+}
+
+function goOAuth2(callbackUrl: string) {
+  window.location.href = `/api/oAuth2/v1/login?callback=${callbackUrl}`
 }
 
 onMounted(() => {
@@ -197,7 +201,7 @@ onUnmounted(() => {
               </NButton>
             </span>
             <span class="mr-4">
-              <NButton type="success" size="small" @click="handleGoToPage('/platform/proAuthorize')">
+              <NButton type="success" size="small" @click="goOAuth2('/')">
                 授权登录
               </NButton>
             </span>

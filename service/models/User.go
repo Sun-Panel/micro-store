@@ -7,19 +7,18 @@ import (
 // 用户表
 type User struct {
 	BaseModel
-	Username     string `gorm:"index:;index:idx_username_password,priority:1;type:varchar(50)" json:"username" validate:"required"` // 账号
-	Password     string `gorm:"index:idx_username_password;type:varchar(32)" json:"password" validate:"required"`                   // 密码
-	Name         string `gorm:"type:varchar(20)" json:"name"`                                                                       // 名称
-	HeadImage    string `gorm:"type:varchar(200)" json:"headImage"`                                                                 // 头像地址
-	Status       int    `gorm:"type:tinyint(1)" json:"status"`                                                                      // 状态 1.启用 2.停用 3.未激活
-	Role         int    `gorm:"type:int(11)" json:"role"`                                                                           // 角色 1.管理员 2.普通用户
-	Mail         string `gorm:"type:varchar(50)" json:"mail"`                                                                       // 邮箱
-	ReferralCode string `gorm:"type:varchar(10)" json:"referralCode"`                                                               // 推荐码
-	SystemLang   string `gorm:"type:char(10)" json:"systemLang"`                                                                    // 系统语言 zh_cn 手动设置、注册和登录更新(只允许系统支持的语言)
-	Lang         string `gorm:"type:char(10)" json:"lang"`                                                                          // 语言 zh_cn 注册和登录更新
-	TimeZone     string `gorm:"type:char(50)" json:"timeZone"`
-	Token        string `gorm:"type:varchar(32)" json:"token"`
-	StoreEmail   string `gorm:"type:varchar(50)" json:"storeEmail"` // 商城平台的邮箱账号
+	Username   string `gorm:"index:;index:idx_username_password,priority:1;type:varchar(50)" json:"username" validate:"required"` // 账号
+	Password   string `gorm:"index:idx_username_password;type:varchar(32)" json:"password" validate:"required"`                   // 密码
+	Name       string `gorm:"type:varchar(20)" json:"name"`                                                                       // 名称
+	HeadImage  string `gorm:"type:varchar(200)" json:"headImage"`                                                                 // 头像地址
+	Status     int    `gorm:"type:tinyint(1)" json:"status"`                                                                      // 状态 1.启用 2.停用 3.未激活
+	Role       int    `gorm:"type:int(11)" json:"role"`                                                                           // 角色 1.管理员 2.普通用户
+	Mail       string `gorm:"type:varchar(50)" json:"mail"`                                                                       // 邮箱
+	SystemLang string `gorm:"type:char(10)" json:"systemLang"`                                                                    // 系统语言 zh_cn 手动设置、注册和登录更新(只允许系统支持的语言)
+	Lang       string `gorm:"type:char(10)" json:"lang"`                                                                          // 语言 zh_cn 注册和登录更新
+	TimeZone   string `gorm:"type:char(50)" json:"timeZone"`
+	Token      string `gorm:"type:varchar(32)" json:"token"`
+	StoreEmail string `gorm:"type:varchar(50)" json:"storeEmail"` // 商城平台的邮箱账号
 
 	UserId uint `gorm:"-"  json:"userId"`
 }
