@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/sunjingliang/oauth2-go/client"
+	"cnb.cool/hslr-s/go-pkg/oauth2-go/client"
 )
 
 func main() {
@@ -43,7 +43,7 @@ func main() {
 	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	fmt.Println("测试 1: 客户端凭证模式")
 	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -89,7 +89,7 @@ func main() {
 	}
 
 	var userInfo UserInfo
-	err = apiClient.Call(ctx, "POST", "/openApi/v1/u/user/getCurrentUserInfo", 
+	err = apiClient.Call(ctx, "POST", "/openApi/v1/u/user/getCurrentUserInfo",
 		tokenResp.AccessToken, nil, &userInfo)
 
 	if err != nil {

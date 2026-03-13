@@ -5,7 +5,8 @@ import (
 	"errors"
 
 	"sun-panel/global"
-	"github.com/sunjingliang/oauth2-go/client"
+
+	"cnb.cool/hslr-s/go-pkg/oauth2-go/client"
 )
 
 // ==================== 客户端适配器 ====================

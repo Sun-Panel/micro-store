@@ -5,8 +5,8 @@ go 1.21
 toolchain go1.22.10
 
 // 开发阶段：使用本地 oauth2 模块进行调试
-// 发布后删除此 replace 指令，使用 go get github.com/sunjingliang/oauth2-go@v1.0.0
-replace github.com/sunjingliang/oauth2-go => ../pkg/oauth2
+// 发布后删除此 replace 指令，使用 go get cnb.cool/hslr-s/go-pkg/oauth2-go@v1.0.0
+// replace cnb.cool/hslr-s/go-pkg/oauth2-go => ../pkg/oauth2
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
@@ -26,7 +26,6 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/shirou/gopsutil/v3 v3.23.3
-	github.com/sunjingliang/oauth2-go v0.0.0 // 本地开发版本
 	gitlab.com/tingshuo/go-diskstate v0.0.0-20191211131809-ee5e7223d03c
 	go.uber.org/zap v1.26.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
@@ -37,6 +36,7 @@ require (
 )
 
 require (
+	cnb.cool/hslr-s/go-pkg/oauth2-go v0.0.0-20260313022743-a89f5c3ed020 // indirect
 	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/bytedance/sonic v1.9.1 // indirect

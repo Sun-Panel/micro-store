@@ -4,7 +4,8 @@ import (
 	"context"
 
 	"sun-panel/global"
-	"github.com/sunjingliang/oauth2-go/client"
+
+	"cnb.cool/hslr-s/go-pkg/oauth2-go/client"
 )
 
 // SunStoreOAuth2Client 新的 OAuth2 客户端封装

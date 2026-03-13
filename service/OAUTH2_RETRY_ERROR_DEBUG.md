@@ -232,7 +232,7 @@ import (
     "fmt"
     "log"
     
-    "github.com/sunjingliang/oauth2-go/client"
+    "cnb.cool/hslr-s/go-pkg/oauth2-go/client"
 )
 
 func main() {

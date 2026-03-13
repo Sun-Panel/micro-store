@@ -7,7 +7,7 @@ import (
 	"sun-panel/global"
 	"sun-panel/lib/sunStore"
 	"sun-panel/lib/sunStore/openApi"
-	"github.com/sunjingliang/oauth2-go/client"
+	"cnb.cool/hslr-s/go-pkg/oauth2-go/client"
 	"time"
 )
 

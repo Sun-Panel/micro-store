@@ -13,10 +13,6 @@
 			"path": "ai-doc"
 		},
 		{
-			"name": "auth-center",
-			"path": "/Users/sunjingliang/my_code/sun-panel_group/sun-auth-center"
-		},
-		{
 			"name": "root",
 			"path": ".",
 		}

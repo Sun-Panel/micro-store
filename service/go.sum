@@ -1,3 +1,5 @@
+cnb.cool/hslr-s/go-pkg/oauth2-go v0.0.0-20260313022743-a89f5c3ed020 h1:sGj3yTBLF93w6Z6dS8cT3xiOUHss6mseDpqEY4x4acg=
+cnb.cool/hslr-s/go-pkg/oauth2-go v0.0.0-20260313022743-a89f5c3ed020/go.mod h1:fHLY+8YFeyyuGVNLfgnJtF1zlykCSmmtod7Ta57YLTY=
 github.com/BurntSushi/toml v1.4.0 h1:kuoIxZQy2WRRk1pttg9asf+WVv6tWQuBNVmK8+nqPr0=
 github.com/BurntSushi/toml v1.4.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/PuerkitoBio/goquery v1.8.1 h1:uQxhNlArOIdbrH1tr0UXwdVFgDcZDrZVdcpygAcwmWM=

@@ -7,8 +7,9 @@ import (
 	"sun-panel/global"
 	"sun-panel/lib/sunStore"
 	"sun-panel/lib/sunStore/openApi"
-	"github.com/sunjingliang/oauth2-go/client"
 	"time"
+
+	"cnb.cool/hslr-s/go-pkg/oauth2-go/client"
 )
 
 type SunStoreType struct {
@@ -84,14 +85,14 @@ func (s *SunStoreType) GetMainPlatformUserInfo(apiHost, accessToken string) (ope
 		tokenPreview = accessToken[:20]
 	}
 	global.Logger.Debugf("🔑 使用 Access Token: %s...", tokenPreview)
-	
+
 	userOpenApi := openApi.NewUser(openApi.NewOpenApi(apiHost, accessToken))
 	openUser, _, err := userOpenApi.GetCurrentUserInfo()
-	
+
 	if err != nil {
 		global.Logger.Errorf("❌ 调用主平台 API 失败: %v", err)
 	}
-	
+
 	return openUser, err
 }
 

@@ -19,7 +19,7 @@ micro-store/
 │   │   ├── types.go                     # 类型定义
 │   │   └── client_test.go               # 单元测试
 │   ├── server/                          # 服务端实现（未来可用）
-│   └── go.mod                           # module github.com/sunjingliang/oauth2-go
+│   └── go.mod                           # module cnb.cool/hslr-s/go-pkg/oauth2-go
 └── service/                             # 主服务
     ├── go.mod                           # 使用 replace 指向本地 oauth2
     ├── biz/
@@ -36,9 +36,9 @@ micro-store/
 ### 1. 模块依赖配置 ✅
 ```go
 // service/go.mod
-replace github.com/sunjingliang/oauth2-go => ../pkg/oauth2
+replace cnb.cool/hslr-s/go-pkg/oauth2-go => ../pkg/oauth2
 
-require github.com/sunjingliang/oauth2-go v0.0.0
+require cnb.cool/hslr-s/go-pkg/oauth2-go v0.0.0
 ```
 
 ### 2. Biz 层封装 ✅
@@ -203,7 +203,7 @@ go test ./server -v     # ✅ 所有测试通过
    ```bash
    cd pkg/oauth2
    git init
-   git remote add origin https://github.com/sunjingliang/oauth2-go.git
+   git remote add origin https://cnb.cool/hslr-s/go-pkg/oauth2-go.git
    git add .
    git commit -m "feat: 初始化 OAuth2 模块"
    git push -u origin main
@@ -218,14 +218,14 @@ go test ./server -v     # ✅ 所有测试通过
 3. **移除 replace 指令**
    ```bash
    # 编辑 service/go.mod
-   # 删除: replace github.com/sunjingliang/oauth2-go => ../pkg/oauth2
-   # 执行: go get github.com/sunjingliang/oauth2-go@v1.0.0
+   # 删除: replace cnb.cool/hslr-s/go-pkg/oauth2-go => ../pkg/oauth2
+   # 执行: go get cnb.cool/hslr-s/go-pkg/oauth2-go@v1.0.0
    ```
 
 ### 其他项目复用
 ```go
 // 其他项目的 go.mod
-require github.com/sunjingliang/oauth2-go v1.0.0
+require cnb.cool/hslr-s/go-pkg/oauth2-go v1.0.0
 ```
 
 ## 💡 最佳实践建议
