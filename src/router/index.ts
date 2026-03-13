@@ -105,6 +105,11 @@ const adminRouter = {
       name: 'AdminClientCreateOnlineCache',
       component: () => import('@/views/admin/clientCreateOnlineCache/index.vue'),
     },
+    {
+      path: '/admin/microAppCategory',
+      name: 'AdminMicroAppCategory',
+      component: () => import('@/views/admin/microAppCategory/index.vue'),
+    },
   ],
 }
 

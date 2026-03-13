@@ -34,6 +34,16 @@ const menuOptions = [
       },
     ],
   },
+  {
+    label: '微应用管理',
+    key: 'micro-app-manage',
+    children: [
+      {
+        label: '分类管理',
+        key: 'AdminMicroAppCategory',
+      },
+    ],
+  },
 
   // {
   //   label: '兑换码',
