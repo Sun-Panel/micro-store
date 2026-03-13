@@ -8,21 +8,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"gorm.io/gorm"
 )
 
 type MicroAppCategoryApi struct {
 }
 
-// 获取分类列表
+// GetList 获取分类列表
 func (a *MicroAppCategoryApi) GetList(c *gin.Context) {
-	type ParamsStruct struct {
-		Page    int    `json:"page"`
-		Limit   int    `json:"limit"`
-		Status  *int   `json:"status"`
-		KeyWord string `json:"keyWord"`
-	}
-
-	param := ParamsStruct{}
+	param := MicroAppCategoryGetListReq{}
 	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
 		apiReturn.ErrorParamFomat(c, err.Error())
 		return
@@ -38,13 +32,9 @@ func (a *MicroAppCategoryApi) GetList(c *gin.Context) {
 	apiReturn.SuccessListData(c, list, total)
 }
 
-// 获取分类详情
+// GetInfo 获取分类详情
 func (a *MicroAppCategoryApi) GetInfo(c *gin.Context) {
-	type ParamsStruct struct {
-		Id uint `json:"id" binding:"required"`
-	}
-
-	param := ParamsStruct{}
+	param := MicroAppCategoryGetInfoReq{}
 	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
 		apiReturn.ErrorParamFomat(c, err.Error())
 		return
@@ -60,16 +50,9 @@ func (a *MicroAppCategoryApi) GetInfo(c *gin.Context) {
 	apiReturn.SuccessData(c, info)
 }
 
-// 创建分类
+// Create 创建分类
 func (a *MicroAppCategoryApi) Create(c *gin.Context) {
-	type ParamsStruct struct {
-		Name   string `json:"name" binding:"required"`
-		Icon   string `json:"icon"`
-		Sort   int    `json:"sort"`
-		Status int    `json:"status"`
-	}
-
-	param := ParamsStruct{}
+	param := MicroAppCategoryCreateReq{}
 	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
 		apiReturn.ErrorParamFomat(c, err.Error())
 		return
@@ -81,36 +64,22 @@ func (a *MicroAppCategoryApi) Create(c *gin.Context) {
 	}
 
 	m := models.MicroAppCategory{}
-	// 检查名称是否存在
-	if exist, _ := m.CheckNameExist(global.Db, param.Name, 0); exist {
-		apiReturn.Error(c, "分类名称已存在")
-		return
-	}
-
-	m.Name = param.Name
-	m.Icon = param.Icon
-	m.Sort = param.Sort
-	m.Status = param.Status
-
-	if err := m.Create(global.Db); err != nil {
+	id, err := m.CreateWithCheck(global.Db, param.Name, param.Icon, param.Sort, param.Status)
+	if err != nil {
+		if err == gorm.ErrRegistered {
+			apiReturn.Error(c, "分类名称已存在")
+			return
+		}
 		apiReturn.ErrorDatabase(c, err.Error())
 		return
 	}
 
-	apiReturn.SuccessData(c, gin.H{"id": m.ID})
+	apiReturn.SuccessData(c, gin.H{"id": id})
 }
 
-// 更新分类
+// Update 更新分类
 func (a *MicroAppCategoryApi) Update(c *gin.Context) {
-	type ParamsStruct struct {
-		Id     uint   `json:"id" binding:"required"`
-		Name   string `json:"name" binding:"required"`
-		Icon   string `json:"icon"`
-		Sort   int    `json:"sort"`
-		Status int    `json:"status"`
-	}
-
-	param := ParamsStruct{}
+	param := MicroAppCategoryUpdateReq{}
 	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
 		apiReturn.ErrorParamFomat(c, err.Error())
 		return
@@ -122,20 +91,12 @@ func (a *MicroAppCategoryApi) Update(c *gin.Context) {
 	}
 
 	m := models.MicroAppCategory{}
-	// 检查名称是否存在
-	if exist, _ := m.CheckNameExist(global.Db, param.Name, param.Id); exist {
-		apiReturn.Error(c, "分类名称已存在")
-		return
-	}
-
-	updateData := map[string]interface{}{
-		"name":   param.Name,
-		"icon":   param.Icon,
-		"sort":   param.Sort,
-		"status": param.Status,
-	}
-
-	if err := m.Update(global.Db, param.Id, updateData); err != nil {
+	err := m.UpdateWithCheck(global.Db, param.Id, param.Name, param.Icon, param.Sort, param.Status)
+	if err != nil {
+		if err == gorm.ErrRegistered {
+			apiReturn.Error(c, "分类名称已存在")
+			return
+		}
 		apiReturn.ErrorDatabase(c, err.Error())
 		return
 	}
@@ -143,13 +104,9 @@ func (a *MicroAppCategoryApi) Update(c *gin.Context) {
 	apiReturn.Success(c)
 }
 
-// 删除分类
+// Deletes 删除分类
 func (a *MicroAppCategoryApi) Deletes(c *gin.Context) {
-	type ParamsStruct struct {
-		Ids []uint `json:"ids" binding:"required"`
-	}
-
-	param := ParamsStruct{}
+	param := MicroAppCategoryDeletesReq{}
 	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
 		apiReturn.ErrorParamFomat(c, err.Error())
 		return
@@ -164,14 +121,9 @@ func (a *MicroAppCategoryApi) Deletes(c *gin.Context) {
 	apiReturn.Success(c)
 }
 
-// 更新分类状态
+// UpdateStatus 更新分类状态
 func (a *MicroAppCategoryApi) UpdateStatus(c *gin.Context) {
-	type ParamsStruct struct {
-		Id     uint `json:"id" binding:"required"`
-		Status int  `json:"status" binding:"required"`
-	}
-
-	param := ParamsStruct{}
+	param := MicroAppCategoryUpdateStatusReq{}
 	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
 		apiReturn.ErrorParamFomat(c, err.Error())
 		return
@@ -186,7 +138,7 @@ func (a *MicroAppCategoryApi) UpdateStatus(c *gin.Context) {
 	apiReturn.Success(c)
 }
 
-// 获取所有启用的分类（下拉选择用）
+// GetEnabledList 获取所有启用的分类（下拉选择用）
 func (a *MicroAppCategoryApi) GetEnabledList(c *gin.Context) {
 	m := models.MicroAppCategory{}
 	list, err := m.GetEnabledList(global.Db)

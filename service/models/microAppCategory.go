@@ -93,3 +93,45 @@ func (m *MicroAppCategory) CheckNameExist(db *gorm.DB, name string, excludeId ui
 func (m *MicroAppCategory) UpdateStatus(db *gorm.DB, id uint, status int) error {
 	return db.Model(&MicroAppCategory{}).Where("id = ?", id).Update("status", status).Error
 }
+
+// ========== 业务逻辑方法 ==========
+
+// CreateWithCheck 创建分类（带名称重复检查）
+func (m *MicroAppCategory) CreateWithCheck(db *gorm.DB, name, icon string, sort, status int) (uint, error) {
+	// 检查名称是否存在
+	if exist, err := m.CheckNameExist(db, name, 0); err != nil {
+		return 0, err
+	} else if exist {
+		return 0, gorm.ErrRegistered // 使用已注册错误表示重复
+	}
+
+	m.Name = name
+	m.Icon = icon
+	m.Sort = sort
+	m.Status = status
+
+	if err := m.Create(db); err != nil {
+		return 0, err
+	}
+
+	return m.ID, nil
+}
+
+// UpdateWithCheck 更新分类（带名称重复检查）
+func (m *MicroAppCategory) UpdateWithCheck(db *gorm.DB, id uint, name, icon string, sort, status int) error {
+	// 检查名称是否存在（排除当前ID）
+	if exist, err := m.CheckNameExist(db, name, id); err != nil {
+		return err
+	} else if exist {
+		return gorm.ErrRegistered
+	}
+
+	updateData := map[string]interface{}{
+		"name":   name,
+		"icon":   icon,
+		"sort":   sort,
+		"status": status,
+	}
+
+	return m.Update(db, id, updateData)
+}
