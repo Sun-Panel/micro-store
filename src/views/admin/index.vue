@@ -34,71 +34,16 @@ const menuOptions = [
       },
     ],
   },
-  // {
-  //   label: '商品管理',
-  //   key: 'AdminGoodsManage',
-  // },
-  {
-    label: 'Pro授权管理',
-    key: 'AdminProAuthorizeManage',
-  },
-  {
-    label: '兑换码',
-    key: 'AdminRedeemCode',
-  },
-  // {
-  //   label: '订单管理',
-  //   key: 'AdminOrderManage',
-  // },
 
   // {
-  //   label: '邮件通知',
-  //   key: 'EmailNotify',
-  //   children: [
-  //     {
-  //       label: '发送邮件',
-  //       key: 'AdminEmailSend',
-  //     },
-  //     {
-  //       label: '模板',
-  //       key: 'AdminEmailTemplate',
-  //     },
-  //   ],
-  // },
-
-  // {
-  //   label: '站内信',
-  //   key: 'Message',
-  //   children: [
-  //     {
-  //       label: '模板',
-  //       key: 'MessageTemplate',
-  //     },
-  //   ],
+  //   label: '兑换码',
+  //   key: 'AdminRedeemCode',
   // },
 
   // {
   //   label: '公告管理',
   //   key: 'NoticeMange',
   // },
-  {
-    label: '版本管理',
-    key: 'AdminVersionManage',
-  },
-  {
-    label: '客户端服务设置',
-    key: 'AdminClientBlacklistIP',
-    children: [
-      {
-        label: '客户端IP黑名单',
-        key: 'AdminClientBlacklistIP',
-      },
-      {
-        label: '客户端API缓存创建',
-        key: 'AdminClientCreateOnlineCache',
-      },
-    ],
-  },
 
   {
     label: '系统管理',

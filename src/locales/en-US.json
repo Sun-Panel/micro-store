@@ -177,6 +177,7 @@
     "leastOne": "Please keep at least one",
     "loadingFailRefresh": "Loading failed, please try refreshing the page and try again",
     "logout": "Log out",
+    "microAppStore": "Micro-app Store",
     "networkError": "Network error, please try again later",
     "nikeName": "Nickname",
     "no": "No",
@@ -285,8 +286,10 @@
     "welcomeMessage": "Welcome back!"
   },
   "menu": {
+    "becomeDeveloper": "Become developer",
     "community": "Community",
     "demo": "Demo",
+    "devDoc": "Dev document",
     "document": "Document",
     "myMessage": "Mmessage",
     "myOrder": "My Order",

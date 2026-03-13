@@ -10,18 +10,18 @@ withDefaults(defineProps<{
 }>(), {
   isVertical: false,
 })
-const authorGroupsLinks = 'https://doc.sun-panel.top/zh_cn/introduce/author_groups.html'
+const devDocLinks = 'https://doc.sun-panel.top/v2/zh_cn/micro_app_dev/'
 
 const activeKey = ref('aaa')
 const menuOptions: MenuOption[] = [
 
   {
-    label: () => a('#/pro', t('menu.upgradePRO')),
+    label: () => a('#/becomeDeveloper', t('menu.becomeDeveloper')),
     key: 'pro',
   },
 
   {
-    label: () => aBlank(authorGroupsLinks, t('menu.community')),
+    label: () => aBlank(devDocLinks, t('menu.devDoc')),
     key: 'community',
     // children: [
     //   {
@@ -38,17 +38,6 @@ const menuOptions: MenuOption[] = [
     //   },
     // ],
   },
-
-  {
-    label: () => aBlank('http://doc.sun-panel.top', t('menu.document')),
-    key: 'doc',
-  },
-
-  {
-    label: () => aBlank('//links.sun-panel.top/demo', t('menu.demo')),
-    key: 'demo',
-  },
-
 ]
 
 function a(url: string, text: string) {

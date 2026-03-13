@@ -10,6 +10,7 @@ import { SvgIconOnline } from '@/components/common'
 import { t } from '@/locales'
 import { router } from '@/router'
 import { useAppStore, useAuthStore, useUserStore } from '@/store'
+import Menu from './Menu.vue'
 
 const userStore = useUserStore()
 const authStore = useAuthStore()
@@ -35,14 +36,14 @@ const options = [
     key: 'header-divider',
     type: 'divider',
   },
-  {
-    label: t('menu.userInfo'),
-    key: 'PlatformUserInfo',
-  },
-  {
-    label: t('menu.prAuthorizeInfo'),
-    key: 'PlatformProAuthorize',
-  },
+  // {
+  //   label: t('menu.userInfo'),
+  //   key: 'PlatformUserInfo',
+  // },
+  // {
+  //   label: t('menu.prAuthorizeInfo'),
+  //   key: 'PlatformProAuthorize',
+  // },
   // {
   //   label: t('menu.myOrder'),
   //   key: 'PlatformOrder',
@@ -178,15 +179,16 @@ onUnmounted(() => {
             />
           </div>
           <div class="flex items-center text-xl font-bold whitespace-nowrap dark:text-white">
-            {{ homeBase?.logo_text }}
+            <!-- {{ homeBase?.logo_text }} -->
+            Sun-Panel | {{ t('common.microAppStore') }}
           </div>
         </div>
 
-        <!-- <div v-if="!isMobile" class="w-full flex justify-end">
+        <div v-if="!isMobile" class="w-full flex justify-end">
           <span>
             <Menu />
           </span>
-        </div> -->
+        </div>
 
         <div v-if="!isMobile" class="min-w-[150px] mx-5">
           <template v-if="!authStore.userInfo?.token">
@@ -216,9 +218,9 @@ onUnmounted(() => {
                 </NBadge>
               </NDropdown>
 
-              <NButton v-if="authStore.userInfo?.role === 1" type="info" size="small" class="!mx-5" @click="handleGoToPage('/admin')">
+              <!-- <NButton v-if="authStore.userInfo?.role === 1" type="info" size="small" class="!mx-5" @click="handleGoToPage('/admin')">
                 后台管理
-              </NButton>
+              </NButton> -->
             </div>
           </template>
         </div>
@@ -237,11 +239,11 @@ onUnmounted(() => {
         <template #header>
           <div class="min-w-[150px] ">
             <template v-if="!authStore.userInfo?.id">
-              <span v-if="isShowRegister" class="mr-4">
+              <!-- <span v-if="isShowRegister" class="mr-4">
                 <NButton type="info" size="small" ghost @click="handleGoToPage({ name: 'register' })">
                   {{ t('login.register') }}
                 </NButton>
-              </span>
+              </span> -->
               <span>
                 <NButton type="success" size="small" @click="handleGoToPage({ name: 'login' })">
                   {{ t('login.login') }}

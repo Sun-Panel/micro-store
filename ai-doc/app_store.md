@@ -9,6 +9,7 @@
 字段|类型|必填|描述
 ---|---|---|---
 id|int|是|主键
+micro_app_id|string|是|关联微应用ID
 app_name|string|是|应用名称
 app_icon|string|是|应用图标URL
 app_desc|string|否|应用简介

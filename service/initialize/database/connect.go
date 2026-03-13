@@ -123,7 +123,14 @@ func CreateDatabase(driver string, db *gorm.DB) error {
 		&models.File{},
 		&models.RedeemCode{},
 
-		// 其他业务表
+		// 微应用商店相关表
+		&models.MicroAppCategory{},  // 应用分类表
+		&models.Developer{},         // 开发者表
+		&models.MicroApp{},          // 微应用列表
+		&models.MicroAppVersion{},   // 微应用版本列表
+		&models.MicroAppDownload{},  // 下载记录表
+		&models.MicroAppInstall{},   // 应用安装记录表
+		&models.MicroAppLang{},      // 微应用多语言表
 
 	)
 

@@ -177,6 +177,7 @@
     "leastOne": "请至少保留一项",
     "loadingFailRefresh": "加载失败，请尝试刷新页面后再试一次",
     "logout": "退出登录",
+    "microAppStore": "微应用商店",
     "networkError": "网络错误，请稍后重试",
     "nikeName": "昵称",
     "no": "否",
@@ -286,8 +287,10 @@
     "welcomeMessage": "欢迎回来！"
   },
   "menu": {
+    "becomeDeveloper": "成为开发者",
     "community": "社区/交流",
     "demo": "演示",
+    "devDoc": "开发文档",
     "document": "文档",
     "myMessage": "我的消息",
     "myOrder": "我的订单",
