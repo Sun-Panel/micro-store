@@ -1,9 +1,9 @@
 import type { App } from 'vue'
 import type { RouteRecordRaw } from 'vue-router'
 import { createRouter, createWebHistory } from 'vue-router'
-import { setupPageGuard } from './permission'
 import AdminLayout from '@/views/admin/index.vue'
 import HomeLayout from '@/views/home/layout/index.vue'
+import { setupPageGuard } from './permission'
 
 const adminRouter = {
   path: '/admin',
@@ -121,9 +121,19 @@ const adminRouter = {
       component: () => import('@/views/admin/myMicroApp/index.vue'),
     },
     {
+      path: '/admin/myMicroApp/detail/:id',
+      name: 'AdminMyMicroAppDetail',
+      component: () => import('@/views/admin/myMicroApp/detail/index.vue'),
+    },
+    {
       path: '/admin/microAppManage',
       name: 'AdminMicroAppManage',
       component: () => import('@/views/admin/microAppManage/index.vue'),
+    },
+    {
+      path: '/admin/versionReview',
+      name: 'AdminVersionReview',
+      component: () => import('@/views/admin/versionReview/index.vue'),
     },
   ],
 }

@@ -2,10 +2,15 @@ package base
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
+	"mime/multipart"
+	"os"
+	"path"
 	"reflect"
 	"strings"
 	"sun-panel/api/api_v1/common/apiReturn"
+
 	"sun-panel/global"
 	"sun-panel/lib/captcha"
 	"sun-panel/lib/cmn"
@@ -23,6 +28,33 @@ type PageLimitVerify struct {
 	Page  int64
 	Limit int64
 }
+
+type FormFileUploadOptions struct {
+	// 表单文件字段名
+	FormFileName string
+	// 同意的文件扩展名,为空不检查
+	AgreeExtNames []string
+	// 允许的最大文件大小，单位字节，为0不检查
+	MaxSize int64
+	// 文件保存目录
+	SaveDir string
+}
+
+type FormFileUploadFileInfo struct {
+	// 文件储存路径
+	FileSavePath string
+	// 文件原始名称
+	FileOriginalName string
+	// 文件信息
+	FormFile *multipart.FileHeader
+	// 文件扩展名 eg: .zip
+	Ext string
+}
+
+var (
+	ErrUploadExtensionNameNotAllowed = errors.New("extension not allowed") // "上传文件类型不允许"
+	ErrUploadExceedMaxSize           = errors.New("exceeds maximum size")  // "上传文件超出最大尺寸"
+)
 
 const (
 	VISIT_MODE_LOGIN = iota
@@ -184,4 +216,88 @@ func ConvertSQLNullTimeUserTimeToString(userLocaltion *time.Location, sqlNullTim
 		return ConvertSystemTimeToUserTime(userLocaltion, sqlNullTime.Time).Format(format)
 	}
 	return ""
+}
+
+func FormFileUpload(c *gin.Context, options FormFileUploadOptions) (uploadInfo FormFileUploadFileInfo, err error) {
+
+	f, err := c.FormFile(options.FormFileName)
+	if err != nil {
+		return
+	} else {
+		fileExt := strings.ToLower(path.Ext(f.Filename))
+
+		if len(options.AgreeExtNames) != 0 && !cmn.InArray(options.AgreeExtNames, fileExt) {
+			err = ErrUploadExtensionNameNotAllowed
+			return
+		}
+
+		if options.MaxSize != 0 && f.Size > options.MaxSize {
+			err = ErrUploadExceedMaxSize
+			return
+		}
+
+		fileName := cmn.Md5(fmt.Sprintf("%s%s", f.Filename, time.Now().String()))
+		fildNamePrefix := fmt.Sprintf("%s/%s-%s-", options.SaveDir, time.Now().Format("20060102150405"), cmn.BuildRandCode(10, cmn.RAND_CODE_MODE2))
+		isExist, _ := cmn.PathExists(options.SaveDir)
+		if !isExist {
+			os.MkdirAll(options.SaveDir, os.ModePerm)
+		}
+		filepath := fmt.Sprintf("%s%s%s", fildNamePrefix, fileName, fileExt)
+		c.SaveUploadedFile(f, filepath)
+
+		uploadInfo = FormFileUploadFileInfo{
+			FileSavePath:     filepath,
+			FileOriginalName: f.Filename,
+			FormFile:         f,
+			Ext:              fileExt,
+		}
+	}
+
+	return
+}
+
+func UploadImageFile(c *gin.Context, agreeExtNames []string, maxSize int64) (fileInfo models.File, err error) {
+	userInfo, _ := GetCurrentUserInfo(c)
+	configUpload := global.Config.GetValueString("base", "source_path")
+
+	// 文件类型
+	// fileTypeStr := c.PostForm("type")
+	// fileType, _ := strconv.Atoi(fileTypeStr)
+
+	f, err := c.FormFile("imgfile")
+	if err != nil {
+		return
+	} else {
+		fileExt := strings.ToLower(path.Ext(f.Filename))
+
+		if !cmn.InArray(agreeExtNames, fileExt) {
+			err = ErrUploadExtensionNameNotAllowed
+			return
+		}
+
+		if maxSize != 0 && f.Size > maxSize {
+			err = ErrUploadExceedMaxSize
+			return
+		}
+
+		fileName := cmn.Md5(fmt.Sprintf("%s%s", f.Filename, time.Now().String()))
+		fildDir := fmt.Sprintf("%s/%d/%d/%d/", configUpload, time.Now().Year(), time.Now().Month(), time.Now().Day())
+		isExist, _ := cmn.PathExists(fildDir)
+		if !isExist {
+			os.MkdirAll(fildDir, os.ModePerm)
+		}
+		filepath := fmt.Sprintf("%s%s%s", fildDir, fileName, fileExt)
+		c.SaveUploadedFile(f, filepath)
+
+		pureFilePath := filepath[len(configUpload):]
+		// 向数据库添加记录
+		fileInfo = models.File{
+			UserId:   userInfo.ID,
+			FileName: f.Filename,
+			Src:      pureFilePath,
+			Ext:      fileExt,
+		}
+	}
+
+	return
 }

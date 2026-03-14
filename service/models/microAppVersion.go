@@ -1,22 +1,49 @@
 package models
 
 import (
+	"encoding/json"
 	"gorm.io/gorm"
 	"time"
 )
 
+// MicroAppVersionConfig 完整的应用配置（对应 app.config.json）
+type MicroAppVersionConfig struct {
+	AppJsonVersion string                        `json:"appJsonVersion"` // JSON 版本
+	MicroAppId     string                        `json:"microAppId"`     // 应用唯一标识
+	Version        string                        `json:"version"`        // 版本号
+	APIVersion     string                        `json:"apiVersion"`     // API 版本
+	Author         string                        `json:"author"`         // 作者
+	Entry          string                        `json:"entry"`          // 入口文件
+	Icon           string                        `json:"icon"`           // 图标
+	Debug          bool                          `json:"debug"`          // 调试模式
+	Components     map[string]json.RawMessage   `json:"components"`     // 组件配置
+	Permissions    []string                      `json:"permissions"`    // 权限列表
+	DataNodes      map[string]json.RawMessage   `json:"dataNodes"`      // 数据节点配置
+	NetworkDomains []string                      `json:"networkDomains"` // 网络域名白名单
+	AppInfo        map[string]AppInfo            `json:"appInfo"`        // 应用多语言信息
+}
+
+// AppInfo 应用多语言信息
+type AppInfo struct {
+	AppName             string `json:"appName"`
+	Description         string `json:"description"`
+	NetworkDescription  string `json:"networkDescription"`
+}
+
 // 微应用版本列表
 type MicroAppVersion struct {
 	BaseModel
-	AppId       uint      `gorm:"type:int(11);not null;index" json:"appId"`         // 微应用ID
-	Version     string    `gorm:"type:varchar(20);not null" json:"version"`         // 版本号（如 1.0.0）
-	VersionCode int       `gorm:"type:int(11);not null" json:"versionCode"`         // 版本号（数字）
-	PackageUrl  string    `gorm:"type:varchar(500);not null" json:"packageUrl"`     // 应用包下载地址
-	PackageHash string    `gorm:"type:varchar(100);not null" json:"packageHash"`    // 版本校验值（MD5/SHA）
-	Status      int       `gorm:"type:tinyint(1);not null;default:0" json:"status"` // 审核状态：0-待审核 1-通过 2-拒绝
-	ReviewTime  time.Time `gorm:"type:datetime" json:"reviewTime"`                  // 审核时间
-	ReviewerId  uint      `gorm:"type:int(11)" json:"reviewerId"`                   // 审核人ID
-	ReviewNote  string    `gorm:"type:varchar(500)" json:"reviewNote"`              // 审核备注
+	AppId       uint                 `gorm:"type:int(11);not null;index" json:"appId"` // 微应用ID
+	Version     string               `gorm:"type:varchar(20);not null" json:"version"` // 版本号（如 1.0.0）
+	VersionCode int                  `gorm:"type:int(11);not null" json:"versionCode"` // 版本号（数字）
+	PackageUrl  string               `gorm:"type:varchar(500);not null" json:"packageUrl"` // 应用包下载地址
+	PackageHash string               `gorm:"type:varchar(100);not null" json:"packageHash"` // 版本校验值（MD5/SHA）
+	VersionDesc string               `gorm:"type:varchar(1000)" json:"versionDesc"` // 版本说明
+	Config     *MicroAppVersionConfig `gorm:"type:json;serializer:json" json:"config"` // 完整配置信息（JSON）
+	Status    int                  `gorm:"type:tinyint(2);not null;default:-1" json:"status"` // 审核状态：-1-草稿 0-待审核 1-通过 2-拒绝
+	ReviewTime *time.Time          `gorm:"type:datetime" json:"reviewTime"` // 审核时间
+	ReviewerId uint                `gorm:"type:int(11)" json:"reviewerId"` // 审核人ID
+	ReviewNote string              `gorm:"type:varchar(500)" json:"reviewNote"` // 审核备注
 }
 
 // 表名

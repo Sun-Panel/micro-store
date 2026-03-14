@@ -45,6 +45,7 @@ service/uploads
 service/plugins
 service/authService/conf
 service/authService/database
+service/micro_app_upload
 
 # 临时
 cache 

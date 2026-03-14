@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { NButton, NCard, NDropdown, NInput, NInputGroup, NSelect, NSpace, useDialog, useMessage } from 'naive-ui'
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { deletes, getList, updateStatus } from '@/api/admin/microApp'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { checkIsDeveloper, getInfo as getDeveloperInfo } from '@/api/developer'
@@ -9,6 +10,7 @@ import EditLangModal from './components/EditLangModal/index.vue'
 import EditMicroApp from './EditMicroApp/index.vue'
 
 const message = useMessage()
+const router = useRouter()
 const tableIsLoading = ref<boolean>(false)
 const editDialogShow = ref<boolean>(false)
 const editLangDialogShow = ref<boolean>(false)
@@ -145,6 +147,11 @@ function handleDropdownSelect(key: string, item: MicroApp.MicroAppInfo) {
   }
 }
 
+// 跳转到详情页
+function handleViewDetail(item: MicroApp.MicroAppInfo) {
+  router.push(`/admin/myMicroApp/detail/${item.id}`)
+}
+
 // 打开编辑语言弹窗
 function handleEditLang(row: MicroApp.MicroAppInfo) {
   const langList = (row as any).langList || []
@@ -215,7 +222,7 @@ onMounted(async () => {
 
     <!-- 卡片列表 -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      <NCard v-for="item in dataList" :key="item.id" hoverable>
+      <NCard v-for="item in dataList" :key="item.id" hoverable @click="handleViewDetail(item)">
         <template #cover>
           <div class="h-40 overflow-hidden flex items-center justify-center bg-gray-50">
             <img v-if="item.appIcon" :src="item.appIcon" class="w-20 h-20 object-contain">
@@ -254,13 +261,7 @@ onMounted(async () => {
           </div>
 
           <!-- 操作按钮 -->
-          <div class="flex justify-end gap-2 pt-2">
-            <NButton size="small" @click="handleEditLang(item)">
-              语言
-            </NButton>
-            <NButton size="small" type="primary" quaternary @click="editInfo = item; editDialogShow = true">
-              编辑
-            </NButton>
+          <div class="flex justify-end gap-2 pt-2" @click.stop>
             <NDropdown
               trigger="click"
               :options="[

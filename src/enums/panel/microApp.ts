@@ -31,3 +31,23 @@ export const microAppChargeTypeMap: Record<number, string> = {
   [MicroAppChargeType.POINTS]: '积分',
   [MicroAppChargeType.PRO_FREE]: 'PRO免费',
 }
+
+/** 微应用版本状态枚举 */
+export enum MicroAppVersionStatus {
+  /** 草稿 */
+  DRAFT = -1,
+  /** 待审核 */
+  PENDING = 0,
+  /** 通过 */
+  APPROVED = 1,
+  /** 拒绝 */
+  REJECTED = 2,
+}
+
+/** 微应用版本状态映射 */
+export const microAppVersionStatusMap: Record<number, string> = {
+  [MicroAppVersionStatus.DRAFT]: '草稿',
+  [MicroAppVersionStatus.PENDING]: '待审核',
+  [MicroAppVersionStatus.APPROVED]: '已通过',
+  [MicroAppVersionStatus.REJECTED]: '已拒绝',
+}

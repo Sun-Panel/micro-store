@@ -36,7 +36,6 @@ const formInitValue = {
   categoryId: 0,
   chargeType: 0,
   price: 0,
-  screenshots: [] as string[],
   authorId: 0,
 }
 
@@ -63,8 +62,8 @@ const show = computed({
   set: (visible: boolean) => emit('update:visible', visible),
 })
 
-// 上传图集列表
-const screenshotList = ref<{ id: string, url: string, status?: string }[]>([])
+// 用于 NUpload 显示的文件列表
+const screenshotList = ref<any[]>([])
 
 // 监听弹窗打开/关闭
 watch(show, (newValue) => {
@@ -81,10 +80,16 @@ watch(show, (newValue) => {
         categoryId: props.microAppInfo.categoryId,
         chargeType: props.microAppInfo.chargeType,
         price: props.microAppInfo.price,
-        screenshots: props.microAppInfo.screenshots ? props.microAppInfo.screenshots.split(',').filter(Boolean) : [],
         authorId: props.authorId,
       }
-      screenshotList.value = model.value.screenshots.map((url, index) => ({ id: String(index), url }))
+      // 初始化已有图片列表
+      const screenshots = props.microAppInfo.screenshots ? props.microAppInfo.screenshots.split(',').filter(Boolean) : []
+      screenshotList.value = screenshots.map((url: string, index: number) => ({
+        id: String(index),
+        name: url.split('/').pop() || `screenshot-${index}`,
+        url,
+        status: 'finished',
+      }))
     }
     else {
       // 创建模式
@@ -97,7 +102,11 @@ watch(show, (newValue) => {
 // 提交表单
 async function submit() {
   try {
-    const screenshotsStr = model.value.screenshots.join(',')
+    // 从 screenshotList 获取所有有效的 URL
+    const screenshotsStr = screenshotList.value
+      .map(f => f.url)
+      .filter((url: string) => url)
+      .join(',')
 
     if (model.value.id) {
       // 更新
@@ -164,23 +173,27 @@ function handleIconError(data: any) {
 }
 
 // ========== 图集上传处理 ==========
-function handleScreenshotFinish(data: any) {
-  if (data.event && data.event.target) {
-    const xhr = data.event.target
-    const response = xhr.response
-    if (response) {
-      const res = JSON.parse(response)
-      if (res.code === 0 && res.data && res.data.imageUrl) {
-        screenshotList.value.push({ id: data.file.id, url: res.data.imageUrl, status: 'finished' })
-        model.value.screenshots = screenshotList.value.map((s: any) => s.url)
-      }
-    }
-  }
+
+// 删除图片 - NUpload 自动更新 file-list，不需要手动处理
+function handleScreenshotRemove() {
+  // v-model:file-list 会自动更新 screenshotList，提交时直接使用即可
 }
 
-function handleScreenshotRemove(data: any) {
-  screenshotList.value = screenshotList.value.filter((s: any) => s.id !== data.file.id)
-  model.value.screenshots = screenshotList.value.map((s: any) => s.url)
+// 上传完成后处理 - 设置文件 URL
+function handleScreenshotFinish({ file, event }: { file: any, event?: any }) {
+  // 尝试从响应中获取上传后的 URL
+  let imageUrl = file.response?.data?.imageUrl || file.response?.data?.url
+  // 如果没有，尝试从 event 获取
+  if (!imageUrl && event?.target?.response) {
+    try {
+      const res = JSON.parse(event.target.response)
+      imageUrl = res.data?.imageUrl || res.data?.url
+    }
+    catch (e) {}
+  }
+  if (imageUrl) {
+    file.url = imageUrl
+  }
 }
 </script>
 
@@ -243,7 +256,9 @@ function handleScreenshotRemove(data: any) {
 
       <!-- 应用图集 -->
       <NFormItem label="应用图集">
+        <!-- 使用 v-model:file-list 管理所有图片 -->
         <NUpload
+          v-model:file-list="screenshotList"
           action="/api/file/uploadImg"
           :headers="{ token: authStore.token }"
           name="imgfile"
