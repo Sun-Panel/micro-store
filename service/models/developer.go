@@ -5,10 +5,13 @@ import "gorm.io/gorm"
 // 开发者表
 type Developer struct {
 	BaseModel
-	UserId        uint   `gorm:"type:int(11);not null;uniqueIndex" json:"userId"`   // 用户ID
-	DeveloperName string `gorm:"type:varchar(50);not null" json:"developerName"`    // 开发者名称
-	ContactMail   string `gorm:"type:varchar(50)" json:"contactMail"`               // 联系邮箱
-	Status        int    `gorm:"type:tinyint(1);default:1" json:"status"`           // 状态：0-禁用 1-正常
+	UserId         uint   `gorm:"type:int(11);not null;uniqueIndex" json:"userId"`         // 用户ID
+	DeveloperName  string `gorm:"type:varchar(50);not null;uniqueIndex" json:"developerName"` // 开发者标识（纯英文，多词用-分割）
+	ContactMail    string `gorm:"type:varchar(50)" json:"contactMail"`                      // 联系邮箱
+	PaymentName    string `gorm:"type:varchar(50)" json:"paymentName"`                       // 收款人真实姓名
+	PaymentQrcode  string `gorm:"type:varchar(500)" json:"paymentQrcode"`                     // 收款二维码图片URL
+	PaymentMethod string `gorm:"type:varchar(200)" json:"paymentMethod"`                    // 收款方式描述
+	Status         int    `gorm:"type:tinyint(1);default:1" json:"status"`                  // 状态：0-禁用 1-正常
 }
 
 // 表名
@@ -98,4 +101,57 @@ func (m *Developer) CheckUserIsDeveloper(db *gorm.DB, userId uint) (bool, error)
 	var count int64
 	err := db.Model(&Developer{}).Where("user_id = ?", userId).Count(&count).Error
 	return count > 0, err
+}
+
+// ========== 业务逻辑方法 ==========
+
+// Register 注册成为开发者（带校验）
+func (m *Developer) Register(db *gorm.DB, userId uint, developerName, contactMail, paymentName, paymentQrcode, paymentMethod string) (uint, error) {
+	// 检查用户是否已经是开发者
+	if isDeveloper, err := m.CheckUserIsDeveloper(db, userId); err != nil {
+		return 0, err
+	} else if isDeveloper {
+		return 0, gorm.ErrRegistered
+	}
+
+	// 检查开发者名称是否存在
+	if exist, err := m.CheckNameExist(db, developerName, 0); err != nil {
+		return 0, err
+	} else if exist {
+		return 0, gorm.ErrRegistered
+	}
+
+	m.UserId = userId
+	m.DeveloperName = developerName
+	m.ContactMail = contactMail
+	m.PaymentName = paymentName
+	m.PaymentQrcode = paymentQrcode
+	m.PaymentMethod = paymentMethod
+	m.Status = 1 // 默认启用
+
+	if err := m.Create(db); err != nil {
+		return 0, err
+	}
+
+	return m.ID, nil
+}
+
+// UpdateInfo 更新开发者信息（带校验）
+func (m *Developer) UpdateInfo(db *gorm.DB, id uint, developerName, contactMail, paymentName, paymentQrcode, paymentMethod string) error {
+	// 检查开发者名称是否存在（排除当前ID）
+	if exist, err := m.CheckNameExist(db, developerName, id); err != nil {
+		return err
+	} else if exist {
+		return gorm.ErrRegistered
+	}
+
+	updateData := map[string]interface{}{
+		"developer_name": developerName,
+		"contact_mail":   contactMail,
+		"payment_name":   paymentName,
+		"payment_qrcode": paymentQrcode,
+		"payment_method": paymentMethod,
+	}
+
+	return m.Update(db, id, updateData)
 }

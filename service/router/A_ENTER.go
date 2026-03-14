@@ -6,6 +6,7 @@ import (
 	"sun-panel/router/admin"
 	"sun-panel/router/oauth2"
 	"sun-panel/router/openness"
+	"sun-panel/router/panel"
 	sunstore "sun-panel/router/sunStore"
 	"sun-panel/router/system"
 
@@ -21,6 +22,7 @@ func InitRouters(addr string) error {
 	// 接口
 	system.Init(routerGroup)
 	admin.Init(routerGroup)
+	panel.Init(routerGroup)
 	openness.Init(routerGroup)
 	oauth2.Init(routerGroup)
 

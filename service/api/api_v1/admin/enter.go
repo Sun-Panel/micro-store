@@ -12,4 +12,6 @@ type ApiAdmin struct {
 	ClientCreateOnlineCacheApi ClientCreateOnlineCacheApi
 	RedeemCodeApi              RedeemCodeApi
 	MicroAppCategoryApi        MicroAppCategoryApi
+	DeveloperApi               DeveloperApi
+	MicroAppApi                MicroAppApi
 }

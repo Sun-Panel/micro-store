@@ -14,4 +14,6 @@ func Init(routerGroup *gin.RouterGroup) {
 	InitClientSetting(adminGroup)
 	InitRedeemCodeRouter(adminGroup)
 	InitMicroAppCategoryRouter(adminGroup)
+	InitDeveloperRouter(adminGroup)
+	InitMicroAppRouter(adminGroup)
 }

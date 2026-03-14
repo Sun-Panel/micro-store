@@ -10,6 +10,7 @@ import (
 func InitMicroAppCategoryRouter(router *gin.RouterGroup) {
 	categoryApi := api_v1.ApiGroupApp.ApiAdmin.MicroAppCategoryApi
 
+	// 需要管理员权限的接口
 	r := router.Group("", middleware.LoginInterceptor, middleware.AdminInterceptor)
 	{
 		r.POST("microAppCategory/getList", categoryApi.GetList)
@@ -18,6 +19,11 @@ func InitMicroAppCategoryRouter(router *gin.RouterGroup) {
 		r.POST("microAppCategory/update", categoryApi.Update)
 		r.POST("microAppCategory/deletes", categoryApi.Deletes)
 		r.POST("microAppCategory/updateStatus", categoryApi.UpdateStatus)
-		r.POST("microAppCategory/getEnabledList", categoryApi.GetEnabledList)
+	}
+
+	// 只需要登录权限的接口（开发者页面使用）
+	rNoAdmin := router.Group("", middleware.LoginInterceptor)
+	{
+		rNoAdmin.POST("microAppCategory/getEnabledList", categoryApi.GetEnabledList)
 	}
 }

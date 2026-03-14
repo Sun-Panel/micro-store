@@ -16,8 +16,8 @@ const activeKey = ref('aaa')
 const menuOptions: MenuOption[] = [
 
   {
-    label: () => a('#/becomeDeveloper', t('menu.becomeDeveloper')),
-    key: 'pro',
+    label: () => a('/developer/register', t('menu.becomeDeveloper')),
+    key: 'becomeDeveloper',
   },
 
   {

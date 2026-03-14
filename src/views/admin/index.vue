@@ -42,6 +42,24 @@ const menuOptions = [
         label: '分类管理',
         key: 'AdminMicroAppCategory',
       },
+      {
+        label: '开发者管理',
+        key: 'AdminDeveloper',
+      },
+      {
+        label: '应用管理',
+        key: 'AdminMicroAppManage',
+      },
+    ],
+  },
+  {
+    label: '开发者中心',
+    key: 'developer-center',
+    children: [
+      {
+        label: '我的微应用',
+        key: 'AdminMyMicroApp',
+      },
     ],
   },
 

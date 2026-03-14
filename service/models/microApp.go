@@ -9,12 +9,14 @@ type MicroApp struct {
 	AppName         string  `gorm:"type:varchar(100);not null" json:"appName"`                // 应用名称（默认语言）
 	AppIcon         string  `gorm:"type:varchar(200);not null" json:"appIcon"`                // 应用图标URL
 	AppDesc         string  `gorm:"type:varchar(500)" json:"appDesc"`                         // 应用简介（默认语言）
+	Remark          string  `gorm:"type:varchar(500)" json:"remark"`                          // 应用备注
 	CategoryId      int     `gorm:"type:int(11);not null;index" json:"categoryId"`            // 应用分类ID
-	ChargeType      int     `gorm:"type:tinyint(1);not null;default:0" json:"chargeType"`     // 收费方式：0-免费 1-付费 2-订阅
-	Price           float64 `gorm:"type:decimal(10,2)" json:"price"`                          // 价格（付费时）
+	ChargeType      int     `gorm:"type:tinyint(1);not null;default:0" json:"chargeType"`     // 收费方式：0-免费 1-积分 2-订阅PRO免费
+	Price           float64 `gorm:"type:decimal(10,2)" json:"price"`                          // 价格（积分时）
 	AuthorId        uint    `gorm:"type:int(11);not null;index" json:"authorId"`              // 开发者ID
 	PermissionLevel int     `gorm:"type:tinyint(1)" json:"permissionLevel"`                   // 应用权限等级
 	Status          int     `gorm:"type:tinyint(1);not null;default:1" json:"status"`         // 状态：0-下架 1-上架 2-审核中
+	Screenshots     string  `gorm:"type:varchar(2000)" json:"screenshots"`                    // 图集（多个图片URL用逗号分隔）
 
 	// 关联多语言信息
 	LangList []MicroAppLang `gorm:"foreignKey:MicroAppId;references:MicroAppId" json:"langList,omitempty"`

@@ -1,3 +1,5 @@
+export * from './microApp'
+
 export enum PanelStateNetworkModeEnum {
   // 局域网
   'lan' = 0,

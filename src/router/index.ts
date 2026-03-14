@@ -110,6 +110,21 @@ const adminRouter = {
       name: 'AdminMicroAppCategory',
       component: () => import('@/views/admin/microAppCategory/index.vue'),
     },
+    {
+      path: '/admin/developer',
+      name: 'AdminDeveloper',
+      component: () => import('@/views/admin/developer/index.vue'),
+    },
+    {
+      path: '/admin/myMicroApp',
+      name: 'AdminMyMicroApp',
+      component: () => import('@/views/admin/myMicroApp/index.vue'),
+    },
+    {
+      path: '/admin/microAppManage',
+      name: 'AdminMicroAppManage',
+      component: () => import('@/views/admin/microAppManage/index.vue'),
+    },
   ],
 }
 
@@ -203,6 +218,11 @@ const routes: RouteRecordRaw[] = [
         path: '/',
         name: 'home',
         component: () => import('@/views/home/index.vue'),
+      },
+      {
+        path: '/developer/register',
+        name: 'DeveloperRegister',
+        component: () => import('@/views/developer/register.vue'),
       },
       {
         path: '/pro',
