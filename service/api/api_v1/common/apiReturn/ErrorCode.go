@@ -15,6 +15,7 @@ const (
 	ErrCodeDatabaseError        = 1200
 	ErrCodePleaseKeepAtLeastOne = 1201
 	ErrCodeNoDataRecordFound    = 1202
+	ErrCodeDataAlreadyExists    = 1203
 
 	ErrCodeUploadFailed          = 1300
 	ErrCodeUnsupportedFileFormat = 1301
@@ -23,6 +24,16 @@ const (
 
 	ErrCodeOrderCreateFailed     = 1401
 	ErrCodeGoodsNoUsePayPlatform = 1402
+
+	// 微应用版本业务错误 2000-2099
+	ErrCodeAppNotFound          = 2000
+	ErrCodeVersionNotFound      = 2001
+	ErrCodeVersionExists        = 2002
+	ErrCodeVersionCodeExists    = 2003
+	ErrCodeStatusNotAllowed     = 2004
+	ErrCodeApprovedCannotDelete = 2005
+	ErrCodeNotPendingReview     = 2006
+	ErrCodeNoUpdateContent      = 2007
 )
 
 var ErrorCodeMap = map[int]error{
@@ -39,11 +50,22 @@ var ErrorCodeMap = map[int]error{
 	ErrCodeDatabaseError:        errors.New("database error"),           // 数据库错误
 	ErrCodePleaseKeepAtLeastOne: errors.New("please keep at least one"), // 请至少保留一个
 	ErrCodeNoDataRecordFound:    errors.New("no data record found"),     // 未找到数据记录
+	ErrCodeDataAlreadyExists:    errors.New("data already exists"),      // 数据已存在
 
 	ErrCodeUploadFailed:          errors.New("upload failed"),           // 上传失败
 	ErrCodeUnsupportedFileFormat: errors.New("unsupported file format"), // 不被支持的格式文件
 
 	ErrCodeParameterFormatError: errors.New("parameter format error"), // 参数格式错误
+
+	// 微应用版本业务错误
+	ErrCodeAppNotFound:          errors.New("app not found"),                      // 应用不存在
+	ErrCodeVersionNotFound:      errors.New("version not found"),                  // 版本不存在
+	ErrCodeVersionExists:        errors.New("version already exists"),             // 版本号已存在
+	ErrCodeVersionCodeExists:    errors.New("version code already exists"),        // 版本编号已存在
+	ErrCodeStatusNotAllowed:     errors.New("status not allowed"),                 // 状态不允许操作
+	ErrCodeApprovedCannotDelete: errors.New("approved version cannot be deleted"), // 已审核版本不能删除
+	ErrCodeNotPendingReview:     errors.New("not pending review"),                 // 非待审核状态
+	ErrCodeNoUpdateContent:      errors.New("no update content"),                  // 无更新内容
 }
 
 func GetError(code int) error {

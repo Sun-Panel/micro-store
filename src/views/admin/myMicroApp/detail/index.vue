@@ -6,8 +6,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { deletes, getInfo as getMicroAppInfo, updateLang, update as updateMicroApp, updateStatus } from '@/api/admin/microApp'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { cancelReview, createVersion, deleteVersion, getVersionList, submitReview, uploadVersionPackage } from '@/api/admin/microAppVersion'
+import { ErrorCode } from '@/enums/errorCode'
 import { microAppChargeTypeMap, microAppStatusMap, MicroAppVersionStatus, microAppVersionStatusMap } from '@/enums/panel'
+import { t } from '@/locales'
 import { timeFormat } from '@/utils/cmn'
+import { apiRespErrMsg } from '@/utils/cmn/apiMessage'
 import EditLangModal from '../components/EditLangModal/index.vue'
 import EditMicroApp from '../EditMicroApp/index.vue'
 
@@ -42,7 +45,7 @@ async function fetchCategoryOptions() {
     })) || []
   }
   catch (error) {
-    console.error(error)
+    apiRespErrMsg(error)
   }
 }
 
@@ -126,7 +129,7 @@ async function fetchMicroAppInfo() {
     initBaseInfoLang()
   }
   catch (error) {
-    message.error('获取微应用详情失败')
+    apiRespErrMsg(error)
   }
   finally {
     loading.value = false
@@ -215,7 +218,7 @@ async function fetchVersionList() {
     versionList.value = data.list || []
   }
   catch (error) {
-    message.error('获取版本列表失败')
+    apiRespErrMsg(error)
   }
   finally {
     versionLoading.value = false
@@ -319,42 +322,51 @@ const langTableColumns: DataTableColumns<{ lang: string, appName: string, appDes
 // 提交审核
 async function handleSubmitReview(versionId: number) {
   try {
-    const { code } = await submitReview<any>({ versionId })
-    if (code === 0) {
+    const res = await submitReview<any>({ versionId })
+    if (res.code === 0) {
       message.success('已提交审核')
       fetchVersionList()
     }
+    else {
+      apiRespErrMsg(res)
+    }
   }
   catch (error) {
-    message.error('提交审核失败')
+    apiRespErrMsg(error)
   }
 }
 
 // 撤销审核
 async function handleCancelReview(versionId: number) {
   try {
-    const { code } = await cancelReview<any>({ versionId })
-    if (code === 0) {
+    const res = await cancelReview<any>({ versionId })
+    if (res.code === 0) {
       message.success('已撤销审核')
       fetchVersionList()
     }
+    else {
+      apiRespErrMsg(res)
+    }
   }
   catch (error) {
-    message.error('撤销审核失败')
+    apiRespErrMsg(error)
   }
 }
 
 // 删除版本
 async function handleDeleteVersion(ids: number[]) {
   try {
-    const { code } = await deleteVersion<any>(ids)
-    if (code === 0) {
+    const res = await deleteVersion<any>(ids)
+    if (res.code === 0) {
       message.success('删除成功')
       fetchVersionList()
     }
+    else {
+      apiRespErrMsg(res)
+    }
   }
   catch (error) {
-    message.error('删除失败')
+    apiRespErrMsg(error)
   }
 }
 
@@ -442,15 +454,20 @@ async function handleSetAsMainInfo() {
     }
 
     // 1. 使用专门的 updateLang 接口更新语言信息
-    await updateLang({
+    const langRes = await updateLang({
       id: microAppInfo.value.id,
       langMap: versionLangMap,
     } as any)
 
+    if (langRes.code !== 0) {
+      apiRespErrMsg(langRes)
+      return
+    }
+
     // 2. 更新图标（如果版本中有图标）
     const newIcon = versionDetailInfo.value.iconURL
     if (newIcon) {
-      await updateMicroApp({
+      const updateRes = await updateMicroApp({
         id: microAppInfo.value.id,
         appName: microAppInfo.value.appName,
         appIcon: newIcon,
@@ -461,6 +478,11 @@ async function handleSetAsMainInfo() {
         price: microAppInfo.value.price || 0,
         screenshots: microAppInfo.value.screenshots || '',
       } as any)
+
+      if (updateRes.code !== 0) {
+        apiRespErrMsg(updateRes)
+        return
+      }
     }
 
     message.success('已设为主信息')
@@ -470,7 +492,7 @@ async function handleSetAsMainInfo() {
     fetchMicroAppInfo()
   }
   catch (error) {
-    message.error('设置失败')
+    apiRespErrMsg(error)
   }
   finally {
     versionDetailLoading.value = false
@@ -482,14 +504,17 @@ async function handleChangeStatus(status: number) {
   if (!microAppInfo.value)
     return
   try {
-    const { code } = await updateStatus({ id: microAppInfo.value.id, status })
-    if (code === 0) {
+    const res = await updateStatus({ id: microAppInfo.value.id, status })
+    if (res.code === 0) {
       message.success(status === 1 ? '已上架' : '已下架')
       fetchMicroAppInfo()
     }
+    else {
+      apiRespErrMsg(res)
+    }
   }
   catch (error) {
-    message.error('操作失败')
+    apiRespErrMsg(error)
   }
 }
 
@@ -498,14 +523,17 @@ async function handleDelete() {
   if (!microAppInfo.value)
     return
   try {
-    const { code } = await deletes([microAppInfo.value.id])
-    if (code === 0) {
+    const res = await deletes([microAppInfo.value.id])
+    if (res.code === 0) {
       message.success('删除成功')
       router.push('/admin/myMicroApp')
     }
+    else {
+      apiRespErrMsg(res)
+    }
   }
   catch (error) {
-    message.error('删除失败')
+    apiRespErrMsg(error)
   }
 }
 
@@ -562,25 +590,28 @@ async function handleUploadChange(options: { file: any }) {
 
   uploadLoading.value = true
   try {
-    const { data } = await uploadVersionPackage<any>(file)
-    if (data) {
-      versionForm.value.packageUrl = data.url
-      versionForm.value.packageHash = data.hash || ''
+    const res = await uploadVersionPackage<any>(file)
+    if (res.code === 0 && res.data) {
+      versionForm.value.packageUrl = res.data.url
+      versionForm.value.packageHash = res.data.hash || ''
       // 保存上传的配置信息，并用返回的 IconURL 覆盖 config.icon（完整路径）
-      if (data.config) {
-        data.config.icon = data.iconURL || data.config.icon
+      if (res.data.config) {
+        res.data.config.icon = res.data.iconURL || res.data.config.icon
       }
-      uploadedConfig.value = data.config || null
+      uploadedConfig.value = res.data.config || null
       // 如果配置文件中有版本号，自动填充
-      if (data.config?.version) {
-        versionForm.value.version = data.config.version
-        handleVersionInput(data.config.version)
+      if (res.data.config?.version) {
+        versionForm.value.version = res.data.config.version
+        handleVersionInput(res.data.config.version)
       }
       message.success('上传成功')
     }
+    else {
+      apiRespErrMsg(res)
+    }
   }
   catch (error) {
-    message.error('上传失败')
+    apiRespErrMsg(error)
   }
   finally {
     uploadLoading.value = false
@@ -622,20 +653,29 @@ async function handleAddVersion() {
       config: uploadedConfig.value || undefined,
     })
 
-    // 自动提交审核
-    if (createRes.code === 0 && createRes.data?.id) {
-      await submitReview<any>({ versionId: createRes.data.id })
-    }
+    if (createRes.code === 0) {
+      // 自动提交审核
+      if (createRes.data?.id) {
+        const reviewRes = await submitReview<any>({ versionId: createRes.data.id })
+        if (reviewRes.code !== 0) {
+          apiRespErrMsg(reviewRes)
+          return
+        }
+      }
 
-    message.success('版本添加成功，已提交审核')
-    addVersionShow.value = false
-    versionForm.value = { version: '', versionCode: 0, packageUrl: '', packageHash: '', versionDesc: '' }
-    versionFile.value = null
-    uploadedConfig.value = null
-    fetchVersionList()
+      message.success('版本添加成功，已提交审核')
+      addVersionShow.value = false
+      versionForm.value = { version: '', versionCode: 0, packageUrl: '', packageHash: '', versionDesc: '' }
+      versionFile.value = null
+      uploadedConfig.value = null
+      fetchVersionList()
+    }
+    else {
+      apiRespErrMsg(createRes)
+    }
   }
   catch (error) {
-    message.error('添加版本失败')
+    apiRespErrMsg(error)
   }
   finally {
     addVersionLoading.value = false
@@ -720,12 +760,14 @@ onMounted(async () => {
           <div v-else class="w-16 h-16 bg-gray-100 rounded flex items-center justify-center text-gray-400">
             暂无图标
           </div>
-          <div>
-            <div class="font-bold text-lg">
-              微应用ID: {{ microAppInfo.microAppId }}
+          <div class="space-y-2">
+            <div class="flex items-baseline gap-2">
+              <span class="text-sm text-gray-500 whitespace-nowrap">MicroAppID:</span>
+              <span class="font-mono text-sm text-gray-700">{{ microAppInfo.microAppId }}</span>
             </div>
-            <div class="font-bold text-lg">
-              微应用名称: {{ baseInfoAppName || microAppInfo.appName }}
+            <div class="flex items-baseline gap-2">
+              <span class="text-sm text-gray-500 whitespace-nowrap">微应用名称:</span>
+              <span class="font-bold text-lg">{{ baseInfoAppName || microAppInfo.appName }}</span>
             </div>
           </div>
         </div>

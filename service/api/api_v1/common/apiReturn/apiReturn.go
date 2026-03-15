@@ -32,6 +32,7 @@ func ApiReturn(ctx *gin.Context, code int, msg string, data interface{}) {
 		returnData["data"] = data
 	}
 	ctx.JSON(200, returnData)
+	ctx.Abort()
 }
 
 // 返回成功

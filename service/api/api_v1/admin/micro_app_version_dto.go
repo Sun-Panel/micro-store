@@ -66,13 +66,13 @@ type AppInfo struct {
 
 // MicroAppVersionUploadResp 版本上传响应
 type MicroAppVersionUploadResp struct {
-	URL         string          `json:"url"`         // 文件访问 URL
-	Hash        string          `json:"hash"`        // 文件 MD5 校验值
-	Config      *MicroAppConfig `json:"config"`      // 解析出的配置文件
-	FileName    string          `json:"fileName"`    // 文件名
-	FileSize    int64           `json:"fileSize"`    // 文件大小
-	FolderName  string          `json:"folderName"`  // 缓存文件夹名（不含路径）
-	IconURL     string          `json:"iconURL"`     // 图标访问 URL
+	URL         string                 `json:"url"`         // 文件访问 URL
+	Hash        string                 `json:"hash"`        // 文件 MD5 校验值
+	Config      map[string]interface{} `json:"config"`      // 解析出的配置文件
+	FileName    string                 `json:"fileName"`    // 文件名
+	FileSize    int64                  `json:"fileSize"`    // 文件大小
+	FolderName  string                 `json:"folderName"`  // 缓存文件夹名（不含路径）
+	IconURL     string                 `json:"iconURL"`     // 图标访问 URL
 }
 
 // MarshalJSON 自定义 JSON 序列化

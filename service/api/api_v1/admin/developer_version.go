@@ -2,6 +2,7 @@ package admin
 
 import (
 	"sun-panel/api/api_v1/common/apiReturn"
+	"sun-panel/biz"
 	"sun-panel/global"
 	"sun-panel/models"
 
@@ -20,7 +21,6 @@ func (a *DeveloperVersionApi) GetList(c *gin.Context) {
 		return
 	}
 
-	// 设置默认值
 	if param.Page < 1 {
 		param.Page = 1
 	}
@@ -64,37 +64,7 @@ func (a *DeveloperVersionApi) Create(c *gin.Context) {
 		return
 	}
 
-	// 检查应用是否存在
-	app := models.MicroApp{}
-	if _, err := app.GetById(global.Db, param.AppId); err != nil {
-		apiReturn.Error(c, "微应用不存在")
-		return
-	}
-
-	// 检查版本号是否存在
-	m := models.MicroAppVersion{}
-	exists, err := m.CheckVersionExist(global.Db, param.AppId, param.Version, 0)
-	if err != nil {
-		apiReturn.ErrorDatabase(c, err.Error())
-		return
-	}
-	if exists {
-		apiReturn.Error(c, "版本号已存在")
-		return
-	}
-
-	// 检查版本号数字是否存在
-	exists, err = m.CheckVersionCodeExist(global.Db, param.AppId, param.VersionCode, 0)
-	if err != nil {
-		apiReturn.ErrorDatabase(c, err.Error())
-		return
-	}
-	if exists {
-		apiReturn.Error(c, "版本号数字已存在")
-		return
-	}
-
-	version := models.MicroAppVersion{
+	version := &models.MicroAppVersion{
 		AppId:       param.AppId,
 		Version:     param.Version,
 		VersionCode: param.VersionCode,
@@ -102,11 +72,10 @@ func (a *DeveloperVersionApi) Create(c *gin.Context) {
 		PackageHash: param.PackageHash,
 		VersionDesc: param.VersionDesc,
 		Config:      param.Config,
-		Status:      -1, // 默认草稿状态
 	}
 
-	if err := version.Create(global.Db); err != nil {
-		apiReturn.ErrorDatabase(c, err.Error())
+	if err := biz.CreateVersionWithCheck(global.Db, version); err != nil {
+		handleBizError(c, err)
 		return
 	}
 
@@ -121,29 +90,8 @@ func (a *DeveloperVersionApi) Update(c *gin.Context) {
 		return
 	}
 
-	m := models.MicroAppVersion{}
-	version, err := m.GetById(global.Db, param.Id)
-	if err != nil {
-		apiReturn.ErrorDataNotFound(c)
-		return
-	}
-
-	// 只有待审核状态可以更新
-	if version.Status != 0 {
-		apiReturn.Error(c, "只有待审核的版本可以更新")
-		return
-	}
-
-	updateData := map[string]interface{}{}
-	if param.Version != "" {
-		updateData["version"] = param.Version
-	}
-	if param.VersionCode > 0 {
-		updateData["version_code"] = param.VersionCode
-	}
-
-	if err := m.Update(global.Db, param.Id, updateData); err != nil {
-		apiReturn.ErrorDatabase(c, err.Error())
+	if err := biz.UpdateVersion(global.Db, param.Id, param.Version, param.VersionCode); err != nil {
+		handleBizError(c, err)
 		return
 	}
 
@@ -158,21 +106,8 @@ func (a *DeveloperVersionApi) SubmitReview(c *gin.Context) {
 		return
 	}
 
-	m := models.MicroAppVersion{}
-	version, err := m.GetById(global.Db, param.VersionId)
-	if err != nil {
-		apiReturn.ErrorDataNotFound(c)
-		return
-	}
-
-	// 只有草稿或已拒绝状态可以提交审核
-	if version.Status != -1 && version.Status != 2 {
-		apiReturn.Error(c, "当前状态不允许提交审核")
-		return
-	}
-
-	if err := m.Update(global.Db, param.VersionId, map[string]interface{}{"status": 0}); err != nil {
-		apiReturn.ErrorDatabase(c, err.Error())
+	if err := biz.SubmitReview(global.Db, param.VersionId); err != nil {
+		handleBizError(c, err)
 		return
 	}
 
@@ -187,22 +122,8 @@ func (a *DeveloperVersionApi) CancelReview(c *gin.Context) {
 		return
 	}
 
-	m := models.MicroAppVersion{}
-	version, err := m.GetById(global.Db, param.VersionId)
-	if err != nil {
-		apiReturn.ErrorDataNotFound(c)
-		return
-	}
-
-	// 只有待审核状态可以撤销
-	if version.Status != 0 {
-		apiReturn.Error(c, "只有待审核的版本可以撤销")
-		return
-	}
-
-	// 撤销审核后变为草稿状态
-	if err := m.Update(global.Db, param.VersionId, map[string]interface{}{"status": -1}); err != nil {
-		apiReturn.ErrorDatabase(c, err.Error())
+	if err := biz.CancelReview(global.Db, param.VersionId); err != nil {
+		handleBizError(c, err)
 		return
 	}
 
@@ -217,24 +138,41 @@ func (a *DeveloperVersionApi) Delete(c *gin.Context) {
 		return
 	}
 
-	m := models.MicroAppVersion{}
-	// 检查版本是否存在
-	version, err := m.GetById(global.Db, param.Ids[0])
-	if err != nil {
-		apiReturn.ErrorDataNotFound(c)
-		return
-	}
-
-	// 只有待审核或已拒绝状态可以删除
-	if version.Status == 1 {
-		apiReturn.Error(c, "已通过的版本不能删除")
-		return
-	}
-
-	if err := m.Delete(global.Db, param.Ids); err != nil {
-		apiReturn.ErrorDatabase(c, err.Error())
+	if err := biz.DeleteVersion(global.Db, param.Ids); err != nil {
+		handleBizError(c, err)
 		return
 	}
 
 	apiReturn.Success(c)
+}
+
+// handleBizError 统一处理业务错误
+func handleBizError(c *gin.Context, err error) {
+	// 业务错误：转换为数字错误码，前端统一处理
+	if errCode, ok := biz.IsBizError(err); ok {
+		intCode := bizCodeToInt(errCode) // API层负责转换
+		apiReturn.ErrorByCode(c, intCode)
+		return
+	}
+	// 其他错误：数据库错误
+	apiReturn.ErrorDatabase(c, err.Error())
+}
+
+// bizCodeToInt 业务错误码转数字错误码（API层负责转换）
+func bizCodeToInt(code string) int {
+	codeMap := map[string]int{
+		biz.ErrCodeAppNotFound:          2000,
+		biz.ErrCodeVersionNotFound:      2001,
+		biz.ErrCodeVersionExists:        2002,
+		biz.ErrCodeVersionCodeExists:    2003,
+		biz.ErrCodeStatusNotAllowed:     2004,
+		biz.ErrCodeApprovedCannotDelete: 2005,
+		biz.ErrCodeNotPendingReview:     2006,
+		biz.ErrCodeNoUpdateContent:      2007,
+	}
+
+	if intCode, ok := codeMap[code]; ok {
+		return intCode
+	}
+	return -1
 }

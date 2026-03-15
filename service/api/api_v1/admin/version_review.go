@@ -2,6 +2,7 @@ package admin
 
 import (
 	"sun-panel/api/api_v1/common/apiReturn"
+	"sun-panel/biz"
 	"sun-panel/global"
 	"sun-panel/models"
 
@@ -46,35 +47,21 @@ func (a *VersionReviewApi) GetPendingList(c *gin.Context) {
 		return
 	}
 
-	m := models.MicroAppVersion{}
-	list, total, err := m.GetPendingList(global.Db, param.Page, param.Limit)
+	// 设置默认值
+	if param.Page < 1 {
+		param.Page = 1
+	}
+	if param.Limit < 1 {
+		param.Limit = 10
+	}
+
+	list, total, err := biz.GetPendingListWithAppInfo(global.Db, param.Page, param.Limit)
 	if err != nil {
 		apiReturn.ErrorDatabase(c, err.Error())
 		return
 	}
 
-	// 填充应用信息
-	type VersionWithApp struct {
-		models.MicroAppVersion
-		AppName string `json:"appName"`
-		AppIcon string `json:"appIcon"`
-	}
-
-	result := make([]VersionWithApp, len(list))
-	for i, v := range list {
-		var app models.MicroApp
-		if err := global.Db.Where("id = ?", v.AppId).First(&app).Error; err == nil {
-			result[i] = VersionWithApp{
-				MicroAppVersion: v,
-				AppName:         app.AppName,
-				AppIcon:         app.AppIcon,
-			}
-		} else {
-			result[i] = VersionWithApp{MicroAppVersion: v}
-		}
-	}
-
-	apiReturn.SuccessListData(c, result, total)
+	apiReturn.SuccessListData(c, list, total)
 }
 
 // Review 审核版本

@@ -1,0 +1,230 @@
+package biz
+
+import (
+	"sun-panel/models"
+
+	"gorm.io/gorm"
+)
+
+// MicroAppVersionService 微应用版本业务服务
+type MicroAppVersionService struct{}
+
+// CreateWithCheck 创建版本（包含业务检查）
+func (s *MicroAppVersionService) CreateWithCheck(db *gorm.DB, version *models.MicroAppVersion) error {
+	// 1. 检查应用是否存在
+	app := models.MicroApp{}
+	if _, err := app.GetById(db, version.AppId); err != nil {
+		return NewBizError(ErrCodeAppNotFound)
+	}
+
+	// 2. 检查版本号是否存在
+	m := models.MicroAppVersion{}
+	exists, err := m.CheckVersionExist(db, version.AppId, version.Version, 0)
+	if err != nil {
+		return err // 数据库错误，直接返回
+	}
+	if exists {
+		return NewBizError(ErrCodeVersionExists)
+	}
+
+	// 3. 检查版本号数字是否存在
+	exists, err = m.CheckVersionCodeExist(db, version.AppId, version.VersionCode, 0)
+	if err != nil {
+		return err // 数据库错误，直接返回
+	}
+	if exists {
+		return NewBizError(ErrCodeVersionCodeExists)
+	}
+
+	// 4. 创建版本
+	version.Status = -1 // 默认草稿状态
+	if err := version.Create(db); err != nil {
+		return err // 数据库错误，直接返回
+	}
+
+	return nil
+}
+
+// GetPendingListWithAppInfo 获取待审核版本列表（包含应用信息）
+func (s *MicroAppVersionService) GetPendingListWithAppInfo(db *gorm.DB, page, limit int) ([]map[string]interface{}, int64, error) {
+	m := models.MicroAppVersion{}
+	list, total, err := m.GetPendingList(db, page, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// 收集所有 AppId
+	appIds := make([]uint, 0, len(list))
+	for _, v := range list {
+		appIds = append(appIds, v.AppId)
+	}
+
+	// 批量查询应用信息（避免 N+1）
+	var apps []models.MicroApp
+	appMap := make(map[uint]models.MicroApp)
+	if len(appIds) > 0 {
+		if err := db.Where("id IN ?", appIds).Find(&apps).Error; err == nil {
+			for _, app := range apps {
+				appMap[app.ID] = app
+			}
+		}
+	}
+
+	// 组装结果
+	result := make([]map[string]interface{}, len(list))
+	for i, v := range list {
+		appInfo := map[string]interface{}{
+			"id":          v.ID,
+			"appId":       v.AppId,
+			"version":     v.Version,
+			"versionCode": v.VersionCode,
+			"packageUrl":  v.PackageUrl,
+			"status":      v.Status,
+			"createTime":  v.CreatedAt,
+			"reviewTime":  v.ReviewTime,
+			"reviewNote":  v.ReviewNote,
+		}
+		if app, ok := appMap[v.AppId]; ok {
+			appInfo["appName"] = app.AppName
+			appInfo["appIcon"] = app.AppIcon
+		}
+		result[i] = appInfo
+	}
+
+	return result, total, nil
+}
+
+// SubmitReview 提交审核
+func (s *MicroAppVersionService) SubmitReview(db *gorm.DB, versionId uint) error {
+	m := models.MicroAppVersion{}
+	version, err := m.GetById(db, versionId)
+	if err != nil {
+		return NewBizError(ErrCodeVersionNotFound)
+	}
+
+	if version.Status != -1 && version.Status != 2 {
+		return NewBizError(ErrCodeStatusNotAllowed)
+	}
+
+	if err := m.Update(db, versionId, map[string]interface{}{"status": 0}); err != nil {
+		return err // 数据库错误，直接返回
+	}
+
+	return nil
+}
+
+// CancelReview 撤销审核
+func (s *MicroAppVersionService) CancelReview(db *gorm.DB, versionId uint) error {
+	m := models.MicroAppVersion{}
+	version, err := m.GetById(db, versionId)
+	if err != nil {
+		return NewBizError(ErrCodeVersionNotFound)
+	}
+
+	if version.Status != 0 {
+		return NewBizError(ErrCodeStatusNotAllowed)
+	}
+
+	if err := m.Update(db, versionId, map[string]interface{}{"status": -1}); err != nil {
+		return err // 数据库错误，直接返回
+	}
+
+	return nil
+}
+
+// DeleteVersion 删除版本
+func (s *MicroAppVersionService) DeleteVersion(db *gorm.DB, ids []uint) error {
+	m := models.MicroAppVersion{}
+	version, err := m.GetById(db, ids[0])
+	if err != nil {
+		return NewBizError(ErrCodeVersionNotFound)
+	}
+
+	if version.Status == 1 {
+		return NewBizError(ErrCodeApprovedCannotDelete)
+	}
+
+	if err := m.Delete(db, ids); err != nil {
+		return err // 数据库错误，直接返回
+	}
+
+	return nil
+}
+
+// UpdateVersion 更新版本
+func (s *MicroAppVersionService) UpdateVersion(db *gorm.DB, id uint, version string, versionCode int) error {
+	m := models.MicroAppVersion{}
+	v, err := m.GetById(db, id)
+	if err != nil {
+		return NewBizError(ErrCodeVersionNotFound)
+	}
+
+	if v.Status != -1 {
+		return NewBizError(ErrCodeStatusNotAllowed)
+	}
+
+	updateData := map[string]interface{}{}
+	if version != "" {
+		updateData["version"] = version
+	}
+	if versionCode > 0 {
+		updateData["version_code"] = versionCode
+	}
+
+	if len(updateData) == 0 {
+		return NewBizError(ErrCodeNoUpdateContent)
+	}
+
+	if err := m.Update(db, id, updateData); err != nil {
+		return err // 数据库错误，直接返回
+	}
+
+	return nil
+}
+
+// Review 审核版本
+func (s *MicroAppVersionService) Review(db *gorm.DB, versionId uint, status int, reviewerId uint, reviewNote string) error {
+	m := models.MicroAppVersion{}
+	version, err := m.GetById(db, versionId)
+	if err != nil {
+		return NewBizError(ErrCodeVersionNotFound)
+	}
+
+	if version.Status != 0 {
+		return NewBizError(ErrCodeNotPendingReview)
+	}
+
+	if err := m.Review(db, versionId, status, reviewerId, reviewNote); err != nil {
+		return err // 数据库错误，直接返回
+	}
+
+	return nil
+}
+
+// 全局实例
+var MicroAppVersionSvc = &MicroAppVersionService{}
+
+// 便捷函数
+func CreateVersionWithCheck(db *gorm.DB, version *models.MicroAppVersion) error {
+	return MicroAppVersionSvc.CreateWithCheck(db, version)
+}
+
+func GetPendingListWithAppInfo(db *gorm.DB, page, limit int) ([]map[string]interface{}, int64, error) {
+	return MicroAppVersionSvc.GetPendingListWithAppInfo(db, page, limit)
+}
+
+func UpdateVersion(db *gorm.DB, id uint, version string, versionCode int) error {
+	return MicroAppVersionSvc.UpdateVersion(db, id, version, versionCode)
+}
+
+func SubmitReview(db *gorm.DB, versionId uint) error {
+	return MicroAppVersionSvc.SubmitReview(db, versionId)
+}
+
+func CancelReview(db *gorm.DB, versionId uint) error {
+	return MicroAppVersionSvc.CancelReview(db, versionId)
+}
+
+func DeleteVersion(db *gorm.DB, ids []uint) error {
+	return MicroAppVersionSvc.DeleteVersion(db, ids)
+}
