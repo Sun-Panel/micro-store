@@ -263,9 +263,6 @@ onMounted(async () => {
               v-for="(screenshot, index) in microAppInfo.screenshots.split(',')"
               :key="index"
               :src="screenshot"
-              width="100%"
-              height="180"
-              object-fit="cover"
               class="rounded-lg"
             />
           </div>

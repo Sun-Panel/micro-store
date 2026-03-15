@@ -50,6 +50,20 @@ const menuOptions = [
         label: '应用管理',
         key: 'AdminMicroAppManage',
       },
+      {
+        label: '审核管理',
+        key: 'review-manage',
+        children: [
+          {
+            label: '应用审核',
+            key: 'AdminMicroAppReview',
+          },
+          {
+            label: '版本审核',
+            key: 'AdminVersionReview',
+          },
+        ],
+      },
     ],
   },
   {

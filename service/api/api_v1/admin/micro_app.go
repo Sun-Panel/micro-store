@@ -91,8 +91,8 @@ func (a *MicroAppApi) GetInfo(c *gin.Context) {
 		"reviewId":        m.ReviewId,
 		"reviewTime":      m.ReviewTime,
 		"langList":        m.LangList,
-		"createTime":      m.CreateTime,
-		"updateTime":      m.UpdateTime,
+		"createTime":      m.CreatedAt,
+		"updateTime":      m.UpdatedAt,
 	}
 
 	apiReturn.SuccessData(c, result)
@@ -605,23 +605,42 @@ func (a *MicroAppApi) ReviewApp(c *gin.Context) {
 			}
 
 			// 更新多语言信息
-			// 先删除旧的多语言记录
+			// 使用软删除方式更新多语言记录
 			m := models.MicroApp{}
-			app, _ := m.GetById(global.Db, review.AppId)
+			app, _ := m.GetById(tx, review.AppId)
 			if app.MicroAppId != "" {
-				tx.Where("micro_app_id = ?", app.MicroAppId).Delete(&models.MicroAppLang{})
-			}
-
-			// 插入新的多语言记录
-			for lang, langInfo := range langMap {
-				langModel := models.MicroAppLang{
-					MicroAppId: app.MicroAppId,
-					Lang:       lang,
-					AppName:    langInfo.AppName,
-					AppDesc:    langInfo.AppDesc,
-				}
-				if err := tx.Create(&langModel).Error; err != nil {
+				// 先软删除当前的多语言记录
+				if err := tx.Where("micro_app_id = ?", app.MicroAppId).Delete(&models.MicroAppLang{}).Error; err != nil {
 					return err
+				}
+
+				// 然后插入新的多语言记录
+				// 如果存在相同唯一索引的软删除记录，会触发冲突，所以我们使用 Save 来处理
+				for lang, langInfo := range langMap {
+					// 先尝试查找已存在的记录（包括软删除的）
+					var existingLang models.MicroAppLang
+					err := tx.Unscoped().Where("micro_app_id = ? AND lang = ?", app.MicroAppId, lang).First(&existingLang).Error
+
+					if err == nil {
+						// 记录已存在，更新它（包括软删除的记录）
+						existingLang.AppName = langInfo.AppName
+						existingLang.AppDesc = langInfo.AppDesc
+						existingLang.DeletedAt = gorm.DeletedAt{} // 取消软删除标记
+						if err := tx.Save(&existingLang).Error; err != nil {
+							return err
+						}
+					} else {
+						// 记录不存在，创建新记录
+						langModel := models.MicroAppLang{
+							MicroAppId: app.MicroAppId,
+							Lang:       lang,
+							AppName:    langInfo.AppName,
+							AppDesc:    langInfo.AppDesc,
+						}
+						if err := tx.Create(&langModel).Error; err != nil {
+							return err
+						}
+					}
 				}
 			}
 		} else {
