@@ -1,6 +1,9 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+	"time"
+)
 
 // 微应用列表
 type MicroApp struct {
@@ -17,6 +20,11 @@ type MicroApp struct {
 	PermissionLevel int     `gorm:"type:tinyint(1)" json:"permissionLevel"`                   // 应用权限等级
 	Status          int     `gorm:"type:tinyint(1);not null;default:1" json:"status"`         // 状态：0-下架 1-上架 2-审核中
 	Screenshots     string  `gorm:"type:varchar(2000)" json:"screenshots"`                    // 图集（多个图片URL用逗号分隔）
+
+	// 审核相关字段
+	ReviewStatus int   `gorm:"type:tinyint(2);not null;default:0;index" json:"reviewStatus"` // 审核状态：0-无审核 1-审核中 2-已通过 3-已拒绝
+	ReviewId     uint  `gorm:"type:int(11)" json:"reviewId"`                                 // 当前审核记录ID
+	ReviewTime   *time.Time `gorm:"type:datetime" json:"reviewTime"`                         // 最后审核时间
 
 	// 关联多语言信息
 	LangList []MicroAppLang `gorm:"foreignKey:MicroAppId;references:MicroAppId" json:"langList,omitempty"`

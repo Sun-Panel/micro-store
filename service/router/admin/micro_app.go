@@ -19,11 +19,18 @@ func InitMicroAppRouter(router *gin.RouterGroup) {
 		r.POST("microApp/update", microAppApi.Update)
 		r.POST("microApp/deletes", microAppApi.Deletes)
 		r.POST("microApp/updateStatus", microAppApi.UpdateStatus)
+		// 审核相关接口（管理员）
+		r.POST("microApp/getPendingReviewList", microAppApi.GetPendingReviewList)
+		r.POST("microApp/reviewApp", microAppApi.ReviewApp)
+		r.POST("microApp/getReviewInfo", microAppApi.GetReviewInfo)
 	}
 
 	// 需要登录权限的接口（开发者使用）
 	rNoAdmin := router.Group("", middleware.LoginInterceptor)
 	{
 		rNoAdmin.POST("microApp/updateLang", microAppApi.UpdateLang)
+		// 审核相关接口（开发者）
+		rNoAdmin.POST("microApp/cancelReview", microAppApi.CancelReview)
+		rNoAdmin.POST("microApp/getReviewHistory", microAppApi.GetReviewHistory)
 	}
 }

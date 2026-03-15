@@ -131,6 +131,7 @@ func CreateDatabase(driver string, db *gorm.DB) error {
 		&models.MicroAppDownload{},  // 下载记录表
 		&models.MicroAppInstall{},   // 应用安装记录表
 		&models.MicroAppLang{},      // 微应用多语言表
+		&models.MicroAppReview{},    // 微应用审核快照表
 
 	)
 

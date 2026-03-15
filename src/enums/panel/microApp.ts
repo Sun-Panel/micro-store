@@ -8,6 +8,26 @@ export enum MicroAppStatus {
   PENDING = 2,
 }
 
+/** 微应用审核状态枚举 */
+export enum MicroAppReviewStatus {
+  /** 无审核 */
+  NO_REVIEW = 0,
+  /** 审核中 */
+  REVIEWING = 1,
+  /** 已通过 */
+  APPROVED = 2,
+  /** 已拒绝 */
+  REJECTED = 3,
+}
+
+/** 微应用审核状态映射 */
+export const microAppReviewStatusMap: Record<number, string> = {
+  [MicroAppReviewStatus.NO_REVIEW]: '无审核',
+  [MicroAppReviewStatus.REVIEWING]: '审核中',
+  [MicroAppReviewStatus.APPROVED]: '已通过',
+  [MicroAppReviewStatus.REJECTED]: '已拒绝',
+}
+
 /** 微应用状态映射 */
 export const microAppStatusMap: Record<number, string> = {
   [MicroAppStatus.OFFLINE]: '下架',

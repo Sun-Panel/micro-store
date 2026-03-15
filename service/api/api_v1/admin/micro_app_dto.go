@@ -67,3 +67,35 @@ type MicroAppUpdateLangReq struct {
 	Id      uint                        `json:"id" binding:"required"`
 	LangMap map[string]MicroAppLangInfo `json:"langMap"`
 }
+
+// ==================== 审核相关请求参数 ====================
+
+// CancelAppReviewRequest 撤销审核请求
+type MicroAppCancelReviewReq struct {
+	Id uint `json:"id" binding:"required"`
+}
+
+// ReviewAppRequest 审核微应用主信息请求
+type MicroAppReviewAppReq struct {
+	ReviewId   uint   `json:"reviewId" binding:"required"`
+	Status     int    `json:"status" binding:"required"`     // 1-通过 2-拒绝
+	ReviewNote string `json:"reviewNote"`
+}
+
+// GetReviewHistoryRequest 获取审核历史请求
+type MicroAppGetReviewHistoryReq struct {
+	AppId uint `json:"appId" binding:"required"`
+	Page  int  `json:"page"`
+	Limit int  `json:"limit"`
+}
+
+// GetReviewInfoRequest 获取审核详情请求
+type MicroAppGetReviewInfoReq struct {
+	ReviewId uint `json:"reviewId" binding:"required"`
+}
+
+// GetPendingReviewListRequest 获取待审核列表请求
+type MicroAppGetPendingReviewListReq struct {
+	Page  int `json:"page"`
+	Limit int `json:"limit"`
+}

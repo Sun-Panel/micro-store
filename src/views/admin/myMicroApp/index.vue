@@ -1,24 +1,24 @@
 <script lang="ts" setup>
-import { NButton, NCard, NDropdown, NInput, NInputGroup, NSelect, NSpace, useDialog, useMessage } from 'naive-ui'
+import { NButton, NCard, NDropdown, NInput, NInputGroup, NSelect, NSpace, NTag, useDialog, useMessage } from 'naive-ui'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { deletes, getList, updateStatus } from '@/api/admin/microApp'
+import { cancelAppReview, deletes, getList, updateStatus } from '@/api/admin/microApp'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { checkIsDeveloper, getInfo as getDeveloperInfo } from '@/api/developer'
+import ReviewHistoryModal from '@/components/common/ReviewHistoryModal/index.vue'
 import { microAppChargeTypeMap, microAppStatusMap } from '@/enums/panel'
-import EditLangModal from './components/EditLangModal/index.vue'
 import EditMicroApp from './EditMicroApp/index.vue'
 
 const message = useMessage()
 const router = useRouter()
 const tableIsLoading = ref<boolean>(false)
 const editDialogShow = ref<boolean>(false)
-const editLangDialogShow = ref<boolean>(false)
+const reviewHistoryShow = ref<boolean>(false)
+const currentAppId = ref<number>(0) // 当前查看审核历史的应用ID
 const keyWord = ref<string>()
 const statusFilter = ref<number | null>(null)
 const categoryFilter = ref<number | null>(null)
 const editInfo = ref<MicroApp.MicroAppInfo>()
-const editLangInfo = ref<{ id: number, langMap: Record<string, { appName: string, appDesc: string }> }>()
 const myDeveloperId = ref<number>(0)
 const dialog = useDialog()
 const categoryOptions = ref<{ label: string, value: number }[]>([])
@@ -152,43 +152,29 @@ function handleViewDetail(item: MicroApp.MicroAppInfo) {
   router.push(`/admin/myMicroApp/detail/${item.id}`)
 }
 
-// 打开编辑语言弹窗
-function handleEditLang(row: MicroApp.MicroAppInfo) {
-  const langList = (row as any).langList || []
-  const langMap: Record<string, { appName: string, appDesc: string }> = {}
+// 打开审核历史弹窗
+function handleViewReviewHistory(item: MicroApp.MicroAppInfo) {
+  currentAppId.value = item.id
+  reviewHistoryShow.value = true
+}
 
-  if (langList.length > 0) {
-    langList.forEach((lang: any) => {
-      langMap[lang.lang] = {
-        appName: lang.appName || '',
-        appDesc: lang.appDesc || '',
-      }
-    })
-  }
-  else {
-    // 没有多语言数据时，使用默认的 appName/appDesc
-    langMap['zh-CN'] = {
-      appName: row.appName || '',
-      appDesc: row.appDesc || '',
+// 撤销审核
+async function handleCancelReview(item: MicroApp.MicroAppInfo) {
+  try {
+    const { code } = await cancelAppReview({ id: item.id })
+    if (code === 0) {
+      message.success('已撤销审核')
+      fetchList()
     }
   }
-
-  editLangInfo.value = {
-    id: row.id,
-    langMap,
+  catch (error) {
+    message.error('撤销审核失败')
   }
-  editLangDialogShow.value = true
 }
 
 function handleDone() {
   editDialogShow.value = false
   message.success('操作成功')
-  fetchList()
-}
-
-function handleLangDone() {
-  editLangDialogShow.value = false
-  message.success('语言保存成功')
   fetchList()
 }
 
@@ -260,6 +246,25 @@ onMounted(async () => {
             </NSpace>
           </div>
 
+          <!-- 审核状态和撤销按钮 -->
+          <div v-if="item.reviewStatus !== undefined && item.reviewStatus !== 0" class="flex items-center gap-2 mt-2">
+            <NTag v-if="item.reviewStatus === 1" type="warning" size="small">
+              审核中
+            </NTag>
+            <NTag v-if="item.reviewStatus === 2" type="success" size="small">
+              已通过
+            </NTag>
+            <NTag v-if="item.reviewStatus === 3" type="error" size="small">
+              已拒绝
+            </NTag>
+            <NButton v-if="item.reviewStatus === 1" text size="small" @click="handleViewReviewHistory(item)">
+              查看审核内容
+            </NButton>
+            <NButton v-if="item.reviewStatus === 1" text size="small" @click="handleCancelReview(item)">
+              撤销审核
+            </NButton>
+          </div>
+
           <!-- 操作按钮 -->
           <div class="flex justify-end gap-2 pt-2" @click.stop>
             <NDropdown
@@ -294,12 +299,7 @@ onMounted(async () => {
       @done="handleDone"
     />
 
-    <!-- 编辑语言弹窗 -->
-    <EditLangModal
-      v-model:visible="editLangDialogShow"
-      :micro-app-id="editLangInfo?.id || 0"
-      :lang-map="editLangInfo?.langMap || {}"
-      @done="handleLangDone"
-    />
+    <!-- 审核历史弹窗 -->
+    <ReviewHistoryModal v-model:visible="reviewHistoryShow" :app-id="currentAppId" />
   </div>
 </template>

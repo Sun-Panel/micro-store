@@ -3,10 +3,12 @@ package admin
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"sun-panel/api/api_v1/common/apiReturn"
 	"sun-panel/api/api_v1/common/base"
 	"sun-panel/global"
 	"sun-panel/models"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -142,7 +144,7 @@ func (a *MicroAppApi) Create(c *gin.Context) {
 	apiReturn.SuccessData(c, gin.H{"id": m.ID, "microAppId": m.MicroAppId})
 }
 
-// Update 更新微应用
+// Update 更新微应用（修改即提交审核）
 func (a *MicroAppApi) Update(c *gin.Context) {
 	param := MicroAppUpdateReq{}
 	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
@@ -155,7 +157,7 @@ func (a *MicroAppApi) Update(c *gin.Context) {
 		return
 	}
 
-	// 先获取现有应用信息，用于获取 microAppId
+	// 获取现有应用信息
 	m := models.MicroApp{}
 	existingApp, err := m.GetById(global.Db, param.Id)
 	if err != nil {
@@ -163,51 +165,68 @@ func (a *MicroAppApi) Update(c *gin.Context) {
 		return
 	}
 
-	updateData := map[string]interface{}{
-		"app_name":      param.AppName,
-		"app_icon":      param.AppIcon,
-		"app_desc":      param.AppDesc,
-		"remark":       param.Remark,
-		"category_id":   param.CategoryId,
-		"charge_type":   param.ChargeType,
-		"price":         param.Price,
-		"screenshots":   param.Screenshots,
+	// 检查是否已有待审核的记录
+	reviewModel := models.MicroAppReview{}
+	_, err = reviewModel.GetPendingByAppId(global.Db, param.Id)
+	if err == nil {
+		apiReturn.Error(c, "已有待审核的记录，请等待审核完成")
+		return
 	}
 
-	// 开启事务更新主应用和多语言信息
+	// 获取现有多语言信息
+	langList, err := (&models.MicroAppLang{}).GetListByAppId(global.Db, existingApp.MicroAppId)
+	if err != nil {
+		apiReturn.ErrorDatabase(c, err.Error())
+		return
+	}
+
+	// 序列化多语言信息（新的数据）
+	langMap := make(map[string]MicroAppLangInfo)
+	// 合并现有的多语言信息和新的多语言信息
+	for _, lang := range langList {
+		langMap[lang.Lang] = MicroAppLangInfo{
+			AppName: lang.AppName,
+			AppDesc: lang.AppDesc,
+		}
+	}
+	// 用新的数据覆盖
+	if param.LangMap != nil {
+		for lang, langInfo := range param.LangMap {
+			langMap[lang] = langInfo
+		}
+	}
+	langMapJson, _ := json.Marshal(langMap)
+
+	// 创建审核快照记录
+	review := models.MicroAppReview{
+		AppId:      param.Id,
+		AppName:    param.AppName,
+		AppIcon:    param.AppIcon,
+		AppDesc:    param.AppDesc,
+		CategoryId: param.CategoryId,
+		ChargeType: param.ChargeType,
+		Price:      param.Price,
+		Screenshots: param.Screenshots,
+		LangMap:    string(langMapJson),
+		Remark:     param.Remark,
+		Status:     0, // 待审核
+	}
+
+	// 开启事务
 	err = global.Db.Transaction(func(tx *gorm.DB) error {
-		// 更新主应用
-		if err := tx.Model(&models.MicroApp{}).Where("id = ?", param.Id).Updates(updateData).Error; err != nil {
+		// 创建审核记录
+		if err := tx.Create(&review).Error; err != nil {
 			return err
 		}
 
-		// 更新多语言信息
-		if param.LangMap != nil {
-			for lang, langInfo := range param.LangMap {
-				var existing models.MicroAppLang
-				err := tx.Where("micro_app_id = ? AND lang = ?", existingApp.MicroAppId, lang).First(&existing).Error
-
-				if err == gorm.ErrRecordNotFound {
-					// 不存在，创建
-					if langInfo.AppName != "" || langInfo.AppDesc != "" {
-						langModel := models.MicroAppLang{
-							MicroAppId: existingApp.MicroAppId,
-							Lang:       lang,
-							AppName:    langInfo.AppName,
-							AppDesc:    langInfo.AppDesc,
-						}
-						if err := tx.Create(&langModel).Error; err != nil {
-							return err
-						}
-					}
-				} else if err == nil {
-					// 存在，更新
-					tx.Model(&existing).Updates(map[string]interface{}{
-						"app_name": langInfo.AppName,
-						"app_desc": langInfo.AppDesc,
-					})
-				}
-			}
+		// 更新主表的审核状态（不更新其他字段）
+		now := time.Now()
+		if err := tx.Model(&models.MicroApp{}).Where("id = ?", param.Id).Updates(map[string]interface{}{
+			"review_status": 1, // 审核中
+			"review_id":     review.ID,
+			"review_time":   &now,
+		}).Error; err != nil {
+			return err
 		}
 
 		return nil
@@ -218,7 +237,7 @@ func (a *MicroAppApi) Update(c *gin.Context) {
 		return
 	}
 
-	apiReturn.Success(c)
+	apiReturn.SuccessData(c, gin.H{"reviewId": review.ID})
 }
 
 // Deletes 删除微应用
@@ -277,7 +296,7 @@ func (a *MicroAppApi) UpdateStatus(c *gin.Context) {
 	apiReturn.Success(c)
 }
 
-// UpdateLang 更新微应用语言
+// UpdateLang 更新微应用语言（修改即提交审核）
 func (a *MicroAppApi) UpdateLang(c *gin.Context) {
 	param := MicroAppUpdateLangReq{}
 	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
@@ -293,35 +312,295 @@ func (a *MicroAppApi) UpdateLang(c *gin.Context) {
 		return
 	}
 
-	// 开启事务更新语言信息
-	err = global.Db.Transaction(func(tx *gorm.DB) error {
-		if param.LangMap != nil {
-			for lang, langInfo := range param.LangMap {
-				var existing models.MicroAppLang
-				err := tx.Where("micro_app_id = ? AND lang = ?", existingApp.MicroAppId, lang).First(&existing).Error
+	// 检查是否已有待审核的记录
+	reviewModel := models.MicroAppReview{}
+	_, err = reviewModel.GetPendingByAppId(global.Db, param.Id)
+	if err == nil {
+		apiReturn.Error(c, "已有待审核的记录，请等待审核完成")
+		return
+	}
 
-				if err == gorm.ErrRecordNotFound {
-					// 不存在，创建
-					if langInfo.AppName != "" || langInfo.AppDesc != "" {
-						langModel := models.MicroAppLang{
-							MicroAppId: existingApp.MicroAppId,
-							Lang:       lang,
-							AppName:    langInfo.AppName,
-							AppDesc:    langInfo.AppDesc,
-						}
-						if err := tx.Create(&langModel).Error; err != nil {
-							return err
-						}
-					}
-				} else if err == nil {
-					// 存在，更新
-					tx.Model(&existing).Updates(map[string]interface{}{
-						"app_name": langInfo.AppName,
-						"app_desc": langInfo.AppDesc,
-					})
+	// 获取现有多语言信息
+	langList, err := (&models.MicroAppLang{}).GetListByAppId(global.Db, existingApp.MicroAppId)
+	if err != nil {
+		apiReturn.ErrorDatabase(c, err.Error())
+		return
+	}
+
+	// 序列化多语言信息（合并现有和新数据）
+	langMap := make(map[string]MicroAppLangInfo)
+	for _, lang := range langList {
+		langMap[lang.Lang] = MicroAppLangInfo{
+			AppName: lang.AppName,
+			AppDesc: lang.AppDesc,
+		}
+	}
+	// 用新的数据覆盖
+	if param.LangMap != nil {
+		for lang, langInfo := range param.LangMap {
+			langMap[lang] = langInfo
+		}
+	}
+	langMapJson, _ := json.Marshal(langMap)
+
+	// 创建审核快照记录
+	review := models.MicroAppReview{
+		AppId:      param.Id,
+		AppName:    existingApp.AppName,
+		AppIcon:    existingApp.AppIcon,
+		AppDesc:    existingApp.AppDesc,
+		CategoryId: existingApp.CategoryId,
+		ChargeType: existingApp.ChargeType,
+		Price:      existingApp.Price,
+		Screenshots: existingApp.Screenshots,
+		LangMap:    string(langMapJson),
+		Remark:     existingApp.Remark,
+		Status:     0, // 待审核
+	}
+
+	// 开启事务
+	err = global.Db.Transaction(func(tx *gorm.DB) error {
+		// 创建审核记录
+		if err := tx.Create(&review).Error; err != nil {
+			return err
+		}
+
+		// 更新主表的审核状态（不更新其他字段）
+		now := time.Now()
+		if err := tx.Model(&models.MicroApp{}).Where("id = ?", param.Id).Updates(map[string]interface{}{
+			"review_status": 1, // 审核中
+			"review_id":     review.ID,
+			"review_time":   &now,
+		}).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		apiReturn.ErrorDatabase(c, err.Error())
+		return
+	}
+
+	apiReturn.SuccessData(c, gin.H{"reviewId": review.ID})
+}
+
+// ==================== 微应用主信息审核相关 ====================
+
+// CancelReview 撤销微应用主信息审核
+func (a *MicroAppApi) CancelReview(c *gin.Context) {
+	param := MicroAppCancelReviewReq{}
+	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	// 获取应用信息
+	m := models.MicroApp{}
+	app, err := m.GetById(global.Db, param.Id)
+	if err != nil {
+		apiReturn.ErrorDataNotFound(c)
+		return
+	}
+
+	// 检查是否有待审核的记录
+	if app.ReviewId == 0 {
+		apiReturn.Error(c, "没有待审核的记录")
+		return
+	}
+
+	// 开启事务
+	err = global.Db.Transaction(func(tx *gorm.DB) error {
+		// 删除审核记录
+		if err := tx.Where("id = ?", app.ReviewId).Delete(&models.MicroAppReview{}).Error; err != nil {
+			return err
+		}
+
+		// 更新主表审核状态
+		if err := tx.Model(&models.MicroApp{}).Where("id = ?", param.Id).Updates(map[string]interface{}{
+			"review_status": 0, // 无审核
+			"review_id":     0,
+			"review_time":   nil,
+		}).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		apiReturn.ErrorDatabase(c, err.Error())
+		return
+	}
+
+	apiReturn.Success(c)
+}
+
+// GetReviewHistory 获取微应用审核历史
+func (a *MicroAppApi) GetReviewHistory(c *gin.Context) {
+	param := MicroAppGetReviewHistoryReq{}
+	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	reviewModel := models.MicroAppReview{}
+	if param.Page <= 0 {
+		param.Page = 1
+	}
+	if param.Limit <= 0 {
+		param.Limit = 10
+	}
+
+	list, total, err := reviewModel.GetListByAppId(global.Db, param.AppId, param.Page, param.Limit)
+	if err != nil {
+		apiReturn.ErrorDatabase(c, err.Error())
+		return
+	}
+
+	apiReturn.SuccessListData(c, list, total)
+}
+
+// GetReviewInfo 获取审核详情
+func (a *MicroAppApi) GetReviewInfo(c *gin.Context) {
+	param := MicroAppGetReviewInfoReq{}
+	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	reviewModel := models.MicroAppReview{}
+	review, err := reviewModel.GetById(global.Db, param.ReviewId)
+	if err != nil {
+		apiReturn.ErrorDataNotFound(c)
+		return
+	}
+
+	apiReturn.SuccessData(c, review)
+}
+
+// GetPendingReviewList 获取待审核列表（管理员）
+func (a *MicroAppApi) GetPendingReviewList(c *gin.Context) {
+	param := MicroAppGetPendingReviewListReq{}
+	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	reviewModel := models.MicroAppReview{}
+	if param.Page <= 0 {
+		param.Page = 1
+	}
+	if param.Limit <= 0 {
+		param.Limit = 10
+	}
+
+	list, total, err := reviewModel.GetPendingList(global.Db, param.Page, param.Limit)
+	if err != nil {
+		apiReturn.ErrorDatabase(c, err.Error())
+		return
+	}
+
+	apiReturn.SuccessListData(c, list, total)
+}
+
+// ReviewApp 审核微应用主信息（管理员）
+func (a *MicroAppApi) ReviewApp(c *gin.Context) {
+	param := MicroAppReviewAppReq{}
+	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	// 验证审核状态
+	if param.Status != 1 && param.Status != 2 {
+		apiReturn.ErrorParamFomat(c, "审核状态无效")
+		return
+	}
+
+	// 获取审核记录
+	reviewModel := models.MicroAppReview{}
+	review, err := reviewModel.GetById(global.Db, param.ReviewId)
+	if err != nil {
+		apiReturn.ErrorDataNotFound(c)
+		return
+	}
+
+	// 检查是否已审核
+	if review.Status != 0 {
+		apiReturn.Error(c, "该记录已审核")
+		return
+	}
+
+	// 获取当前管理员ID（从token中获取）
+	adminId := c.GetUint("adminId")
+
+	// 开启事务
+	err = global.Db.Transaction(func(tx *gorm.DB) error {
+		// 更新审核记录状态
+		now := time.Now()
+		if err := tx.Model(&models.MicroAppReview{}).Where("id = ?", param.ReviewId).Updates(map[string]interface{}{
+			"status":      param.Status,
+			"reviewer_id": adminId,
+			"review_note": param.ReviewNote,
+			"review_time": now,
+		}).Error; err != nil {
+			return err
+		}
+
+		// 如果审核通过，将审核快照数据更新到主表
+		if param.Status == 1 {
+			// 反序列化多语言信息
+			var langMap map[string]MicroAppLangInfo
+			json.Unmarshal([]byte(review.LangMap), &langMap)
+
+			// 更新主表
+			if err := tx.Model(&models.MicroApp{}).Where("id = ?", review.AppId).Updates(map[string]interface{}{
+				"app_name":      review.AppName,
+				"app_icon":      review.AppIcon,
+				"app_desc":      review.AppDesc,
+				"category_id":   review.CategoryId,
+				"charge_type":   review.ChargeType,
+				"price":         review.Price,
+				"screenshots":   review.Screenshots,
+				"remark":        review.Remark,
+				"review_status": 2, // 已通过
+				"review_time":   &now,
+			}).Error; err != nil {
+				return err
+			}
+
+			// 更新多语言信息
+			// 先删除旧的多语言记录
+			m := models.MicroApp{}
+			app, _ := m.GetById(global.Db, review.AppId)
+			if app.MicroAppId != "" {
+				tx.Where("micro_app_id = ?", app.MicroAppId).Delete(&models.MicroAppLang{})
+			}
+
+			// 插入新的多语言记录
+			for lang, langInfo := range langMap {
+				langModel := models.MicroAppLang{
+					MicroAppId: app.MicroAppId,
+					Lang:       lang,
+					AppName:    langInfo.AppName,
+					AppDesc:    langInfo.AppDesc,
+				}
+				if err := tx.Create(&langModel).Error; err != nil {
+					return err
 				}
 			}
+		} else {
+			// 审核拒绝
+			if err := tx.Model(&models.MicroApp{}).Where("id = ?", review.AppId).Updates(map[string]interface{}{
+				"review_status": 3, // 已拒绝
+				"review_time":   &now,
+			}).Error; err != nil {
+				return err
+			}
 		}
+
 		return nil
 	})
 

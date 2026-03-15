@@ -55,3 +55,53 @@ export function updateLang<T>(data: MicroApp.UpdateLangRequest) {
     data,
   })
 }
+
+// ==================== 微应用主信息审核相关 ====================
+
+// 撤销审核（与版本审核的 cancelReview 区分）
+export function cancelAppReview<T>(data: MicroApp.CancelAppReviewRequest) {
+  return post<T>({
+    url: '/admin/microApp/cancelReview',
+    data,
+  })
+}
+
+// 撤销审核
+export function cancelReview<T>(data: MicroApp.CancelAppReviewRequest) {
+  return post<T>({
+    url: '/admin/microApp/cancelReview',
+    data,
+  })
+}
+
+// 获取审核历史
+export function getReviewHistory<T>(data: MicroApp.GetReviewHistoryRequest) {
+  return post<T>({
+    url: '/admin/microApp/getReviewHistory',
+    data,
+  })
+}
+
+// 获取审核详情
+export function getReviewInfo<T>(reviewId: number) {
+  return post<T>({
+    url: '/admin/microApp/getReviewInfo',
+    data: { reviewId },
+  })
+}
+
+// 获取待审核列表（管理员）
+export function getPendingReviewList<T>(data: MicroApp.GetPendingReviewListRequest) {
+  return post<T>({
+    url: '/admin/microApp/getPendingReviewList',
+    data,
+  })
+}
+
+// 审核微应用主信息（管理员）
+export function reviewApp<T>(data: MicroApp.ReviewAppRequest) {
+  return post<T>({
+    url: '/admin/microApp/reviewApp',
+    data,
+  })
+}

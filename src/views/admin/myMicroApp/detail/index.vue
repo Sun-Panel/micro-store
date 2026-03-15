@@ -3,15 +3,15 @@ import type { DataTableColumns } from 'naive-ui'
 import { NButton, NCard, NDataTable, NImage, NImageGroup, NModal, NPopconfirm, NSelect, NSpace, NTag, NUpload, useMessage } from 'naive-ui'
 import { computed, h, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { deletes, getInfo as getMicroAppInfo, updateLang, update as updateMicroApp, updateStatus } from '@/api/admin/microApp'
+import { cancelAppReview, deletes, getInfo as getMicroAppInfo, updateStatus } from '@/api/admin/microApp'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
-import { cancelReview, createVersion, deleteVersion, getVersionList, submitReview, uploadVersionPackage } from '@/api/admin/microAppVersion'
-import { ErrorCode } from '@/enums/errorCode'
+import { cancelReview, deleteVersion, getVersionList, submitReview } from '@/api/admin/microAppVersion'
+import ReviewHistoryModal from '@/components/common/ReviewHistoryModal/index.vue'
+import AddVersionModal from '@/components/common/VersionManagement/AddVersionModal.vue'
+import VersionDetailModal from '@/components/common/VersionManagement/VersionDetailModal.vue'
 import { microAppChargeTypeMap, microAppStatusMap, MicroAppVersionStatus, microAppVersionStatusMap } from '@/enums/panel'
-import { t } from '@/locales'
 import { timeFormat } from '@/utils/cmn'
 import { apiRespErrMsg } from '@/utils/cmn/apiMessage'
-import EditLangModal from '../components/EditLangModal/index.vue'
 import EditMicroApp from '../EditMicroApp/index.vue'
 
 const route = useRoute()
@@ -29,11 +29,10 @@ const versionLoading = ref(false)
 
 // 编辑弹窗
 const editDialogShow = ref(false)
-const editLangDialogShow = ref(false)
 const categoryOptions = ref<{ label: string, value: number }[]>([])
 
-// 语言编辑信息
-const editLangInfo = ref<{ id: number, langMap: Record<string, { appName: string, appDesc: string }> }>()
+// 审核历史
+const reviewHistoryShow = ref(false)
 
 // 获取分类选项
 async function fetchCategoryOptions() {
@@ -59,65 +58,10 @@ const categoryName = computed(() => {
 
 // 添加版本弹窗
 const addVersionShow = ref(false)
-const addVersionLoading = ref(false)
-
-// 添加版本表单
-const versionForm = ref({
-  version: '',
-  versionCode: 0,
-  packageUrl: '',
-  packageHash: '',
-  versionDesc: '',
-})
-const versionFile = ref<File | null>(null)
 
 // 版本详情弹窗
 const versionDetailShow = ref(false)
-const versionDetailLoading = ref(false)
 const currentVersionDetail = ref<any>(null)
-
-// 打开版本详情
-const versionDetailInfo = ref<{
-  iconURL: string
-  appName: string
-  appDesc: string
-  microAppId: string
-  author: string
-  version: string
-  versionDesc: string
-  permissions: string[]
-  dataNodes: Record<string, any>
-  networkDomains: string[]
-  appInfo: Record<string, { appName: string, appDesc: string }>
-} | null>(null)
-
-// 当前选中的语言
-const versionDetailLang = ref('zh-CN')
-
-// 可用的语言列表
-const versionDetailLangList = computed(() => {
-  if (!versionDetailInfo.value?.appInfo)
-    return []
-  return Object.keys(versionDetailInfo.value.appInfo)
-})
-
-// 当前语言下的应用名称
-const versionDetailCurrentAppName = computed(() => {
-  if (!versionDetailInfo.value?.appInfo)
-    return ''
-  return versionDetailInfo.value.appInfo[versionDetailLang.value]?.appName
-    || versionDetailInfo.value.appInfo['zh-CN']?.appName
-    || ''
-})
-
-// 当前语言下的应用描述
-const versionDetailCurrentAppDesc = computed(() => {
-  if (!versionDetailInfo.value?.appInfo)
-    return ''
-  return versionDetailInfo.value.appInfo[versionDetailLang.value]?.appDesc
-    || versionDetailInfo.value.appInfo['zh-CN']?.appDesc
-    || ''
-})
 
 // 获取微应用详情
 async function fetchMicroAppInfo() {
@@ -292,7 +236,7 @@ function createColumns(): DataTableColumns<MicroApp.VersionInfo> {
               : null,
             // 待审核状态，可以撤销
             row.status === MicroAppVersionStatus.PENDING
-              ? h(NButton, { size: 'small', type: 'warning', onClick: () => handleCancelReview(row.id) }, {
+              ? h(NButton, { size: 'small', type: 'warning', onClick: () => handleVersionCancelReview(row.id) }, {
                   default: () => '撤销',
                 })
               : null,
@@ -371,132 +315,9 @@ async function handleDeleteVersion(ids: number[]) {
 }
 
 // 打开版本详情弹窗
-async function openVersionDetail(row: MicroApp.VersionInfo) {
+function openVersionDetail(row: MicroApp.VersionInfo) {
   currentVersionDetail.value = row
   versionDetailShow.value = true
-
-  // 从版本配置中获取信息
-  const config = row.config
-
-  // 从微应用信息中获取多语言数据作为后备
-  const microAppLangList = microAppInfo.value?.langList || []
-  const microAppLangMap: Record<string, { appName: string, appDesc: string }> = {}
-  microAppLangList.forEach((lang: any) => {
-    microAppLangMap[lang.lang] = {
-      appName: lang.appName || '',
-      appDesc: lang.appDesc || '',
-    }
-  })
-
-  // 如果微应用没有多语言数据，使用基本信息
-  if (Object.keys(microAppLangMap).length === 0 && microAppInfo.value) {
-    microAppLangMap['zh-CN'] = {
-      appName: microAppInfo.value.appName || '',
-      appDesc: microAppInfo.value.appDesc || '',
-    }
-  }
-
-  // 转换 appInfo 格式
-  const versionAppInfo = config?.appInfo || {}
-  const formattedAppInfo: Record<string, { appName: string, appDesc: string }> = {}
-  for (const [lang, info] of Object.entries(versionAppInfo)) {
-    formattedAppInfo[lang] = {
-      appName: (info as any).appName || '',
-      appDesc: (info as any).description || '',
-    }
-  }
-
-  versionDetailInfo.value = {
-    iconURL: config?.icon || microAppInfo.value?.appIcon || '',
-    appName: '',
-    appDesc: '',
-    microAppId: config?.microAppId || microAppInfo.value?.microAppId || '',
-    author: config?.author || '',
-    version: row.version || '',
-    versionDesc: row.versionDesc || '',
-    permissions: config?.permissions || [],
-    dataNodes: {},
-    networkDomains: config?.networkDomains || [],
-    appInfo: Object.keys(formattedAppInfo).length > 0 ? formattedAppInfo : microAppLangMap,
-  }
-
-  // 设置默认语言
-  const langs = Object.keys(versionDetailInfo.value.appInfo)
-  versionDetailLang.value = langs.includes('zh-CN') ? 'zh-CN' : (langs[0] || 'zh-CN')
-}
-
-// 设置为主信息 - 同时更新语言和图标
-async function handleSetAsMainInfo() {
-  if (!versionDetailInfo.value || !microAppInfo.value)
-    return
-
-  versionDetailLoading.value = true
-
-  try {
-    // 准备语言信息
-    const versionLangMap: Record<string, { appName: string, appDesc: string }> = {}
-
-    // 从版本详情中获取多语言信息
-    const appInfo = versionDetailInfo.value.appInfo || {}
-    for (const [lang, info] of Object.entries(appInfo)) {
-      versionLangMap[lang] = {
-        appName: (info as any).appName || '',
-        appDesc: (info as any).appDesc || '',
-      }
-    }
-
-    // 如果没有多语言信息，使用默认
-    if (Object.keys(versionLangMap).length === 0) {
-      versionLangMap['zh-CN'] = {
-        appName: versionDetailInfo.value.appName || '',
-        appDesc: versionDetailInfo.value.appDesc || '',
-      }
-    }
-
-    // 1. 使用专门的 updateLang 接口更新语言信息
-    const langRes = await updateLang({
-      id: microAppInfo.value.id,
-      langMap: versionLangMap,
-    } as any)
-
-    if (langRes.code !== 0) {
-      apiRespErrMsg(langRes)
-      return
-    }
-
-    // 2. 更新图标（如果版本中有图标）
-    const newIcon = versionDetailInfo.value.iconURL
-    if (newIcon) {
-      const updateRes = await updateMicroApp({
-        id: microAppInfo.value.id,
-        appName: microAppInfo.value.appName,
-        appIcon: newIcon,
-        appDesc: microAppInfo.value.appDesc,
-        remark: microAppInfo.value.remark,
-        categoryId: microAppInfo.value.categoryId,
-        chargeType: microAppInfo.value.chargeType,
-        price: microAppInfo.value.price || 0,
-        screenshots: microAppInfo.value.screenshots || '',
-      } as any)
-
-      if (updateRes.code !== 0) {
-        apiRespErrMsg(updateRes)
-        return
-      }
-    }
-
-    message.success('已设为主信息')
-    versionDetailShow.value = false
-
-    // 刷新微应用信息
-    fetchMicroAppInfo()
-  }
-  catch (error) {
-    apiRespErrMsg(error)
-  }
-  finally {
-    versionDetailLoading.value = false
-  }
 }
 
 // 上架/下架
@@ -537,40 +358,36 @@ async function handleDelete() {
   }
 }
 
-// 打开语言编辑弹窗
-function handleEditLang() {
+// 撤销微应用主信息审核
+async function handleCancelAppReview() {
   if (!microAppInfo.value)
     return
-  const langList = (microAppInfo.value as any).langList || []
-  const langMap: Record<string, { appName: string, appDesc: string }> = {}
-
-  if (langList.length > 0) {
-    langList.forEach((lang: any) => {
-      langMap[lang.lang] = {
-        appName: lang.appName || '',
-        appDesc: lang.appDesc || '',
-      }
-    })
-  }
-  else {
-    langMap['zh-CN'] = {
-      appName: microAppInfo.value?.appName || '',
-      appDesc: microAppInfo.value?.appDesc || '',
+  try {
+    const { code } = await cancelAppReview({ id: microAppInfo.value.id })
+    if (code === 0) {
+      message.success('已撤销审核')
+      fetchMicroAppInfo()
     }
   }
-
-  editLangInfo.value = {
-    id: microAppInfo.value.id,
-    langMap,
+  catch (error) {
+    message.error('撤销审核失败')
   }
-  editLangDialogShow.value = true
 }
 
-// 语言编辑完成
-function handleLangDone() {
-  editLangDialogShow.value = false
-  message.success('语言保存成功')
-  fetchMicroAppInfo()
+// 版本撤销审核
+async function handleVersionCancelReview(versionId: number) {
+  if (!versionId)
+    return
+  try {
+    const { code } = await cancelReview({ versionId })
+    if (code === 0) {
+      message.success('已撤销审核')
+      fetchVersionList()
+    }
+  }
+  catch (error) {
+    message.error('撤销审核失败')
+  }
 }
 
 // 处理编辑完成
@@ -580,106 +397,9 @@ function handleEditDone() {
   fetchMicroAppInfo()
 }
 
-// 处理文件选择并上传
-const uploadLoading = ref(false)
-const uploadedConfig = ref<MicroApp.VersionConfig | null>(null)
-async function handleUploadChange(options: { file: any }) {
-  const file = options.file.file
-  if (!file)
-    return
-
-  uploadLoading.value = true
-  try {
-    const res = await uploadVersionPackage<any>(file)
-    if (res.code === 0 && res.data) {
-      versionForm.value.packageUrl = res.data.url
-      versionForm.value.packageHash = res.data.hash || ''
-      // 保存上传的配置信息，并用返回的 IconURL 覆盖 config.icon（完整路径）
-      if (res.data.config) {
-        res.data.config.icon = res.data.iconURL || res.data.config.icon
-      }
-      uploadedConfig.value = res.data.config || null
-      // 如果配置文件中有版本号，自动填充
-      if (res.data.config?.version) {
-        versionForm.value.version = res.data.config.version
-        handleVersionInput(res.data.config.version)
-      }
-      message.success('上传成功')
-    }
-    else {
-      apiRespErrMsg(res)
-    }
-  }
-  catch (error) {
-    apiRespErrMsg(error)
-  }
-  finally {
-    uploadLoading.value = false
-  }
-}
-
-// 处理版本号输入
-function handleVersionInput(value: string) {
-  versionForm.value.version = value
-  // 简单版本号转数字：1.0.0 -> 100
-  const parts = value.split('.')
-  let code = 0
-  if (parts.length >= 1)
-    code += Number(parts[0]) * 100
-  if (parts.length >= 2)
-    code += Number(parts[1]) * 10
-  if (parts.length >= 3)
-    code += Number(parts[2])
-  versionForm.value.versionCode = code
-}
-
-// 提交添加版本
-async function handleAddVersion() {
-  if (!versionForm.value.packageUrl || !versionForm.value.version) {
-    message.warning('请上传版本包并填写版本号')
-    return
-  }
-
-  addVersionLoading.value = true
-  try {
-    // 创建版本，传递完整的配置信息
-    const createRes = await createVersion<any>({
-      appId: microAppId.value,
-      version: versionForm.value.version,
-      versionCode: versionForm.value.versionCode,
-      packageUrl: versionForm.value.packageUrl,
-      packageHash: versionForm.value.packageHash || '',
-      versionDesc: versionForm.value.versionDesc,
-      config: uploadedConfig.value || undefined,
-    })
-
-    if (createRes.code === 0) {
-      // 自动提交审核
-      if (createRes.data?.id) {
-        const reviewRes = await submitReview<any>({ versionId: createRes.data.id })
-        if (reviewRes.code !== 0) {
-          apiRespErrMsg(reviewRes)
-          return
-        }
-      }
-
-      message.success('版本添加成功，已提交审核')
-      addVersionShow.value = false
-      versionForm.value = { version: '', versionCode: 0, packageUrl: '', packageHash: '', versionDesc: '' }
-      versionFile.value = null
-      uploadedConfig.value = null
-      fetchVersionList()
-    }
-    else {
-      apiRespErrMsg(createRes)
-    }
-  }
-  catch (error) {
-    apiRespErrMsg(error)
-  }
-  finally {
-    addVersionLoading.value = false
-  }
+// 查看审核历史
+function handleViewReviewHistory() {
+  reviewHistoryShow.value = true
 }
 
 // 返回列表
@@ -710,13 +430,28 @@ onMounted(async () => {
             返回列表
           </NButton>
           <span class="text-lg font-bold">{{ microAppInfo?.appName || '微应用详情' }}</span>
+          <!-- 审核状态 -->
+          <div v-if="microAppInfo?.reviewStatus && microAppInfo.reviewStatus !== 0" class="flex items-center gap-2">
+            <NTag v-if="microAppInfo.reviewStatus === 1" type="warning" size="small">
+              审核中
+            </NTag>
+            <NTag v-if="microAppInfo.reviewStatus === 2" type="success" size="small">
+              已通过
+            </NTag>
+            <NTag v-if="microAppInfo.reviewStatus === 3" type="error" size="small">
+              已拒绝
+            </NTag>
+            <NButton v-if="microAppInfo.reviewStatus === 1" size="tiny" @click="handleViewReviewHistory">
+              查看审核内容
+            </NButton>
+          </div>
         </div>
         <NSpace>
           <NButton @click="handlePreview">
             查看公开页面
           </NButton>
-          <NButton @click="handleEditLang">
-            语言设置
+          <NButton v-if="microAppInfo?.reviewStatus === 1" @click="handleCancelAppReview">
+            撤销审核
           </NButton>
           <NButton type="primary" @click="editDialogShow = true">
             编辑信息
@@ -851,178 +586,22 @@ onMounted(async () => {
       @done="handleEditDone"
     />
 
-    <!-- 语言编辑弹窗 -->
-    <EditLangModal
-      v-model:visible="editLangDialogShow"
-      :micro-app-id="editLangInfo?.id || 0"
-      :lang-map="editLangInfo?.langMap || {}"
-      @done="handleLangDone"
+    <!-- 添加版本弹窗 -->
+    <AddVersionModal
+      v-model:visible="addVersionShow"
+      :app-id="microAppId"
+      @done="fetchVersionList"
     />
 
-    <!-- 添加版本弹窗 -->
-    <NModal v-model:show="addVersionShow" preset="card" style="width: 500px" title="添加版本">
-      <div class="space-y-4">
-        <div>
-          <div class="mb-2">
-            选择版本包 <span class="text-red-500">*</span>
-          </div>
-          <NUpload
-            accept=".zip"
-            :max="1"
-            :custom-request="(options: any) => handleUploadChange({ file: options.file })"
-            :show-file-list="false"
-          >
-            <NButton :loading="uploadLoading">
-              {{ uploadLoading ? '上传中...' : '选择文件' }}
-            </NButton>
-          </NUpload>
-          <div v-if="uploadedConfig !== null" class="text-xs mt-1">
-            <div v-if="uploadedConfig.icon" class="mb-2">
-              <img :src="uploadedConfig.icon" class="w-12 h-12 object-contain border rounded">
-            </div>
-            <div v-if="uploadedConfig.appInfo?.['zh-CN']?.appName || uploadedConfig.appInfo?.['en-US']?.appName" class="text-lg font-bold">
-              应用名称：{{ uploadedConfig.appInfo?.['zh-CN']?.appName || uploadedConfig.appInfo?.['en-US']?.appName }}
-            </div>
-            <div v-if="uploadedConfig.microAppId" class="text-gray-500">
-              应用ID：{{ uploadedConfig.microAppId }}
-            </div>
-            <div v-if="uploadedConfig.author" class="text-gray-500">
-              作者：{{ uploadedConfig.author }}
-            </div>
-            <div v-if="uploadedConfig.version" class="text-blue-500">
-              版本号：{{ uploadedConfig.version }}
-            </div>
-            <div v-else class="text-orange-500">
-              未检测到版本号，请手动填写
-            </div>
-          </div>
-          <div class="text-xs text-gray-400 mt-1">
-            支持 .zip 格式的微应用包
-          </div>
-        </div>
-        <div>
-          <div class="mb-2">
-            版本号 <span class="text-red-500">*</span>
-          </div>
-          <NInput v-model:value="versionForm.version" placeholder="如：1.0.0" @update:value="handleVersionInput" />
-        </div>
-        <div>
-          <div class="mb-2">
-            版本说明
-          </div>
-          <NInput v-model:value="versionForm.versionDesc" type="textarea" placeholder="请输入版本说明" :rows="3" />
-        </div>
-      </div>
-
-      <template #footer>
-        <NSpace justify="end">
-          <NButton @click="addVersionShow = false">
-            取消
-          </NButton>
-          <NButton type="primary" :loading="addVersionLoading" @click="handleAddVersion">
-            添加
-          </NButton>
-        </NSpace>
-      </template>
-    </NModal>
-
     <!-- 版本详情弹窗 -->
-    <NModal v-model:show="versionDetailShow" preset="card" style="width: 600px" title="版本详情">
-      <div v-if="versionDetailInfo" class="space-y-4">
-        <!-- 语言切换 -->
-        <div v-if="versionDetailLangList.length > 0" class="flex justify-end">
-          <NSelect
-            v-model:value="versionDetailLang"
-            :options="versionDetailLangList.map(lang => ({ label: lang, value: lang }))"
-            style="width: 120px"
-            size="small"
-          />
-        </div>
+    <VersionDetailModal
+      v-model:visible="versionDetailShow"
+      :version-info="currentVersionDetail"
+      :micro-app-info="microAppInfo"
+      @done="fetchMicroAppInfo"
+    />
 
-        <div class="flex items-start gap-4">
-          <img v-if="versionDetailInfo.iconURL" :src="versionDetailInfo.iconURL" class="w-20 h-20 object-contain border rounded">
-          <div v-else class="w-20 h-20 bg-gray-100 border rounded flex items-center justify-center text-gray-400">
-            暂无图标
-          </div>
-          <div class="flex-1">
-            <div class="text-lg font-bold">
-              {{ versionDetailCurrentAppName || '未命名' }}
-            </div>
-            <div v-if="versionDetailCurrentAppDesc" class="text-sm text-gray-500 mt-1">
-              {{ versionDetailCurrentAppDesc }}
-            </div>
-            <div class="text-sm text-gray-500 mt-1">
-              ID: {{ versionDetailInfo.microAppId }}
-            </div>
-            <div class="text-sm text-gray-500">
-              作者: {{ versionDetailInfo.author }}
-            </div>
-            <div class="text-sm text-gray-500">
-              版本: {{ versionDetailInfo.version }}
-            </div>
-          </div>
-        </div>
-
-        <!-- 多语言列表 -->
-        <div v-if="versionDetailLangList.length > 0" class="text-sm">
-          <div class="text-gray-500 mb-2">
-            多语言信息：
-          </div>
-          <NDataTable
-            :columns="langTableColumns"
-            :data="versionDetailLangList.map(lang => ({
-              lang,
-              appName: versionDetailInfo?.appInfo?.[lang]?.appName || '-',
-              appDesc: versionDetailInfo?.appInfo?.[lang]?.appDesc || '-',
-            }))"
-            :bordered="true"
-            size="small"
-          />
-        </div>
-
-        <div v-if="versionDetailInfo.versionDesc" class="text-sm">
-          <div class="text-gray-500">
-            版本说明：
-          </div>
-          <div>{{ versionDetailInfo.versionDesc }}</div>
-        </div>
-
-        <div v-if="versionDetailInfo.permissions?.length" class="text-sm">
-          <div class="text-gray-500">
-            权限：
-          </div>
-          <div class="flex flex-wrap gap-1 mt-1">
-            <NTag v-for="p in versionDetailInfo.permissions" :key="p" size="small" type="info">
-              {{ p }}
-            </NTag>
-          </div>
-        </div>
-
-        <div v-if="versionDetailInfo.networkDomains?.length" class="text-sm">
-          <div class="text-gray-500">
-            网络域名白名单：
-          </div>
-          <div class="flex flex-wrap gap-1 mt-1">
-            <NTag v-for="d in versionDetailInfo.networkDomains" :key="d" size="small">
-              {{ d }}
-            </NTag>
-          </div>
-        </div>
-      </div>
-      <div v-else class="text-center py-8 text-gray-500">
-        暂无详情信息
-      </div>
-
-      <template #footer>
-        <NSpace justify="end">
-          <NButton @click="versionDetailShow = false">
-            关闭
-          </NButton>
-          <NButton type="primary" :loading="versionDetailLoading" @click="handleSetAsMainInfo">
-            设为微应用主信息
-          </NButton>
-        </NSpace>
-      </template>
-    </NModal>
+    <!-- 审核历史弹窗 -->
+    <ReviewHistoryModal v-model:visible="reviewHistoryShow" :app-id="microAppId" />
   </div>
 </template>
