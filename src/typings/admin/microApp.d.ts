@@ -17,6 +17,7 @@ declare namespace MicroApp {
     chargeType: number
     price: number
     authorId: number
+    authorName?: string
     permissionLevel: number
     status: number
     screenshots: string

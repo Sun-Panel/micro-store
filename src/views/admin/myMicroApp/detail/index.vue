@@ -407,10 +407,10 @@ function handleBack() {
   router.push('/admin/myMicroApp')
 }
 
-// 预览应用
+// 预览应用（跳转到前台公开页面）
 function handlePreview() {
-  // TODO: 跳转到微应用公开首页
-  message.info('预览功能待开发')
+  const url = `/microApp/${microAppId.value}`
+  window.open(url, '_blank')
 }
 
 onMounted(async () => {

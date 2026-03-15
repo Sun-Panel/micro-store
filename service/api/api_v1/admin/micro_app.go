@@ -62,7 +62,40 @@ func (a *MicroAppApi) GetInfo(c *gin.Context) {
 		return
 	}
 
-	apiReturn.SuccessData(c, m)
+	// 查询作者名字
+	var authorName string
+	if m.AuthorId > 0 {
+		var user models.User
+		if err := global.Db.Select("name").Where("id = ?", m.AuthorId).First(&user).Error; err == nil {
+			authorName = user.Name
+		}
+	}
+
+	// 返回数据，包含作者名字
+	result := gin.H{
+		"id":              m.ID,
+		"microAppId":      m.MicroAppId,
+		"appName":         m.AppName,
+		"appIcon":         m.AppIcon,
+		"appDesc":         m.AppDesc,
+		"remark":          m.Remark,
+		"categoryId":      m.CategoryId,
+		"chargeType":      m.ChargeType,
+		"price":           m.Price,
+		"authorId":        m.AuthorId,
+		"authorName":      authorName,
+		"permissionLevel": m.PermissionLevel,
+		"status":          m.Status,
+		"screenshots":     m.Screenshots,
+		"reviewStatus":    m.ReviewStatus,
+		"reviewId":        m.ReviewId,
+		"reviewTime":      m.ReviewTime,
+		"langList":        m.LangList,
+		"createTime":      m.CreateTime,
+		"updateTime":      m.UpdateTime,
+	}
+
+	apiReturn.SuccessData(c, result)
 }
 
 // Create 创建微应用

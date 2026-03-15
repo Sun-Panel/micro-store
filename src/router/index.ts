@@ -240,6 +240,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/home/pro.vue'),
       },
       {
+        path: '/microApp/:id',
+        name: 'MicroAppDetail',
+        component: () => import('@/views/home/microAppDetail/index.vue'),
+      },
+      {
         path: '/platformLogin',
         name: 'platformLogin',
         children: platformLogin,
