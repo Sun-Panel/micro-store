@@ -22,9 +22,13 @@ type MicroApp struct {
 	Screenshots     string  `gorm:"type:varchar(2000)" json:"screenshots"`                    // 图集（多个图片URL用逗号分隔）
 
 	// 审核相关字段
-	ReviewStatus int   `gorm:"type:tinyint(2);not null;default:0;index" json:"reviewStatus"` // 审核状态：0-无审核 1-审核中 2-已通过 3-已拒绝
-	ReviewId     uint  `gorm:"type:int(11)" json:"reviewId"`                                 // 当前审核记录ID
+	ReviewStatus int    `gorm:"type:tinyint(2);not null;default:0;index" json:"reviewStatus"` // 审核状态：0-无审核 1-审核中 2-已通过 3-已拒绝
+	ReviewId     uint   `gorm:"type:int(11)" json:"reviewId"`                                 // 当前审核记录ID
 	ReviewTime   *time.Time `gorm:"type:datetime" json:"reviewTime"`                         // 最后审核时间
+
+	// 下架相关字段
+	OfflineType   int    `gorm:"type:tinyint(1);not null;default:0" json:"offlineType"`     // 下架类型：0-正常 1-作者下架 2-平台下架
+	OfflineReason string `gorm:"type:varchar(500)" json:"offlineReason"`                    // 下架原因
 
 	// 关联多语言信息
 	LangList []MicroAppLang `gorm:"foreignKey:MicroAppId;references:MicroAppId" json:"langList,omitempty"`
@@ -135,6 +139,15 @@ func (m *MicroApp) UpdateStatus(db *gorm.DB, id uint, status int) error {
 // 批量更新状态
 func (m *MicroApp) BatchUpdateStatus(db *gorm.DB, ids []uint, status int) error {
 	return db.Model(&MicroApp{}).Where("id IN ?", ids).Update("status", status).Error
+}
+
+// 下架应用
+func (m *MicroApp) Offline(db *gorm.DB, id uint, offlineType int, reason string) error {
+	return db.Model(&MicroApp{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"status":           0, // 下架状态
+		"offline_type":    offlineType,
+		"offline_reason":  reason,
+	}).Error
 }
 
 // 获取开发者的应用数量

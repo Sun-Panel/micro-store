@@ -5,3 +5,5 @@ export function getCurrentDate() {
   const year = date.getFullYear()
   return `${year}-${month}-${day}`
 }
+
+export * from './lang'

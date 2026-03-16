@@ -94,6 +94,13 @@ declare namespace MicroApp {
     reviewNote?: string
   }
 
+  // 管理员下架版本请求
+  interface OfflineVersionRequest {
+    id: number
+    type: number       // 下架类型：1-作者下架 2-平台下架
+    reason?: string   // 下架原因
+  }
+
   // 获取版本列表请求
   interface GetVersionListRequest {
     appId: number

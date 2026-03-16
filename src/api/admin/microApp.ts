@@ -48,6 +48,14 @@ export function updateStatus<T>(data: MicroApp.UpdateStatusRequest) {
   })
 }
 
+// 下架微应用
+export function offline<T>(data: MicroApp.OfflineRequest) {
+  return post<T>({
+    url: '/admin/microApp/offline',
+    data,
+  })
+}
+
 // 更新语言
 export function updateLang<T>(data: MicroApp.UpdateLangRequest) {
   return post<T>({

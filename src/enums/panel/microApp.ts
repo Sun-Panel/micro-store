@@ -62,6 +62,8 @@ export enum MicroAppVersionStatus {
   APPROVED = 1,
   /** 拒绝 */
   REJECTED = 2,
+  /** 已下架 */
+  OFFLINE = 3,
 }
 
 /** 微应用版本状态映射 */
@@ -70,4 +72,5 @@ export const microAppVersionStatusMap: Record<number, string> = {
   [MicroAppVersionStatus.PENDING]: '待审核',
   [MicroAppVersionStatus.APPROVED]: '已通过',
   [MicroAppVersionStatus.REJECTED]: '已拒绝',
+  [MicroAppVersionStatus.OFFLINE]: '已下架',
 }

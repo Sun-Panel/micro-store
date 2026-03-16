@@ -19,6 +19,7 @@ func InitMicroAppRouter(router *gin.RouterGroup) {
 		r.POST("microApp/update", microAppApi.Update)
 		r.POST("microApp/deletes", microAppApi.Deletes)
 		r.POST("microApp/updateStatus", microAppApi.UpdateStatus)
+		r.POST("microApp/offline", microAppApi.Offline)
 		// 审核相关接口（管理员）
 		r.POST("microApp/getPendingReviewList", microAppApi.GetPendingReviewList)
 		r.POST("microApp/reviewApp", microAppApi.ReviewApp)

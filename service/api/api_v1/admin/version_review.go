@@ -100,3 +100,26 @@ func (a *VersionReviewApi) Review(c *gin.Context) {
 
 	apiReturn.Success(c)
 }
+
+// Offline 下架版本
+func (a *VersionReviewApi) Offline(c *gin.Context) {
+	param := MicroAppVersionOfflineReq{}
+	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	// 平台下架时，原因必填
+	if param.Type == 2 && param.Reason == "" {
+		apiReturn.ErrorParamFomat(c, "平台下架时，下架原因不能为空")
+		return
+	}
+
+	m := models.MicroAppVersion{}
+	if err := m.Offline(global.Db, param.Id, param.Type, param.Reason); err != nil {
+		apiReturn.ErrorDatabase(c, err.Error())
+		return
+	}
+
+	apiReturn.Success(c)
+}

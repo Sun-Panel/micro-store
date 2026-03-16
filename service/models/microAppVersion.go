@@ -40,10 +40,13 @@ type MicroAppVersion struct {
 	PackageHash string               `gorm:"type:varchar(100);not null" json:"packageHash"` // 版本校验值（MD5/SHA）
 	VersionDesc string               `gorm:"type:varchar(1000)" json:"versionDesc"` // 版本说明
 	Config     *MicroAppVersionConfig `gorm:"type:json;serializer:json" json:"config"` // 完整配置信息（JSON）
-	Status    int                  `gorm:"type:tinyint(2);not null;default:-1" json:"status"` // 审核状态：-1-草稿 0-待审核 1-通过 2-拒绝
+	Status     int                  `gorm:"type:tinyint(2);not null;default:-1" json:"status"` // 审核状态：-1-草稿 0-待审核 1-通过 2-拒绝
 	ReviewTime *time.Time          `gorm:"type:datetime" json:"reviewTime"` // 审核时间
 	ReviewerId uint                `gorm:"type:int(11)" json:"reviewerId"` // 审核人ID
 	ReviewNote string              `gorm:"type:varchar(500)" json:"reviewNote"` // 审核备注
+	// 下架相关字段
+	OfflineType   int    `gorm:"type:tinyint(1);not null;default:0" json:"offlineType"`     // 下架类型：0-正常 1-作者下架 2-平台下架
+	OfflineReason string `gorm:"type:varchar(500)" json:"offlineReason"`                    // 下架原因
 }
 
 // 表名
@@ -128,6 +131,15 @@ func (m *MicroAppVersion) Review(db *gorm.DB, id uint, status int, reviewerId ui
 		"reviewer_id": reviewerId,
 		"review_note": reviewNote,
 		"review_time": time.Now(),
+	}).Error
+}
+
+// 下架版本
+func (m *MicroAppVersion) Offline(db *gorm.DB, id uint, offlineType int, reason string) error {
+	return db.Model(&MicroAppVersion{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"status":          3, // 3-已下架
+		"offline_type":    offlineType,
+		"offline_reason":  reason,
 	}).Error
 }
 

@@ -329,6 +329,29 @@ func (a *MicroAppApi) UpdateStatus(c *gin.Context) {
 	apiReturn.Success(c)
 }
 
+// Offline 下架微应用
+func (a *MicroAppApi) Offline(c *gin.Context) {
+	param := MicroAppOfflineReq{}
+	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	// 平台下架时，原因必填
+	if param.Type == 2 && param.Reason == "" {
+		apiReturn.ErrorParamFomat(c, "平台下架时，下架原因不能为空")
+		return
+	}
+
+	m := models.MicroApp{}
+	if err := m.Offline(global.Db, param.Id, param.Type, param.Reason); err != nil {
+		apiReturn.ErrorDatabase(c, err.Error())
+		return
+	}
+
+	apiReturn.Success(c)
+}
+
 // UpdateLang 更新微应用语言（修改即提交审核）
 func (a *MicroAppApi) UpdateLang(c *gin.Context) {
 	param := MicroAppUpdateLangReq{}

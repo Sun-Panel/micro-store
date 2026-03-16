@@ -51,6 +51,13 @@ type MicroAppVersionDeleteReq struct {
 	Ids []uint `json:"ids" binding:"required"`
 }
 
+// MicroAppVersionOfflineReq 版本下架请求
+type MicroAppVersionOfflineReq struct {
+	Id     uint   `json:"id" binding:"required"`
+	Type   int    `json:"type" binding:"required"`   // 下架类型：1-作者下架 2-平台下架
+	Reason string `json:"reason"`                     // 下架原因
+}
+
 // ==================== 管理员端版本审核 DTO ====================
 
 // AdminVersionGetListReq 管理员获取版本列表请求

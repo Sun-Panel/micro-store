@@ -94,3 +94,11 @@ export function adminReviewVersion<T>(data: MicroApp.ReviewVersionRequest) {
     data,
   })
 }
+
+// 管理员下架版本
+export function adminOfflineVersion<T>(data: MicroApp.OfflineVersionRequest) {
+  return post<T>({
+    url: '/admin/version/offline',
+    data,
+  })
+}

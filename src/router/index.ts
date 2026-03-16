@@ -131,6 +131,11 @@ const adminRouter = {
       component: () => import('@/views/admin/microAppManage/index.vue'),
     },
     {
+      path: '/admin/microAppManage/detail/:id',
+      name: 'AdminMicroAppManageDetail',
+      component: () => import('@/views/admin/microAppManage/detail/index.vue'),
+    },
+    {
       path: '/admin/versionReview',
       name: 'AdminVersionReview',
       component: () => import('@/views/admin/versionReview/index.vue'),

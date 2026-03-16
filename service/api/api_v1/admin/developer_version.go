@@ -146,6 +146,29 @@ func (a *DeveloperVersionApi) Delete(c *gin.Context) {
 	apiReturn.Success(c)
 }
 
+// Offline 下架版本
+func (a *DeveloperVersionApi) Offline(c *gin.Context) {
+	param := MicroAppVersionOfflineReq{}
+	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	// 平台下架时，原因必填
+	if param.Type == 2 && param.Reason == "" {
+		apiReturn.ErrorParamFomat(c, "平台下架时，下架原因不能为空")
+		return
+	}
+
+	m := models.MicroAppVersion{}
+	if err := m.Offline(global.Db, param.Id, param.Type, param.Reason); err != nil {
+		apiReturn.ErrorDatabase(c, err.Error())
+		return
+	}
+
+	apiReturn.Success(c)
+}
+
 // handleBizError 统一处理业务错误
 func handleBizError(c *gin.Context, err error) {
 	// 业务错误：转换为数字错误码，前端统一处理

@@ -16,5 +16,6 @@ func InitVersionReviewRouter(router *gin.RouterGroup) {
 		r.POST("version/getList", reviewApi.GetList)
 		r.POST("version/getPendingList", reviewApi.GetPendingList)
 		r.POST("version/review", reviewApi.Review)
+		r.POST("version/offline", reviewApi.Offline)
 	}
 }

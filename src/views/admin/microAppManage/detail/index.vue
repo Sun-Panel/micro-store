@@ -1,17 +1,15 @@
 <script lang="ts" setup>
-import { NButton, NCard, NInput, NModal, NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
+import { NButton, NCard, NModal, NPopconfirm, NSpace, NTag, NInput, useMessage } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { cancelAppReview, deletes, getInfo as getMicroAppInfo, updateStatus } from '@/api/admin/microApp'
+import { deletes, getInfo as getMicroAppInfo, offline, updateStatus } from '@/api/admin/microApp'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
-import { adminOfflineVersion, cancelReview, deleteVersion, getVersionList, submitReview } from '@/api/admin/microAppVersion'
-import ReviewHistoryModal from '@/components/common/ReviewHistoryModal/index.vue'
-import AddVersionModal from '@/components/common/VersionManagement/AddVersionModal.vue'
+import { cancelReview, getVersionList, adminOfflineVersion } from '@/api/admin/microAppVersion'
 import VersionDetailModal from '@/components/common/VersionManagement/VersionDetailModal.vue'
+import { microAppStatusMap, MicroAppVersionStatus } from '@/enums/panel'
 import { apiRespErrMsg } from '@/utils/cmn'
-import MicroAppBasicInfo from '../components/MicroAppBasicInfo.vue'
-import MicroAppVersionInfo from '../components/MicroAppVersionInfo.vue'
-import EditMicroApp from '../EditMicroApp/index.vue'
+import MicroAppBasicInfo from '../../myMicroApp/components/MicroAppBasicInfo.vue'
+import MicroAppVersionInfo from '../../myMicroApp/components/MicroAppVersionInfo.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,24 +24,20 @@ const versionList = ref<MicroApp.VersionInfo[]>([])
 const loading = ref(false)
 const versionLoading = ref(false)
 
-// 编辑弹窗
-const editDialogShow = ref(false)
 const categoryOptions = ref<{ label: string, value: number }[]>([])
-
-// 审核历史
-const reviewHistoryShow = ref(false)
-
-// 添加版本弹窗
-const addVersionShow = ref(false)
 
 // 版本详情弹窗
 const versionDetailShow = ref(false)
 const currentVersionDetail = ref<MicroApp.VersionInfo | null>(null)
 
-// 版本下架弹窗
+// 下架弹窗
 const offlineDialogShow = ref(false)
-const offlineVersion = ref<MicroApp.VersionInfo | null>(null)
 const offlineReason = ref('')
+
+// 版本下架弹窗
+const versionOfflineDialogShow = ref(false)
+const versionOfflineVersion = ref<MicroApp.VersionInfo | null>(null)
+const versionOfflineReason = ref('')
 
 // 获取分类选项
 async function fetchCategoryOptions() {
@@ -93,77 +87,12 @@ async function fetchVersionList() {
   }
 }
 
-// 提交审核
-async function handleSubmitReview(versionId: number) {
-  try {
-    const res = await submitReview<any>({ versionId })
-    if (res.code === 0) {
-      message.success('已提交审核')
-      fetchVersionList()
-    }
-    else {
-      apiRespErrMsg(res)
-    }
-  }
-  catch (error) {
-    apiRespErrMsg(error)
-  }
-}
-
 // 撤销审核
-async function handleCancelReview(versionId: number) {
+async function handleVersionCancelReview(versionId: number) {
   try {
-    const res = await cancelReview<any>({ versionId })
+    const res = await cancelReview({ versionId })
     if (res.code === 0) {
       message.success('已撤销审核')
-      fetchVersionList()
-    }
-    else {
-      apiRespErrMsg(res)
-    }
-  }
-  catch (error) {
-    apiRespErrMsg(error)
-  }
-}
-
-// 删除版本
-async function handleDeleteVersion(ids: number[]) {
-  try {
-    const res = await deleteVersion<any>(ids)
-    if (res.code === 0) {
-      message.success('删除成功')
-      fetchVersionList()
-    }
-    else {
-      apiRespErrMsg(res)
-    }
-  }
-  catch (error) {
-    apiRespErrMsg(error)
-  }
-}
-
-// 打开版本下架弹窗
-function openOfflineDialog(version: MicroApp.VersionInfo) {
-  offlineVersion.value = version
-  offlineReason.value = ''
-  offlineDialogShow.value = true
-}
-
-// 确认下架版本
-async function handleOfflineVersion() {
-  if (!offlineVersion.value)
-    return
-  try {
-    const res = await adminOfflineVersion<any>({
-      id: offlineVersion.value.id,
-      type: 1, // 作者下架
-      reason: offlineReason.value || undefined,
-    })
-    if (res.code === 0) {
-      message.success('已下架')
-      offlineDialogShow.value = false
       fetchVersionList()
     }
     else {
@@ -181,14 +110,75 @@ function openVersionDetail(version: MicroApp.VersionInfo) {
   versionDetailShow.value = true
 }
 
-// 上架/下架
+// 打开下架弹窗
+function openOfflineDialog() {
+  offlineReason.value = ''
+  offlineDialogShow.value = true
+}
+
+// 打开版本下架弹窗
+function openVersionOfflineDialog(version: MicroApp.VersionInfo) {
+  versionOfflineVersion.value = version
+  versionOfflineReason.value = ''
+  versionOfflineDialogShow.value = true
+}
+
+// 确认下架版本
+async function handleVersionOffline() {
+  if (!versionOfflineVersion.value)
+    return
+  try {
+    const res = await adminOfflineVersion<any>({
+      id: versionOfflineVersion.value.id,
+      type: 2, // 平台下架
+      reason: versionOfflineReason.value || undefined,
+    })
+    if (res.code === 0) {
+      message.success('已下架')
+      versionOfflineDialogShow.value = false
+      fetchVersionList()
+    }
+    else {
+      apiRespErrMsg(res)
+    }
+  }
+  catch (error) {
+    apiRespErrMsg(error)
+  }
+}
+
+// 确认下架
+async function handleOffline() {
+  if (!microAppInfo.value)
+    return
+  try {
+    const res = await offline<any>({
+      id: microAppInfo.value.id,
+      type: 2, // 平台下架
+      reason: offlineReason.value || undefined,
+    })
+    if (res.code === 0) {
+      message.success('已下架')
+      offlineDialogShow.value = false
+      fetchMicroAppInfo()
+    }
+    else {
+      apiRespErrMsg(res)
+    }
+  }
+  catch (error) {
+    apiRespErrMsg(error)
+  }
+}
+
+// 上架
 async function handleChangeStatus(status: number) {
   if (!microAppInfo.value)
     return
   try {
     const res = await updateStatus({ id: microAppInfo.value.id, status })
     if (res.code === 0) {
-      message.success(status === 1 ? '已上架' : '已下架')
+      message.success('已上架')
       fetchMicroAppInfo()
     }
     else {
@@ -208,7 +198,7 @@ async function handleDelete() {
     const res = await deletes([microAppInfo.value.id])
     if (res.code === 0) {
       message.success('删除成功')
-      router.push('/admin/myMicroApp')
+      router.push('/admin/microAppManage')
     }
     else {
       apiRespErrMsg(res)
@@ -219,40 +209,12 @@ async function handleDelete() {
   }
 }
 
-// 撤销微应用主信息审核
-async function handleCancelAppReview() {
-  if (!microAppInfo.value)
-    return
-  try {
-    const { code } = await cancelAppReview({ id: microAppInfo.value.id })
-    if (code === 0) {
-      message.success('已撤销审核')
-      fetchMicroAppInfo()
-    }
-  }
-  catch (error) {
-    message.error('撤销审核失败')
-  }
-}
-
-// 处理编辑完成
-function handleEditDone() {
-  editDialogShow.value = false
-  message.success('保存成功')
-  fetchMicroAppInfo()
-}
-
-// 查看审核历史
-function handleViewReviewHistory() {
-  reviewHistoryShow.value = true
-}
-
 // 返回列表
 function handleBack() {
-  router.push('/admin/myMicroApp')
+  router.push('/admin/microAppManage')
 }
 
-// 预览应用（跳转到前台公开页面）
+// 预览应用
 function handlePreview() {
   const url = `/microApp/${microAppId.value}`
   window.open(url, '_blank')
@@ -286,25 +248,16 @@ onMounted(async () => {
             <NTag v-if="microAppInfo.reviewStatus === 3" type="error" size="small">
               已拒绝
             </NTag>
-            <NButton v-if="microAppInfo.reviewStatus === 1" size="tiny" @click="handleViewReviewHistory">
-              查看审核内容
-            </NButton>
           </div>
         </div>
         <NSpace>
           <NButton @click="handlePreview">
             查看公开页面
           </NButton>
-          <NButton v-if="microAppInfo?.reviewStatus === 1" @click="handleCancelAppReview">
-            撤销审核
-          </NButton>
-          <NButton type="primary" @click="editDialogShow = true">
-            编辑信息
-          </NButton>
           <NButton v-if="microAppInfo?.status === 0" type="success" @click="handleChangeStatus(1)">
             上架
           </NButton>
-          <NButton v-else-if="microAppInfo?.status === 1" @click="handleChangeStatus(0)">
+          <NButton v-else-if="microAppInfo?.status === 1" @click="openOfflineDialog">
             下架
           </NButton>
           <NPopconfirm @positive-click="handleDelete">
@@ -319,43 +272,25 @@ onMounted(async () => {
       </div>
     </NCard>
 
-    <!-- 基本信息组件 -->
+    <!-- 基本信息组件（不显示编辑按钮） -->
     <MicroAppBasicInfo
       class="mb-[20px]"
       :micro-app-info="microAppInfo"
       :category-options="categoryOptions"
+      :show-edit-button="false"
     />
 
-    <!-- 版本管理组件 -->
+    <!-- 版本管理组件（只读，不能添加版本，不能删除，只能查看详情和下架） -->
     <MicroAppVersionInfo
       :version-list="versionList"
       :loading="versionLoading"
-      :can-add-version="true"
-      :can-delete-version="true"
-      :can-submit-review="true"
+      :can-add-version="false"
+      :can-delete-version="false"
+      :can-submit-review="false"
       :can-offline-version="true"
-      @add-version="addVersionShow = true"
       @view-detail="openVersionDetail"
-      @submit-review="handleSubmitReview"
-      @cancel-review="handleCancelReview"
-      @delete-version="handleDeleteVersion"
-      @offline-version="openOfflineDialog"
-    />
-
-    <!-- 编辑弹窗 -->
-    <EditMicroApp
-      v-model:visible="editDialogShow"
-      :micro-app-info="microAppInfo"
-      :author-id="microAppInfo?.authorId || 0"
-      :category-options="categoryOptions"
-      @done="handleEditDone"
-    />
-
-    <!-- 添加版本弹窗 -->
-    <AddVersionModal
-      v-model:visible="addVersionShow"
-      :app-id="microAppId"
-      @done="fetchVersionList"
+      @cancel-review="handleVersionCancelReview"
+      @offline-version="openVersionOfflineDialog"
     />
 
     <!-- 版本详情弹窗 -->
@@ -366,27 +301,46 @@ onMounted(async () => {
       @done="fetchMicroAppInfo"
     />
 
-    <!-- 审核历史弹窗 -->
-    <ReviewHistoryModal v-model:visible="reviewHistoryShow" :app-id="microAppId" />
+    <!-- 下架弹窗 -->
+    <NModal
+      v-model:show="offlineDialogShow"
+      preset="dialog"
+      title="下架微应用"
+      positive-text="确认下架"
+      negative-text="取消"
+      @positive-click="handleOffline"
+    >
+      <div class="py-4">
+        <div class="mb-4">
+          <span class="text-gray-600">请输入下架原因（必填）：</span>
+        </div>
+        <NInput
+          v-model:value="offlineReason"
+          type="textarea"
+          placeholder="请输入下架原因"
+          :rows="3"
+        />
+      </div>
+    </NModal>
 
     <!-- 版本下架弹窗 -->
     <NModal
-      v-model:show="offlineDialogShow"
+      v-model:show="versionOfflineDialogShow"
       preset="dialog"
       title="下架版本"
       positive-text="确认下架"
       negative-text="取消"
-      @positive-click="handleOfflineVersion"
+      @positive-click="handleVersionOffline"
     >
       <div class="py-4">
         <div class="mb-2 text-gray-600">
-          下架版本：{{ offlineVersion?.version }}
+          下架版本：{{ versionOfflineVersion?.version }}
         </div>
         <div class="mb-4">
-          <span class="text-gray-600">下架原因（选填）：</span>
+          <span class="text-gray-600">请输入下架原因（必填）：</span>
         </div>
         <NInput
-          v-model:value="offlineReason"
+          v-model:value="versionOfflineReason"
           type="textarea"
           placeholder="请输入下架原因"
           :rows="3"

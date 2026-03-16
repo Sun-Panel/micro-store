@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { DataTableColumns } from 'naive-ui'
 import { NButton, NCard, NDataTable, NDescriptions, NDescriptionsItem, NDivider, NImage, NImageGroup, NInput, NInputGroup, NModal, NSpace, NTag, useMessage } from 'naive-ui'
-import { h, onMounted, ref } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
 import { getInfo, getPendingReviewList, reviewApp } from '@/api/admin/microApp'
 import { microAppChargeTypeMap, MicroAppReviewStatus, microAppReviewStatusMap } from '@/enums/panel'
 import { timeFormat } from '@/utils/cmn'
@@ -21,6 +21,148 @@ const currentAppInfo = ref<MicroApp.MicroAppInfo>()
 const reviewForm = ref({
   status: 1,
   reviewNote: '',
+})
+
+// ==================== 多语言处理 ====================
+// 浏览器语言检测
+function getBrowserLang(): string {
+  const lang = navigator.language || (navigator as any).userLanguage || 'zh-CN'
+  if (lang.startsWith('zh'))
+    return 'zh-CN'
+  if (lang.startsWith('en'))
+    return 'en-US'
+  if (lang.startsWith('ja'))
+    return 'ja-JP'
+  if (lang.startsWith('ko'))
+    return 'ko-KR'
+  return 'zh-CN'
+}
+
+// 获取待审核信息的多语言列表
+const reviewLangList = computed(() => {
+  if (!currentReview.value?.langMap)
+    return ['zh-CN']
+  const langMap = currentReview.value.langMap
+  let parsed: any = langMap
+
+  // 如果是字符串，解析 JSON
+  if (typeof langMap === 'string') {
+    try {
+      parsed = JSON.parse(langMap)
+    }
+    catch (e) {
+      console.error('解析 langMap JSON 失败:', e)
+      return ['zh-CN']
+    }
+  }
+
+  // 处理可能是数组的情况
+  if (Array.isArray(parsed)) {
+    return parsed.map((l: any) => l.lang).filter(Boolean)
+  }
+  return Object.keys(parsed)
+})
+
+// 获取当前信息的多语言列表
+const currentLangList = computed(() => {
+  if (!currentAppInfo.value)
+    return ['zh-CN']
+  const langList = (currentAppInfo.value as any).langList || []
+  if (langList.length > 0) {
+    return langList.map((l: any) => l.lang)
+  }
+  return ['zh-CN']
+})
+
+// 当前语言
+const currentLang = computed(() => {
+  const browserLang = getBrowserLang()
+  const langs = reviewLangList.value
+  return langs.includes(browserLang) ? browserLang : (langs.includes('zh-CN') ? 'zh-CN' : langs[0])
+})
+
+// 获取待审核信息的多语言 Map（处理可能是数组或字符串的情况）
+const reviewLangMap = computed(() => {
+  if (!currentReview.value?.langMap)
+    return {}
+  const langMap = currentReview.value.langMap
+  let parsed: any = langMap
+
+  // 如果是字符串，解析 JSON
+  if (typeof langMap === 'string') {
+    try {
+      parsed = JSON.parse(langMap)
+    }
+    catch (e) {
+      console.error('解析 langMap JSON 失败:', e)
+      return {}
+    }
+  }
+
+  // 如果是数组，转换为对象
+  if (Array.isArray(parsed)) {
+    const result: Record<string, any> = {}
+    parsed.forEach((l: any) => {
+      if (l.lang) {
+        result[l.lang] = l
+      }
+    })
+    return result
+  }
+
+  return parsed
+})
+
+// 当前语言下的应用名称（待审核）
+const displayReviewAppName = computed(() => {
+  if (!currentReview.value)
+    return ''
+  const langMap = reviewLangMap.value
+  return langMap[currentLang.value]?.appName
+    || langMap['zh-CN']?.appName
+    || currentReview.value.appName
+    || ''
+})
+
+// 当前语言下的应用描述（待审核）
+const displayReviewAppDesc = computed(() => {
+  if (!currentReview.value)
+    return ''
+  const langMap = reviewLangMap.value
+  return langMap[currentLang.value]?.appDesc
+    || langMap['zh-CN']?.appDesc
+    || currentReview.value.appDesc
+    || ''
+})
+
+// 当前语言下的应用名称（当前）
+const displayCurrentAppName = computed(() => {
+  if (!currentAppInfo.value)
+    return ''
+  const langList = (currentAppInfo.value as any).langList || []
+  const langMap: Record<string, any> = {}
+  langList.forEach((l: any) => {
+    langMap[l.lang] = l
+  })
+  return langMap[currentLang.value]?.appName
+    || langMap['zh-CN']?.appName
+    || currentAppInfo.value.appName
+    || ''
+})
+
+// 当前语言下的应用描述（当前）
+const displayCurrentAppDesc = computed(() => {
+  if (!currentAppInfo.value)
+    return ''
+  const langList = (currentAppInfo.value as any).langList || []
+  const langMap: Record<string, any> = {}
+  langList.forEach((l: any) => {
+    langMap[l.lang] = l
+  })
+  return langMap[currentLang.value]?.appDesc
+    || langMap['zh-CN']?.appDesc
+    || currentAppInfo.value.appDesc
+    || ''
 })
 
 // 获取列表
@@ -199,7 +341,7 @@ onMounted(() => {
             </div>
             <NDescriptions bordered :column="1">
               <NDescriptionsItem label="应用名称">
-                {{ currentAppInfo.appName }}
+                {{ displayCurrentAppName }}
               </NDescriptionsItem>
               <NDescriptionsItem label="应用图标">
                 <img
@@ -210,7 +352,7 @@ onMounted(() => {
                 <span v-else class="text-gray-400">暂无图标</span>
               </NDescriptionsItem>
               <NDescriptionsItem label="应用描述">
-                {{ currentAppInfo.appDesc || '-' }}
+                {{ displayCurrentAppDesc || '-' }}
               </NDescriptionsItem>
               <NDescriptionsItem label="收费方式">
                 {{ microAppChargeTypeMap[currentAppInfo.chargeType] || '免费' }}
@@ -220,6 +362,11 @@ onMounted(() => {
               </NDescriptionsItem>
               <NDescriptionsItem label="备注">
                 {{ currentAppInfo.remark || '暂无备注' }}
+              </NDescriptionsItem>
+              <NDescriptionsItem label="支持语言">
+                <NTag v-for="lang in currentLangList" :key="lang" size="small" class="mr-1">
+                  {{ lang }}
+                </NTag>
               </NDescriptionsItem>
             </NDescriptions>
           </div>
@@ -231,7 +378,7 @@ onMounted(() => {
             </div>
             <NDescriptions bordered :column="1">
               <NDescriptionsItem label="应用名称">
-                {{ currentReview.appName }}
+                {{ displayReviewAppName }}
               </NDescriptionsItem>
               <NDescriptionsItem label="应用图标">
                 <img
@@ -242,7 +389,7 @@ onMounted(() => {
                 <span v-else class="text-gray-400">暂无图标</span>
               </NDescriptionsItem>
               <NDescriptionsItem label="应用描述">
-                {{ currentReview.appDesc || '-' }}
+                {{ displayReviewAppDesc || '-' }}
               </NDescriptionsItem>
               <NDescriptionsItem label="收费方式">
                 {{ microAppChargeTypeMap[currentReview.chargeType] || '免费' }}
@@ -253,7 +400,67 @@ onMounted(() => {
               <NDescriptionsItem label="备注">
                 {{ currentReview.remark || '暂无备注' }}
               </NDescriptionsItem>
+              <NDescriptionsItem label="支持语言">
+                <NTag v-for="lang in reviewLangList" :key="lang" type="primary" size="small" class="mr-1">
+                  {{ lang }}
+                </NTag>
+              </NDescriptionsItem>
             </NDescriptions>
+          </div>
+        </div>
+
+        <!-- 多语言详情 -->
+        <NDivider title-placement="left">
+          多语言详情
+        </NDivider>
+        <div class="flex gap-6">
+          <!-- 当前多语言信息 -->
+          <div v-if="currentAppInfo" class="flex-1">
+            <div class="text-sm text-gray-500 mb-2">
+              当前多语言信息
+            </div>
+            <div v-if="currentAppInfo?.langList && currentAppInfo.langList.length > 0">
+              <div v-for="(langItem, index) in currentAppInfo.langList" :key="`current-lang-${index}`" class="mb-3 p-3 bg-gray-50 rounded">
+                <div class="font-semibold text-sm mb-1">
+                  {{ langItem.lang }}
+                </div>
+                <div class="text-sm">
+                  <div class="mb-1">
+                    <span class="text-gray-500">名称:</span> {{ langItem.appName }}
+                  </div>
+                  <div>
+                    <span class="text-gray-500">描述:</span> {{ langItem.appDesc || '-' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-gray-400 text-sm">
+              暂无多语言信息
+            </div>
+          </div>
+          <!-- 待审核多语言信息 -->
+          <div class="flex-1">
+            <div class="text-sm text-blue-600 mb-2">
+              待审核多语言信息
+            </div>
+            <div v-if="Object.keys(reviewLangMap).length > 0">
+              <div v-for="(langItem, lang) in reviewLangMap" :key="`review-lang-${lang}`" class="mb-3 p-3 bg-blue-50 rounded border border-blue-200">
+                <div class="font-semibold text-sm mb-1 text-blue-700">
+                  {{ lang }}
+                </div>
+                <div class="text-sm">
+                  <div class="mb-1">
+                    <span class="text-gray-500">名称:</span> {{ langItem.appName }}
+                  </div>
+                  <div>
+                    <span class="text-gray-500">描述:</span> {{ langItem.appDesc || '-' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-gray-400 text-sm">
+              暂无多语言信息
+            </div>
           </div>
         </div>
 

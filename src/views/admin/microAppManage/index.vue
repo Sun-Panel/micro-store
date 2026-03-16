@@ -2,6 +2,7 @@
 import type { DataTableColumns, PaginationProps } from 'naive-ui'
 import { NButton, NCard, NDataTable, NDropdown, NInput, NInputGroup, NSelect, useDialog, useMessage } from 'naive-ui'
 import { h, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { deletes, getList, updateStatus } from '@/api/admin/microApp'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { SvgIcon } from '@/components/common'
@@ -9,11 +10,11 @@ import { microAppChargeTypeMap, microAppStatusMap } from '@/enums/panel'
 import { timeFormat } from '@/utils/cmn'
 
 const message = useMessage()
+const router = useRouter()
 const tableIsLoading = ref<boolean>(false)
 const keyWord = ref<string>()
 const statusFilter = ref<number | null>(null)
 const categoryFilter = ref<number | null>(null)
-const editInfo = ref<MicroApp.MicroAppInfo>()
 const dialog = useDialog()
 const categoryOptions = ref<{ label: string, value: number }[]>([])
 
@@ -138,7 +139,7 @@ const columns = createColumns({
     handleChangeStatus(row, status)
   },
   handleView(row: MicroApp.MicroAppInfo) {
-    editInfo.value = row
+    router.push(`/admin/microAppManage/detail/${row.id}`)
   },
 })
 

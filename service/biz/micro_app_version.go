@@ -102,7 +102,8 @@ func (s *MicroAppVersionService) SubmitReview(db *gorm.DB, versionId uint) error
 		return NewBizError(ErrCodeVersionNotFound)
 	}
 
-	if version.Status != -1 && version.Status != 2 {
+	// 草稿(-1)、拒绝(2)、下架(3)状态可以提交审核
+	if version.Status != -1 && version.Status != 2 && version.Status != 3 {
 		return NewBizError(ErrCodeStatusNotAllowed)
 	}
 

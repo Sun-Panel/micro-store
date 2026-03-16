@@ -117,6 +117,13 @@ declare namespace MicroApp {
     status: number
   }
 
+  // 下架请求
+  interface OfflineRequest {
+    id: number
+    type: number        // 下架类型：1-作者下架  2-平台下架
+    reason?: string    // 下架原因
+  }
+
   // 更新语言请求
   interface UpdateLangRequest {
     id: number
