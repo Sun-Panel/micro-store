@@ -1,11 +1,12 @@
 <script lang="ts" setup>
 import { h, onMounted, reactive, ref } from 'vue'
-import { NButton, NCard, NDataTable, NDropdown, NInput, NInputGroup, useDialog, useMessage } from 'naive-ui'
+import { NButton, NCard, NDataTable, NDropdown, NInput, NInputGroup, NSpace, NTag, useDialog, useMessage } from 'naive-ui'
 import type { DataTableColumns, PaginationProps } from 'naive-ui'
 import EditUser from './EditUser/index.vue'
 import { AdminUserManageDelete, AdminUserManageGetList } from '@/api/admin'
 import { timeFormat } from '@/utils/cmn'
 import { SvgIcon } from '@/components/common'
+import { getRoleTagType } from '@/utils/role'
 
 const message = useMessage()
 const tableIsLoading = ref<boolean>(false)
@@ -40,7 +41,14 @@ const createColumns = ({
       title: '角色',
       key: 'role',
       render(row) {
-        return row.role === 1 ? '管理员' : '普通用户'
+        if (!row.roles || row.roles.length === 0) {
+          return h(NTag, { type: 'default', size: 'small' }, { default: () => '未设置' })
+        }
+        return h(NSpace, { size: 'small' }, {
+          default: () => row.roles!.map(role => 
+            h(NTag, { type: getRoleTagType(role.value), size: 'small' }, { default: () => role.name })
+          )
+        })
       },
     },
     {

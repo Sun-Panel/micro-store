@@ -13,7 +13,7 @@ function generateUrl(toPage: string) {
   const callbackUrl = encodeURIComponent(toPage)
   // console.log('回调地址', callbackUrl)
   return `/api/oAuth2/v1/login?callback=${callbackUrl}`
-  return `http://127.0.0.1:1003/#/authThirdAppLogin?client_id=test_appid&redirect_uri=${callbackUrl}&response_type=code`
+  // return `http://127.0.0.1:1003/#/authThirdAppLogin?client_id=test_appid&redirect_uri=${callbackUrl}&response_type=code`
 }
 
 export interface HttpOption {

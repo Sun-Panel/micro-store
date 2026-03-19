@@ -4,4 +4,9 @@ declare namespace AdminUserManage {
         limit:number
         keyWord?:string
     }
+
+    interface UpdatePasswordRequest{
+        userId: number
+        newPassword: string
+    }
 }

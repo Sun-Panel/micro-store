@@ -16,5 +16,6 @@ func InitUserRouter(router *gin.RouterGroup) {
 		r.POST("users/update", userApi.Update)
 		r.POST("users/getList", userApi.GetList)
 		r.POST("users/deletes", userApi.Deletes)
+		r.POST("users/updatePassword", userApi.UpdatePassword)
 	}
 }

@@ -30,6 +30,13 @@ export function AdminUserManageDelete<T>(userIds: number[]) {
   })
 }
 
+export function AdminUserManageUpdatePassword<T>(param: AdminUserManage.UpdatePasswordRequest) {
+  return post<T>({
+    url: '/admin/users/updatePassword',
+    data: param,
+  })
+}
+
 // 系统设置
 export function AdminSystemSettingSetEmail<T>(email: AdminSystemSetting.Email) {
   return post<T>({

@@ -1,6 +1,7 @@
 import type { Router } from 'vue-router'
 import { createDiscreteApi } from 'naive-ui'
 import { useAuthStore } from '@/store/'
+import { ROLE_USER } from '@/utils/role'
 
 const naiveApi = createDiscreteApi(['loadingBar'])
 
@@ -10,12 +11,13 @@ export function setupPageGuard(router: Router) {
     const authStore = useAuthStore()
     naiveApi.loadingBar.start()
 
-    // 非管理员路由拦截
-    if (authStore.userInfo?.role !== 1 && to.path.includes('admin'))
+    // 仅普通用户角色时拦截（不能访问admin路由）
+    if (authStore.userInfo?.role === ROLE_USER && to.path.includes('admin')) {
       next({ name: '404' })
+      return
+    }
 
-    else
-      next()
+    next()
   })
 
   router.afterEach((to, from) => {
