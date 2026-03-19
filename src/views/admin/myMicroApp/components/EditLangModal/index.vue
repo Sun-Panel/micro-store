@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { NButton, NCard, NForm, NFormItem, NInput, NModal, NSelect, NSpace } from 'naive-ui'
 import { computed, ref, watch } from 'vue'
-import { updateLang } from '@/api/admin/microApp'
+import { updateLang } from '@/api/admin/microAppDeveloper'
 
 const props = defineProps<Props>()
 

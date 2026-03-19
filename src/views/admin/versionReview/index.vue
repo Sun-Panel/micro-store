@@ -2,7 +2,7 @@
 import type { DataTableColumns } from 'naive-ui'
 import { NButton, NCard, NDataTable, NDescriptions, NDescriptionsItem, NDivider, NInput, NInputGroup, NModal, NSpace, NTag, useMessage } from 'naive-ui'
 import { h, onMounted, ref } from 'vue'
-import { adminGetPendingVersionList, adminReviewVersion, getVersionList } from '@/api/admin/microAppVersion'
+import { getPendingList, review, getVersionList } from '@/api/admin/versionReview'
 import { MicroAppVersionStatus, microAppVersionStatusMap } from '@/enums/panel'
 import { timeFormat } from '@/utils/cmn'
 
@@ -27,7 +27,7 @@ const reviewForm = ref({
 async function fetchList() {
   loading.value = true
   try {
-    const { data } = await adminGetPendingVersionList<Common.ListResponse<MicroApp.VersionInfo[]>>({
+    const { data } = await getPendingList<Common.ListResponse<MicroApp.VersionInfo[]>>({
       page: 1,
       limit: 100,
       keyword: keyWord.value,
@@ -137,7 +137,7 @@ async function handleReview() {
 
   reviewLoading.value = true
   try {
-    const { code } = await adminReviewVersion<any>({
+    const { code } = await review<any>({
       versionId: currentVersion.value.id,
       status: reviewForm.value.status,
       reviewNote: reviewForm.value.reviewNote,
@@ -156,6 +156,7 @@ async function handleReview() {
     reviewLoading.value = false
   }
 }
+
 
 function handleSearch() {
   fetchList()

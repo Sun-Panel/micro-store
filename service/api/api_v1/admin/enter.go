@@ -15,6 +15,5 @@ type ApiAdmin struct {
 	DeveloperApi               DeveloperApi
 	MicroAppApi                MicroAppApi
 	DeveloperVersionApi        DeveloperVersionApi
-	VersionReviewApi           VersionReviewApi
 	MicroAppVersionUploadApi   MicroAppVersionUploadApi
 }

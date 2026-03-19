@@ -229,3 +229,11 @@ func CancelReview(db *gorm.DB, versionId uint) error {
 func DeleteVersion(db *gorm.DB, ids []uint) error {
 	return MicroAppVersionSvc.DeleteVersion(db, ids)
 }
+
+func ReviewVersion(db *gorm.DB, versionId uint, status int, reviewNote string) error {
+	return MicroAppVersionSvc.Review(db, versionId, status, 0, reviewNote)
+}
+
+func ReviewVersionWithReviewer(db *gorm.DB, versionId uint, status int, reviewerId uint, reviewNote string) error {
+	return MicroAppVersionSvc.Review(db, versionId, status, reviewerId, reviewNote)
+}

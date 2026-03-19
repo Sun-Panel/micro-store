@@ -2,7 +2,7 @@
 import type { FormInst, FormRules } from 'naive-ui'
 import { NButton, NCard, NForm, NFormItem, NImage, NInput, NInputNumber, NModal, NSelect, NSpace, NTabPane, NTabs, NUpload } from 'naive-ui'
 import { computed, defineEmits, defineProps, ref, watch } from 'vue'
-import { create, update } from '@/api/admin/microApp'
+import { create, update } from '@/api/admin/microAppDeveloper'
 import { microAppChargeTypeMap } from '@/enums/panel'
 import { t } from '@/locales'
 import { useAuthStore } from '@/store'

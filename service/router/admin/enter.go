@@ -16,6 +16,4 @@ func Init(routerGroup *gin.RouterGroup) {
 	InitMicroAppCategoryRouter(adminGroup)
 	InitDeveloperRouter(adminGroup)
 	InitMicroAppRouter(adminGroup)
-	InitDeveloperVersionRouter(adminGroup)
-	InitVersionReviewRouter(adminGroup)
 }

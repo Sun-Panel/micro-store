@@ -2,7 +2,8 @@
 import type { DataTableColumns } from 'naive-ui'
 import { NButton, NCard, NDataTable, NDescriptions, NDescriptionsItem, NDivider, NImage, NImageGroup, NInput, NInputGroup, NModal, NSpace, NTag, useMessage } from 'naive-ui'
 import { computed, h, onMounted, ref } from 'vue'
-import { getInfo, getPendingReviewList, reviewApp } from '@/api/admin/microApp'
+import { getPendingList, getInfo, approve } from '@/api/admin/microAppReview'
+import { getInfo as getMicroAppInfo } from '@/api/admin/microApp'
 import { microAppChargeTypeMap, MicroAppReviewStatus, microAppReviewStatusMap } from '@/enums/panel'
 import { timeFormat } from '@/utils/cmn'
 
@@ -169,7 +170,7 @@ const displayCurrentAppDesc = computed(() => {
 async function fetchList() {
   loading.value = true
   try {
-    const { data } = await getPendingReviewList<Common.ListResponse<MicroApp.MicroAppReviewInfo[]>>({
+    const { data } = await getPendingList<Common.ListResponse<MicroApp.MicroAppReviewInfo[]>>({
       page: 1,
       limit: 100,
     })
@@ -248,7 +249,7 @@ async function openReview(row: MicroApp.MicroAppReviewInfo) {
 
   // 获取当前应用信息
   try {
-    const { data } = await getInfo<MicroApp.MicroAppInfo>(row.appId)
+    const { data } = await getMicroAppInfo<MicroApp.MicroAppInfo>(row.appId)
     currentAppInfo.value = data
   }
   catch {
@@ -271,7 +272,7 @@ async function handleReview() {
 
   reviewLoading.value = true
   try {
-    const { code } = await reviewApp<any>({
+    const { code } = await approve<any>({
       reviewId: currentReview.value.id,
       status: reviewForm.value.status,
       reviewNote: reviewForm.value.reviewNote,

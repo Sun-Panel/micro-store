@@ -2,7 +2,7 @@
 import { NButton, NCard, NDropdown, NInput, NInputGroup, NSelect, NSpace, NTag, useDialog, useMessage } from 'naive-ui'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { cancelAppReview, deletes, getList, updateStatus } from '@/api/admin/microApp'
+import { cancelReview, deletes, getList, offline } from '@/api/admin/microAppDeveloper'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { checkIsDeveloper, getInfo as getDeveloperInfo } from '@/api/developer'
 import ReviewHistoryModal from '@/components/common/ReviewHistoryModal/index.vue'
@@ -109,10 +109,16 @@ async function handleDelete(id: number) {
 
 async function handleChangeStatus(row: MicroApp.MicroAppInfo, status?: number) {
   const newStatus = status ?? (row.status === 1 ? 0 : 1)
+  // 开发者只能下架自己的应用，不能上架（上架需要审核通过）
+  if (newStatus === 1) {
+    message.warning('应用需要审核通过后才能上架')
+    return
+  }
+
   try {
-    const { code } = await updateStatus({ id: row.id, status: newStatus })
+    const { code } = await offline({ id: row.id, type: 1, reason: '作者主动下架' })
     if (code === 0) {
-      message.success(newStatus === 1 ? '已上架' : '已下架')
+      message.success('已下架')
       fetchList()
     }
   }

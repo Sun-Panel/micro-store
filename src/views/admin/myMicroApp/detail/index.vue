@@ -2,9 +2,9 @@
 import { NButton, NCard, NInput, NModal, NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { cancelAppReview, deletes, getInfo as getMicroAppInfo, updateStatus } from '@/api/admin/microApp'
+import { cancelReview, deletes, getInfo as getMicroAppInfo, offline } from '@/api/admin/microAppDeveloper'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
-import { adminOfflineVersion, cancelReview, deleteVersion, getVersionList, submitReview } from '@/api/admin/microAppVersion'
+import { adminOfflineVersion, cancelReview as cancelVersionReview, deleteVersion, getVersionList, submitReview } from '@/api/admin/microAppDeveloper'
 import ReviewHistoryModal from '@/components/common/ReviewHistoryModal/index.vue'
 import AddVersionModal from '@/components/common/VersionManagement/AddVersionModal.vue'
 import VersionDetailModal from '@/components/common/VersionManagement/VersionDetailModal.vue'
@@ -185,10 +185,16 @@ function openVersionDetail(version: MicroApp.VersionInfo) {
 async function handleChangeStatus(status: number) {
   if (!microAppInfo.value)
     return
+  // 开发者只能下架自己的应用，不能上架（上架需要审核通过）
+  if (status === 1) {
+    message.warning('应用需要审核通过后才能上架')
+    return
+  }
+
   try {
-    const res = await updateStatus({ id: microAppInfo.value.id, status })
+    const res = await offline({ id: microAppInfo.value.id, type: 1, reason: '作者主动下架' })
     if (res.code === 0) {
-      message.success(status === 1 ? '已上架' : '已下架')
+      message.success('已下架')
       fetchMicroAppInfo()
     }
     else {
@@ -224,7 +230,7 @@ async function handleCancelAppReview() {
   if (!microAppInfo.value)
     return
   try {
-    const { code } = await cancelAppReview({ id: microAppInfo.value.id })
+    const { code } = await cancelReview({ id: microAppInfo.value.id })
     if (code === 0) {
       message.success('已撤销审核')
       fetchMicroAppInfo()

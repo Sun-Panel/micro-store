@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { NButton, NCard, NModal, NTag } from 'naive-ui'
 import { computed, ref, watch } from 'vue'
-import { getReviewHistory } from '@/api/admin/microApp'
+import { getReviewHistory } from '@/api/admin/microAppDeveloper'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 
 interface Props {

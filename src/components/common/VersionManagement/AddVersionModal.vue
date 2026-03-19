@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { NButton, NInput, NModal, NSpace, NUpload, useMessage } from 'naive-ui'
 import { ref, watch } from 'vue'
-import { createVersion, submitReview, uploadVersionPackage } from '@/api/admin/microAppVersion'
+import { createVersion, submitReview, uploadVersionPackage } from '@/api/admin/microAppDeveloper'
 import { apiRespErrMsg } from '@/utils/cmn/apiMessage'
 
 interface Props {

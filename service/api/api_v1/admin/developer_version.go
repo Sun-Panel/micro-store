@@ -169,6 +169,84 @@ func (a *DeveloperVersionApi) Offline(c *gin.Context) {
 	apiReturn.Success(c)
 }
 
+// GetVersionList 获取版本列表（管理员专用）
+func (a *DeveloperVersionApi) GetVersionList(c *gin.Context) {
+	param := AdminVersionGetListReq{}
+	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	if param.Page < 1 {
+		param.Page = 1
+	}
+	if param.Limit < 1 {
+		param.Limit = 10
+	}
+
+	m := models.MicroAppVersion{}
+	list, total, err := m.GetList(global.Db, param.Page, param.Limit, &param.AppId, param.Status)
+	if err != nil {
+		apiReturn.ErrorDatabase(c, err.Error())
+		return
+	}
+
+	apiReturn.SuccessListData(c, list, total)
+}
+
+// GetPendingList 获取待审核版本列表（审核员专用）
+func (a *DeveloperVersionApi) GetPendingList(c *gin.Context) {
+	param := AdminVersionGetPendingListReq{}
+	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	if param.Page < 1 {
+		param.Page = 1
+	}
+	if param.Limit < 1 {
+		param.Limit = 10
+	}
+
+	m := models.MicroAppVersion{}
+	// 状态 1 表示审核中
+	status := 1
+	list, total, err := m.GetList(global.Db, param.Page, param.Limit, nil, &status)
+	if err != nil {
+		apiReturn.ErrorDatabase(c, err.Error())
+		return
+	}
+
+	apiReturn.SuccessListData(c, list, total)
+}
+
+// Review 审核版本（审核员专用）
+func (a *DeveloperVersionApi) Review(c *gin.Context) {
+	param := AdminVersionReviewReq{}
+	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	// 验证审核状态
+	if param.Status != 1 && param.Status != 2 {
+		apiReturn.ErrorParamFomat(c, "审核状态无效")
+		return
+	}
+
+	// 获取当前审核员ID（从token中获取）
+	reviewerId := c.GetUint("adminId")
+
+	// 调用业务层审核方法
+	if err := biz.ReviewVersionWithReviewer(global.Db, param.VersionId, param.Status, reviewerId, param.ReviewNote); err != nil {
+		handleBizError(c, err)
+		return
+	}
+
+	apiReturn.Success(c)
+}
+
 // handleBizError 统一处理业务错误
 func handleBizError(c *gin.Context, err error) {
 	// 业务错误：转换为数字错误码，前端统一处理

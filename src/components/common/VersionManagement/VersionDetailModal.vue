@@ -2,7 +2,7 @@
 import type { DataTableColumns } from 'naive-ui'
 import { NButton, NDataTable, NModal, NSelect, NSpace, NTag, useMessage } from 'naive-ui'
 import { computed, h, ref, watch } from 'vue'
-import { updateLang, update as updateMicroApp } from '@/api/admin/microApp'
+import { updateLang, update as updateMicroApp } from '@/api/admin/microAppDeveloper'
 import { apiRespErrMsg } from '@/utils/cmn/apiMessage'
 
 interface Props {
