@@ -1,15 +1,15 @@
 <script setup lang="ts">
+import type { Language } from '@/store/modules/app/helper'
 import { NButton, NCard, NForm, NFormItem, NGradientText, NInput, NSelect, useMessage } from 'naive-ui'
 import { onMounted, ref } from 'vue'
 import { login } from '@/api'
-import { useAppStore, useAuthStore } from '@/store'
-import { Captcha, SvgIcon } from '@/components/common'
-import { router } from '@/router'
-import { t } from '@/locales'
-import { languageOptions } from '@/utils/defaultData'
-import type { Language } from '@/store/modules/app/helper'
 import { getLoginConfig } from '@/api/openness'
+import { Captcha, SvgIcon } from '@/components/common'
+import { t } from '@/locales'
+import { router } from '@/router'
+import { useAppStore, useAuthStore } from '@/store'
 import { apiRespErrMsg } from '@/utils/cmn/apiMessage'
+import { languageOptions } from '@/utils/defaultData'
 
 // const userStore = useUserStore()
 const authStore = useAuthStore()
@@ -28,7 +28,7 @@ const form = ref<Login.LoginReqest>({
   password: '',
 })
 
-const loginPost = async () => {
+async function loginPost() {
   loading.value = true
   try {
     const res = await login<Login.LoginResponse>(form.value)
@@ -43,7 +43,7 @@ const loginPost = async () => {
         router.push('/admin')
 
       else
-        router.push('platform/proAuthorize')
+        router.push('/')
 
       // if (encodeURIComponent(route.query.callback as string))
       //   // location.href = `#/${route.query.callback}` as string
@@ -104,7 +104,7 @@ onMounted(() => {
 
       <div class="login-title  ">
         <NGradientText :size="30" type="danger" class="!font-bold">
-          {{ $t('common.appName') }} PRO授权平台
+          {{ $t('common.appName') }} 微应用
         </NGradientText>
       </div>
       <NForm :model="form" label-width="100px" size="large" @keydown.enter="handleSubmit">
