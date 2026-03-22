@@ -44,10 +44,10 @@ const options = [
   //   label: t('menu.prAuthorizeInfo'),
   //   key: 'PlatformProAuthorize',
   // },
-  // {
-  //   label: t('menu.myOrder'),
-  //   key: 'PlatformOrder',
-  // },
+  {
+    label: t('menu.console'),
+    key: 'console',
+  },
   {
     label: t('common.logout'),
     key: 'logout',
@@ -90,6 +90,10 @@ function handleSelect(key: string | number, option: DropdownOption) {
   switch (key) {
     case 'logout':
       logoutApi()
+      break
+
+    case 'console':
+      window.open('/admin')
       break
 
     default:

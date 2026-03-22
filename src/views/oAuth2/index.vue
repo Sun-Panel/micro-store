@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router'
-import { onMounted, ref } from 'vue'
+import type { Language } from '@/store/modules/app/helper'
 import { NResult, NSpin } from 'naive-ui'
+import { onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
+import { oAuth2CodeBind, oAuth2CodeLogin } from '@/api/login'
 import { t } from '@/locales'
 import { router } from '@/router'
-import { oAuth2CodeBind, oAuth2CodeLogin } from '@/api/login'
-import { apiRespErrMsg } from '@/utils/cmn/apiMessage'
 import { useAppStore, useAuthStore } from '@/store'
-import type { Language } from '@/store/modules/app/helper'
+import { apiRespErrMsg } from '@/utils/cmn/apiMessage'
 
 const route = useRoute()
 

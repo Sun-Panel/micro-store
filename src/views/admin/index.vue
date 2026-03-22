@@ -56,6 +56,7 @@ const ADMIN_MENU_CONFIG: AdminMenuItem[] = [
     roles: ROLE_DEVELOPER | ROLE_ADMIN,
     children: [
       { label: '我的微应用', key: 'AdminMyMicroApp' },
+      { label: '开发者信息', key: 'AdminDeveloperInfo' },
     ],
   },
   {

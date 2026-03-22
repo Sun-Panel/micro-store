@@ -80,10 +80,10 @@ onMounted(() => {
       </h1>
 
       <div class="mx-5" @click="router.push({ path: '/' })">
-        {{ authStore.userInfo?.username }}
         <NButton size="small" strong secondary type="info">
           返回平台
         </NButton>
+        {{ authStore.userInfo?.name }} ({{ authStore.userInfo?.username }})
       </div>
     </div>
   </header>

@@ -300,6 +300,7 @@
   "menu": {
     "becomeDeveloper": "Become developer",
     "community": "Community",
+    "console": "Console",
     "demo": "Demo",
     "devDoc": "Dev document",
     "document": "Document",
