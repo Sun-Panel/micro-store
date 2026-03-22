@@ -34,6 +34,12 @@ const (
 	ErrCodeApprovedCannotDelete = 2005
 	ErrCodeNotPendingReview     = 2006
 	ErrCodeNoUpdateContent      = 2007
+
+	// 微应用开发者业务错误 3000-3099
+	ErrCodeAppIdExists         = 3000
+	ErrCodeNoPermission        = 3001
+	ErrCodePendingReviewExists = 3002
+	ErrCodeNoPendingReviewApp  = 3003
 )
 
 var ErrorCodeMap = map[int]error{
@@ -66,6 +72,12 @@ var ErrorCodeMap = map[int]error{
 	ErrCodeApprovedCannotDelete: errors.New("approved version cannot be deleted"), // 已审核版本不能删除
 	ErrCodeNotPendingReview:     errors.New("not pending review"),                 // 非待审核状态
 	ErrCodeNoUpdateContent:      errors.New("no update content"),                  // 无更新内容
+
+	// 微应用开发者业务错误
+	ErrCodeAppIdExists:         errors.New("app id already exists"),               // 应用ID已存在
+	ErrCodeNoPermission:        errors.New("no permission for this app"),          // 无权操作此应用
+	ErrCodePendingReviewExists: errors.New("pending review already exists"),       // 已有待审核记录
+	ErrCodeNoPendingReviewApp:  errors.New("no pending review for this app"),      // 没有待审核记录
 }
 
 func GetError(code int) error {

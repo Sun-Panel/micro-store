@@ -2,8 +2,8 @@
 import { NButton, NCard, NDropdown, NInput, NInputGroup, NSelect, NSpace, NTag, useDialog, useMessage } from 'naive-ui'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { cancelReview, deletes, getList, offline } from '@/api/admin/microAppDeveloper'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
+import { cancelReview, deletes, getList, offline } from '@/api/admin/microAppDeveloper'
 import { checkIsDeveloper, getInfo as getDeveloperInfo } from '@/api/developer'
 import ReviewHistoryModal from '@/components/common/ReviewHistoryModal/index.vue'
 import { microAppChargeTypeMap, microAppStatusMap } from '@/enums/panel'
@@ -167,13 +167,13 @@ function handleViewReviewHistory(item: MicroApp.MicroAppInfo) {
 // 撤销审核
 async function handleCancelReview(item: MicroApp.MicroAppInfo) {
   try {
-    const { code } = await cancelAppReview({ id: item.id })
+    const { code } = await cancelReview({ id: item.id })
     if (code === 0) {
       message.success('已撤销审核')
       fetchList()
     }
   }
-  catch (error) {
+  catch {
     message.error('撤销审核失败')
   }
 }

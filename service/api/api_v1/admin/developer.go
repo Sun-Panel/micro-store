@@ -3,6 +3,7 @@ package admin
 import (
 	"sun-panel/api/api_v1/common/apiReturn"
 	"sun-panel/api/api_v1/common/base"
+	"sun-panel/biz"
 	"sun-panel/global"
 	"sun-panel/models"
 
@@ -22,8 +23,7 @@ func (a *DeveloperApi) GetList(c *gin.Context) {
 		return
 	}
 
-	m := models.Developer{}
-	list, total, err := m.GetList(global.Db, param.Page, param.Limit, param.Status, param.KeyWord)
+	list, total, err := biz.Developer.GetDeveloperList(global.Db, param.Page, param.Limit, param.Status, param.KeyWord)
 	if err != nil {
 		apiReturn.ErrorDatabase(c, err.Error())
 		return
@@ -40,14 +40,30 @@ func (a *DeveloperApi) GetInfo(c *gin.Context) {
 		return
 	}
 
-	m := models.Developer{}
-	info, err := m.GetById(global.Db, param.Id)
+	info, err := biz.Developer.GetDeveloperInfo(global.Db, param.Id)
 	if err != nil {
 		apiReturn.ErrorDataNotFound(c)
 		return
 	}
 
 	apiReturn.SuccessData(c, info)
+}
+
+// GetByDeveloperName 根据开发者标识获取开发者信息
+func (a *DeveloperApi) GetByDeveloperName(c *gin.Context) {
+	param := DeveloperGetByDeveloperNameReq{}
+	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	developer, err := biz.Developer.GetByDeveloperName(global.Db, param.DeveloperName)
+	if err != nil {
+		apiReturn.ErrorDataNotFound(c)
+		return
+	}
+
+	apiReturn.SuccessData(c, developer)
 }
 
 // Update 更新开发者

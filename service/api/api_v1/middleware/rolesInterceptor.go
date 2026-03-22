@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sun-panel/api/api_v1/common/apiReturn"
 	"sun-panel/api/api_v1/common/base"
+	"sun-panel/global"
 	"sun-panel/models"
 
 	"github.com/gin-gonic/gin"
@@ -40,25 +41,25 @@ func RolesInterceptor(requiredRole int, roleName string) gin.HandlerFunc {
 var (
 	// UserInterceptor 需要普通用户角色
 	UserInterceptor = RolesInterceptor(models.ROLE_USER, "普通用户")
-	
-	// DeveloperInterceptor 需要开发者角色
-	DeveloperInterceptor = RolesInterceptor(models.ROLE_DEVELOPER, "开发者")
-	
+
+	// // DeveloperInterceptor 需要开发者角色
+	// DeveloperInterceptor = RolesInterceptor(models.ROLE_DEVELOPER, "开发者")
+
 	// AdminInterceptor 需要管理员角色（已存在，但保持兼容）
 	// AdminInterceptor = RolesInterceptor(models.ROLE_ADMIN, "管理员")
-	
+
 	// AuditorInterceptor 需要审核员角色
 	AuditorInterceptor = RolesInterceptor(models.ROLE_AUDITOR, "审核员")
-	
+
 	// OperatorInterceptor 需要运营角色
 	OperatorInterceptor = RolesInterceptor(models.ROLE_OPERATOR, "运营")
-	
+
 	// AdminOrAuditorInterceptor 需要管理员或审核员角色
 	AdminOrAuditorInterceptor = MultiRolesInterceptor(models.ROLE_ADMIN | models.ROLE_AUDITOR)
-	
+
 	// AdminOrDeveloperInterceptor 需要管理员或开发者角色
 	AdminOrDeveloperInterceptor = MultiRolesInterceptor(models.ROLE_ADMIN | models.ROLE_DEVELOPER)
-	
+
 	// DeveloperOrAuditorInterceptor 需要开发者或审核员角色
 	DeveloperOrAuditorInterceptor = MultiRolesInterceptor(models.ROLE_DEVELOPER | models.ROLE_AUDITOR)
 )
@@ -67,12 +68,15 @@ var (
 // 使用位运算：requiredRolesMask = role1 | role2 | role3 ...
 func MultiRolesInterceptor(requiredRolesMask int) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		global.Logger.Debugln("进入多角色拦截器", "requiredRolesMask:", requiredRolesMask)
 		currentUser, exists := base.GetCurrentUserInfo(c)
 		if !exists {
 			apiReturn.ErrorNotLogin(c)
 			c.Abort()
 			return
 		}
+
+		global.Logger.Debugln("当前用户角色：", currentUser.Role)
 
 		// 使用位运算检查用户是否拥有任意一个所需角色
 		if (currentUser.Role & requiredRolesMask) == 0 {

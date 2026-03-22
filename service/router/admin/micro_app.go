@@ -9,45 +9,58 @@ import (
 )
 
 func InitMicroAppRouter(router *gin.RouterGroup) {
-	microAppApi := api_v1.ApiGroupApp.ApiAdmin.MicroAppApi
-	versionApi := api_v1.ApiGroupApp.ApiAdmin.DeveloperVersionApi
+	apiGroup := api_v1.ApiGroupApp.ApiAdmin
 	loginRouter := router.Group("", middleware.LoginInterceptor)
 
-	// ==================== 管理员专用接口 ====================
-	loginRouter.POST("microApp/getList", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), microAppApi.GetList)
-	loginRouter.POST("microApp/getInfo", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), microAppApi.GetInfo)
-	loginRouter.POST("microApp/updateStatus", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), microAppApi.UpdateStatus)
+	// ==================== 管理员专用接口（微应用） ====================
+	loginRouter.POST("microApp/getList", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.MicroAppAdminApi.GetList)
+	loginRouter.POST("microApp/getInfo", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.MicroAppAdminApi.GetInfo)
+	loginRouter.POST("microApp/updateStatus", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.MicroAppAdminApi.UpdateStatus)
 
 	// 管理员和开发者共享接口
-	loginRouter.POST("microApp/deletes", middleware.MultiRolesInterceptor(models.ROLE_ADMIN|models.ROLE_DEVELOPER), microAppApi.Deletes)
-	loginRouter.POST("microApp/offline", middleware.MultiRolesInterceptor(models.ROLE_ADMIN|models.ROLE_DEVELOPER), microAppApi.Offline)
+	loginRouter.POST("microApp/deletes", middleware.MultiRolesInterceptor(models.ROLE_ADMIN|models.ROLE_DEVELOPER), apiGroup.MicroAppAdminApi.Deletes)
+	loginRouter.POST("microApp/offline", middleware.MultiRolesInterceptor(models.ROLE_ADMIN|models.ROLE_DEVELOPER), apiGroup.MicroAppAdminApi.Offline)
 
-	// ==================== 审核员专用接口 ====================
-	loginRouter.POST("review/getPendingList", middleware.MultiRolesInterceptor(models.ROLE_AUDITOR), microAppApi.GetReviewPendingList)
-	loginRouter.POST("review/getInfo", middleware.MultiRolesInterceptor(models.ROLE_AUDITOR), microAppApi.GetReviewInfo)
-	loginRouter.POST("review/approve", middleware.MultiRolesInterceptor(models.ROLE_AUDITOR), microAppApi.ReviewApp)
+	// ==================== 审核员专用接口（微应用） ====================
+	loginRouter.POST("review/getPendingList", middleware.MultiRolesInterceptor(models.ROLE_AUDITOR), apiGroup.MicroAppAuditorApi.GetReviewPendingList)
+	loginRouter.POST("review/getInfo", middleware.MultiRolesInterceptor(models.ROLE_AUDITOR), apiGroup.MicroAppAuditorApi.GetReviewInfo)
+	loginRouter.POST("review/approve", middleware.MultiRolesInterceptor(models.ROLE_AUDITOR), apiGroup.MicroAppAuditorApi.ReviewApp)
 
-	// ==================== 开发者专用接口（微应用） ====================
-	loginRouter.POST("developer/microApp/create", middleware.MultiRolesInterceptor(models.ROLE_DEVELOPER|models.ROLE_ADMIN), microAppApi.Create)
-	loginRouter.POST("developer/microApp/update", middleware.MultiRolesInterceptor(models.ROLE_DEVELOPER), microAppApi.Update)
-	loginRouter.POST("developer/microApp/updateLang", middleware.MultiRolesInterceptor(models.ROLE_DEVELOPER), microAppApi.UpdateLang)
-	loginRouter.POST("developer/microApp/cancelReview", middleware.MultiRolesInterceptor(models.ROLE_DEVELOPER), microAppApi.CancelReview)
-	loginRouter.POST("developer/microApp/getReviewHistory", middleware.MultiRolesInterceptor(models.ROLE_DEVELOPER), microAppApi.GetReviewHistory)
-	loginRouter.POST("developer/microApp/list", middleware.MultiRolesInterceptor(models.ROLE_DEVELOPER), microAppApi.GetMyList)
-	loginRouter.POST("developer/microApp/info", middleware.MultiRolesInterceptor(models.ROLE_DEVELOPER), microAppApi.GetMyInfo)
+	// ==================== 开发者专用接口====================
+	myMicroAppRouter := loginRouter.Group("",
+		middleware.MultiRolesInterceptor(models.ROLE_DEVELOPER),
+		middleware.DeveloperInterceptor)
+	{
+		// ==================== 微应用 ====================
+		myMicroAppRouter.POST("create", apiGroup.MicroAppDeveloperApi.Create)
+		myMicroAppRouter.POST("developer/myMicroApp/update", apiGroup.MicroAppDeveloperApi.Update)
+		myMicroAppRouter.POST("developer/myMicroApp/updateLang", apiGroup.MicroAppDeveloperApi.UpdateLang)
+		myMicroAppRouter.POST("developer/myMicroApp/cancelReview", apiGroup.MicroAppDeveloperApi.CancelReview)
+		myMicroAppRouter.POST("developer/myMicroApp/getReviewHistory", apiGroup.MicroAppDeveloperApi.GetReviewHistory)
+		myMicroAppRouter.POST("developer/myMicroApp/list", apiGroup.MicroAppDeveloperApi.GetMyList)
+		myMicroAppRouter.POST("developer/myMicroApp/info", apiGroup.MicroAppDeveloperApi.GetMyInfo)
 
-	// ==================== 开发者专用接口（版本管理） ====================
-	loginRouter.POST("developer/version/getList", versionApi.GetList)
-	loginRouter.POST("developer/version/getInfo", versionApi.GetInfo)
-	loginRouter.POST("developer/version/create", versionApi.Create)
-	loginRouter.POST("developer/version/update", versionApi.Update)
-	loginRouter.POST("developer/version/submitReview", versionApi.SubmitReview)
-	loginRouter.POST("developer/version/cancelReview", versionApi.CancelReview)
-	loginRouter.POST("developer/version/delete", versionApi.Delete)
+		// ==================== 微应用版本管理 ====================
+		myMicroAppRouter.POST("developer/version/getList", apiGroup.DeveloperVersionApi.GetList)
+		myMicroAppRouter.POST("developer/version/getInfo", apiGroup.DeveloperVersionApi.GetInfo)
+		myMicroAppRouter.POST("developer/version/create", apiGroup.DeveloperVersionApi.Create)
+		myMicroAppRouter.POST("developer/version/update", apiGroup.DeveloperVersionApi.Update)
+		myMicroAppRouter.POST("developer/version/submitReview", apiGroup.DeveloperVersionApi.SubmitReview)
+		myMicroAppRouter.POST("developer/version/cancelReview", apiGroup.DeveloperVersionApi.CancelReview)
+		myMicroAppRouter.POST("developer/version/delete", apiGroup.DeveloperVersionApi.Delete)
+	}
 
 	// ==================== 管理员/审核员专用接口（版本审核） ====================
-	loginRouter.POST("reviewVersion/getPendingList", middleware.MultiRolesInterceptor(models.ROLE_AUDITOR), versionApi.GetPendingList)
-	loginRouter.POST("reviewVersion/review", middleware.MultiRolesInterceptor(models.ROLE_AUDITOR), versionApi.Review)
-	loginRouter.POST("reviewVersion/offline", middleware.MultiRolesInterceptor(models.ROLE_ADMIN|models.ROLE_AUDITOR), versionApi.Offline)
-	loginRouter.POST("version/getList", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), versionApi.GetVersionList)
+	loginRouter.POST("reviewVersion/getPendingList", middleware.MultiRolesInterceptor(models.ROLE_AUDITOR), apiGroup.MicroAppVersionAdminApi.GetPendingList)
+	loginRouter.POST("reviewVersion/review", middleware.MultiRolesInterceptor(models.ROLE_AUDITOR), apiGroup.MicroAppVersionAdminApi.Review)
+	loginRouter.POST("reviewVersion/offline", middleware.MultiRolesInterceptor(models.ROLE_ADMIN|models.ROLE_AUDITOR), apiGroup.MicroAppVersionAdminApi.Offline)
+	loginRouter.POST("version/getList", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.MicroAppVersionAdminApi.GetVersionList)
+
+	// ==================== 管理员专用接口（开发者用户管理） ====================
+	loginRouter.POST("developer/user/getList", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.DeveloperApi.GetList)
+	loginRouter.POST("developer/user/getInfo", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.DeveloperApi.GetInfo)
+	loginRouter.POST("developer/user/getByDeveloperName", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.DeveloperApi.GetByDeveloperName)
+	loginRouter.POST("developer/user/update", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.DeveloperApi.Update)
+	loginRouter.POST("developer/user/deletes", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.DeveloperApi.Deletes)
+	loginRouter.POST("developer/user/updateStatus", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.DeveloperApi.UpdateStatus)
 }

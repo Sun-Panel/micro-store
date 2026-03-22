@@ -1,10 +1,10 @@
 <script lang="ts" setup>
-import { computed, nextTick, onMounted, ref } from 'vue'
 import { NButton, useMessage } from 'naive-ui'
-import { SvgIconOnline } from '@/components/common'
-import { useAdminStore } from '@/store'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { getHomeBase } from '@/api/openness'
+import { SvgIconOnline } from '@/components/common'
 import { router } from '@/router'
+import { useAdminStore, useAuthStore } from '@/store'
 // interface Props {
 //   // usingContext: boolean
 // }
@@ -17,8 +17,8 @@ import { router } from '@/router'
 // defineProps<Props>()
 
 // const emit = defineEmits<Emit>()
-
 const adminStore = useAdminStore()
+const authStore = useAuthStore()
 const ms = useMessage()
 const collapsed = computed(() => adminStore.siderCollapsed)
 const homeBase = ref<Openness.open.HomeBase>()
@@ -75,11 +75,12 @@ onMounted(() => {
         @dblclick="onScrollToTop"
       >
         <div class="text-[18px] font-bold">
-          {{ homeBase?.logo_text }}后台
+          {{ homeBase?.logo_text }} 微应用控制台
         </div>
       </h1>
 
       <div class="mx-5" @click="router.push({ path: '/' })">
+        {{ authStore.userInfo?.username }}
         <NButton size="small" strong secondary type="info">
           返回平台
         </NButton>

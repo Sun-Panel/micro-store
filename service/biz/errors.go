@@ -18,6 +18,12 @@ const (
 	ErrCodeApprovedCannotDelete = "APPROVED_CANNOT_DELETE" // 已审核版本不能删除
 	ErrCodeNotPendingReview     = "NOT_PENDING_REVIEW"    // 非待审核状态
 	ErrCodeNoUpdateContent      = "NO_UPDATE_CONTENT"     // 无更新内容
+
+	// 微应用开发者相关 3000-3099
+	ErrCodeAppIdExists         = "APP_ID_EXISTS"          // 应用ID已存在
+	ErrCodeNoPermission        = "NO_PERMISSION"          // 无权操作此应用
+	ErrCodePendingReviewExists = "PENDING_REVIEW_EXISTS"  // 已有待审核记录
+	ErrCodeNoPendingReviewApp  = "NO_PENDING_REVIEW_APP"  // 没有待审核记录（应用审核）
 )
 
 // NewBizError 创建业务错误
@@ -36,6 +42,8 @@ func IsBizError(err error) (string, bool) {
 		ErrCodeAppNotFound, ErrCodeVersionNotFound,
 		ErrCodeVersionExists, ErrCodeVersionCodeExists, ErrCodeStatusNotAllowed,
 		ErrCodeApprovedCannotDelete, ErrCodeNotPendingReview, ErrCodeNoUpdateContent,
+		// 微应用开发者相关
+		ErrCodeAppIdExists, ErrCodeNoPermission, ErrCodePendingReviewExists, ErrCodeNoPendingReviewApp,
 	}
 
 	if slices.Contains(validCodes, errMsg) {

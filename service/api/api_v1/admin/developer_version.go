@@ -270,6 +270,11 @@ func bizCodeToInt(code string) int {
 		biz.ErrCodeApprovedCannotDelete: 2005,
 		biz.ErrCodeNotPendingReview:     2006,
 		biz.ErrCodeNoUpdateContent:      2007,
+		// 微应用开发者相关 3000-3099
+		biz.ErrCodeAppIdExists:         3000,
+		biz.ErrCodeNoPermission:        3001,
+		biz.ErrCodePendingReviewExists: 3002,
+		biz.ErrCodeNoPendingReviewApp:  3003,
 	}
 
 	if intCode, ok := codeMap[code]; ok {

@@ -15,6 +15,11 @@ type DeveloperGetInfoReq struct {
 	Id uint `json:"id" binding:"required"`
 }
 
+// GetByDeveloperNameRequest 根据开发者标识获取开发者信息请求
+type DeveloperGetByDeveloperNameReq struct {
+	DeveloperName string `json:"developerName" binding:"required"`
+}
+
 // UpdateRequest 更新开发者请求
 type DeveloperUpdateReq struct {
 	Id            uint   `json:"id" binding:"required"`

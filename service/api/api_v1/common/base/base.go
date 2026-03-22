@@ -123,6 +123,15 @@ func GetCurrentUserInfo(c *gin.Context) (userInfo models.User, exist bool) {
 	return
 }
 
+func GetCurrentDeveloper(c *gin.Context) models.Developer {
+	if value, exist := c.Get("developerInfo"); exist {
+		if v, ok := value.(models.Developer); ok {
+			return v
+		}
+	}
+	return models.Developer{}
+}
+
 func GetUserTimezoneLocation(c *gin.Context) *time.Location {
 	timezone := c.Request.Header.Get("Timezone")
 	location, err := time.LoadLocation(timezone)

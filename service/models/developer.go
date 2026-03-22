@@ -5,13 +5,14 @@ import "gorm.io/gorm"
 // 开发者表
 type Developer struct {
 	BaseModel
-	UserId         uint   `gorm:"type:int(11);not null;uniqueIndex" json:"userId"`         // 用户ID
-	DeveloperName  string `gorm:"type:varchar(50);not null;uniqueIndex" json:"developerName"` // 开发者标识（纯英文，多词用-分割）
-	ContactMail    string `gorm:"type:varchar(50)" json:"contactMail"`                      // 联系邮箱
-	PaymentName    string `gorm:"type:varchar(50)" json:"paymentName"`                       // 收款人真实姓名
-	PaymentQrcode  string `gorm:"type:varchar(500)" json:"paymentQrcode"`                     // 收款二维码图片URL
-	PaymentMethod string `gorm:"type:varchar(200)" json:"paymentMethod"`                    // 收款方式描述
-	Status         int    `gorm:"type:tinyint(1);default:1" json:"status"`                  // 状态：0-禁用 1-正常
+	UserId        uint   `gorm:"type:int(11);not null;uniqueIndex" json:"userId"`            // 用户ID
+	DeveloperName string `gorm:"type:varchar(50);not null;uniqueIndex" json:"developerName"` // 开发者标识（纯英文，多词用-分割）
+	Name          string `gorm:"type:varchar(50)" json:"name"`                               // 开发者名称
+	ContactMail   string `gorm:"type:varchar(50)" json:"contactMail"`                        // 联系邮箱
+	PaymentName   string `gorm:"type:varchar(50)" json:"paymentName"`                        // 收款人真实姓名
+	PaymentQrcode string `gorm:"type:varchar(500)" json:"paymentQrcode"`                     // 收款二维码图片URL
+	PaymentMethod string `gorm:"type:varchar(200)" json:"paymentMethod"`                     // 收款方式描述
+	Status        int    `gorm:"type:tinyint(1);default:1" json:"status"`                    // 状态：0-禁用 1-正常
 }
 
 // 表名
@@ -60,6 +61,13 @@ func (m *Developer) GetById(db *gorm.DB, id uint) (Developer, error) {
 func (m *Developer) GetByUserId(db *gorm.DB, userId uint) (Developer, error) {
 	var developer Developer
 	err := db.Where("user_id = ?", userId).First(&developer).Error
+	return developer, err
+}
+
+// 根据开发者标识获取开发者信息
+func (m *Developer) GetByDeveloperName(db *gorm.DB, developerName string) (Developer, error) {
+	var developer Developer
+	err := db.Where("developer_name = ?", developerName).First(&developer).Error
 	return developer, err
 }
 
