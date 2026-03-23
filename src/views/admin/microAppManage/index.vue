@@ -58,7 +58,10 @@ function createColumns({
     {
       title: '应用ID',
       key: 'microAppId',
-      width: 150,
+    },
+    {
+      title: '作者',
+      key: 'developer.name',
     },
     {
       title: '收费',

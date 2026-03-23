@@ -6,7 +6,7 @@ toolchain go1.22.10
 
 // 开发阶段：使用本地 oauth2 模块进行调试
 // 发布后删除此 replace 指令，使用 go get cnb.cool/hslr-s/go-pkg/oauth2-go@v1.0.0
-// replace cnb.cool/hslr-s/go-pkg/oauth2-go => ../pkg/oauth2
+// replace cnb.cool/hslr-s/go-pkg/oauth2-go => ../../../go-pkg/oauth2
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.1

@@ -72,12 +72,16 @@ const newLang = ref<string | null>(null)
 // 本地语言数据
 const localLangMap = ref<Record<string, { appName: string, appDesc: string }>>({})
 
-// 表单验证规则
-const rules: FormRules = {
-  appName: [{ required: true, trigger: 'blur', message: '请输入应用名称' }],
-  appIcon: [{ required: true, trigger: 'blur', message: '请上传应用图标' }],
-  categoryId: [{ required: true, type: 'number', trigger: 'change', message: '请选择分类' }],
-}
+// 表单验证规则 - 根据编辑或添加模式动态调整
+const rules = computed<FormRules>(() => {
+  const isEdit = !!props.microAppInfo?.id
+  return {
+    appName: [{ required: true, trigger: 'blur', message: '请输入应用名称' }],
+    appIcon: isEdit ? [{ required: true, trigger: 'blur', message: '请上传应用图标' }] : [],
+    microAppId: !isEdit ? [{ required: true, trigger: 'blur', message: '请输入应用标识' }] : [],
+    categoryId: [{ required: true, type: 'number', trigger: 'change', message: '请选择分类' }],
+  }
+})
 
 // 弹窗显示状态
 const show = computed({
@@ -281,7 +285,7 @@ function handleScreenshotFinish({ file, event }: { file: any, event?: any }) {
       <NTabPane name="basic" tab="基本信息">
         <NForm ref="formRef" :model="model" :rules="rules">
           <!-- 应用唯一标识：仅创建时显示 -->
-          <NFormItem v-if="!microAppInfo?.id" path="microAppId" label="应用唯一标识">
+          <NFormItem v-if="!microAppInfo?.id" path="microAppId" label="应用ID (MicroAppID)">
             <NInput v-model:value="model.microAppId" placeholder="请输入应用标识（作者唯一标识-应用名称）" />
           </NFormItem>
 

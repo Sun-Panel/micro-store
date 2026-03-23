@@ -32,7 +32,7 @@ func InitMicroAppRouter(router *gin.RouterGroup) {
 		middleware.DeveloperInterceptor)
 	{
 		// ==================== 微应用 ====================
-		myMicroAppRouter.POST("create", apiGroup.MicroAppDeveloperApi.Create)
+		myMicroAppRouter.POST("developer/myMicroApp/create", apiGroup.MicroAppDeveloperApi.Create)
 		myMicroAppRouter.POST("developer/myMicroApp/update", apiGroup.MicroAppDeveloperApi.Update)
 		myMicroAppRouter.POST("developer/myMicroApp/updateLang", apiGroup.MicroAppDeveloperApi.UpdateLang)
 		myMicroAppRouter.POST("developer/myMicroApp/cancelReview", apiGroup.MicroAppDeveloperApi.CancelReview)

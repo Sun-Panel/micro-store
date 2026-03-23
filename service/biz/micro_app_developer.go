@@ -16,7 +16,15 @@ type MicroAppDeveloperService struct{}
 // GetDeveloperAppList 获取开发者应用列表
 func (s *MicroAppDeveloperService) GetDeveloperAppList(db *gorm.DB, page, limit int, status *int, categoryId *int, developerId uint, keyword string) ([]models.MicroApp, int64, error) {
 	m := models.MicroApp{}
-	return m.GetListWithAllLangs(db, page, limit, status, categoryId, &developerId, keyword)
+	opts := models.MicroAppQueryOptions{
+		Page:       page,
+		Limit:      limit,
+		Status:     status,
+		CategoryId: categoryId,
+		AuthorId:   &developerId,
+		KeyWord:    keyword,
+	}
+	return m.GetListWithAllLangs(db, opts)
 }
 
 // GetDeveloperAppInfo 获取开发者应用详情（含权限验证）

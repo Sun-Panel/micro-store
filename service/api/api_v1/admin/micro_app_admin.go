@@ -23,7 +23,15 @@ func (a *MicroAppAdminApi) GetList(c *gin.Context) {
 
 	m := models.MicroApp{}
 	// 管理员可以查看所有应用，不限制 authorId
-	list, total, err := m.GetListWithAllLangs(global.Db, param.Page, param.Limit, param.Status, param.CategoryId, nil, param.KeyWord)
+	opts := models.MicroAppQueryOptions{
+		Page:             param.Page,
+		Limit:            param.Limit,
+		Status:           param.Status,
+		CategoryId:       param.CategoryId,
+		KeyWord:          param.KeyWord,
+		IncludeDeveloper: true,
+	}
+	list, total, err := m.GetListWithAllLangs(global.Db, opts)
 	if err != nil {
 		apiReturn.ErrorDatabase(c, err.Error())
 		return
