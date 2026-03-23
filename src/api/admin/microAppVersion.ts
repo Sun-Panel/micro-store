@@ -68,3 +68,11 @@ export function deleteVersion<T>(ids: number[]) {
     data: { ids },
   })
 }
+
+// 下架版本
+export function offlineVersion<T>(data: { id: number, type: number, reason?: string }) {
+  return post<T>({
+    url: '/admin/developer/version/offline',
+    data,
+  })
+}

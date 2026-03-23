@@ -3,10 +3,9 @@ import { NButton, NCard, NDropdown, NInput, NInputGroup, NSelect, NSpace, NTag, 
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
-import { cancelReview, deletes, getList, offline } from '@/api/admin/microAppDeveloper'
-import { checkIsDeveloper, getInfo as getDeveloperInfo } from '@/api/developer'
+import { cancelReview, deletes, getList, offline, submitReview } from '@/api/admin/microAppDeveloper'
 import ReviewHistoryModal from '@/components/common/ReviewHistoryModal/index.vue'
-import { microAppChargeTypeMap, microAppStatusMap } from '@/enums/panel'
+import { microAppChargeTypeMap, microAppReviewStatusMap, microAppStatusMap } from '@/enums/panel'
 import EditMicroApp from './EditMicroApp/index.vue'
 
 const message = useMessage()
@@ -19,7 +18,6 @@ const keyWord = ref<string>()
 const statusFilter = ref<number | null>(null)
 const categoryFilter = ref<number | null>(null)
 const editInfo = ref<MicroApp.MicroAppInfo>()
-const myDeveloperId = ref<number>(0)
 const dialog = useDialog()
 const categoryOptions = ref<{ label: string, value: number }[]>([])
 
@@ -39,7 +37,7 @@ async function fetchCategoryOptions() {
     const res = await getCategoryList<any>()
     categoryOptions.value = res.data?.map((item: any) => ({
       label: item.name,
-      value: item.id,
+      value: item.ID,
     })) || []
   }
   catch (error) {
@@ -47,28 +45,7 @@ async function fetchCategoryOptions() {
   }
 }
 
-async function checkAndGetDeveloper() {
-  try {
-    const res = await checkIsDeveloper<any>()
-    if (!res.data?.isDeveloper) {
-      message.warning('您还不是开发者，无法管理微应用')
-      return false
-    }
-
-    const devInfo = await getDeveloperInfo<any>()
-    myDeveloperId.value = devInfo.data?.id
-    return true
-  }
-  catch (error) {
-    console.error(error)
-    return false
-  }
-}
-
 async function fetchList() {
-  if (!myDeveloperId.value)
-    return
-
   tableIsLoading.value = true
   const req: MicroApp.GetListRequest = {
     page: 1,
@@ -80,7 +57,6 @@ async function fetchList() {
     req.status = statusFilter.value
   if (categoryFilter.value !== null)
     req.categoryId = categoryFilter.value
-  req.authorId = myDeveloperId.value
 
   try {
     const { data } = await getList<Common.ListResponse<MicroApp.MicroAppInfo[]>>(req)
@@ -131,6 +107,22 @@ function handleSelect() {
   fetchList()
 }
 
+// 获取审核状态标签类型
+function getReviewStatusTagType(reviewStatus: number) {
+  switch (reviewStatus) {
+    case 0:
+      return 'success' // 已通过
+    case 1:
+      return 'warning' // 审核中
+    case 2:
+      return 'error' // 已拒绝
+    case 3:
+      return 'info' // 草稿
+    default:
+      return 'default'
+  }
+}
+
 function handleAdd() {
   editInfo.value = undefined
   editDialogShow.value = true
@@ -178,6 +170,23 @@ async function handleCancelReview(item: MicroApp.MicroAppInfo) {
   }
 }
 
+// 提交审核
+async function handleSubmitReview(item: MicroApp.MicroAppInfo) {
+  try {
+    const { code, msg } = await submitReview({ id: item.id })
+    if (code === 0) {
+      message.success('已提交审核')
+      fetchList()
+    }
+    else {
+      message.error(msg || '提交审核失败')
+    }
+  }
+  catch {
+    message.error('提交审核失败')
+  }
+}
+
 function handleDone() {
   editDialogShow.value = false
   message.success('操作成功')
@@ -186,10 +195,7 @@ function handleDone() {
 
 onMounted(async () => {
   await fetchCategoryOptions()
-  const isDev = await checkAndGetDeveloper()
-  if (isDev) {
-    fetchList()
-  }
+  fetchList()
 })
 </script>
 
@@ -252,6 +258,19 @@ onMounted(async () => {
             </NSpace>
           </div>
 
+          <!-- 显示审核状态和操作按钮 -->
+          <div v-if="item.reviewStatus !== undefined" class="mt-2">
+            <NSpace>
+              <NTag :type="getReviewStatusTagType(item.reviewStatus)" size="small">
+                {{ microAppReviewStatusMap[item.reviewStatus] }}
+              </NTag>
+              <!-- 审核中：显示撤销审核按钮 -->
+              <NButton v-if="item.reviewStatus === 1" size="small" @click.stop="handleCancelReview(item)">
+                撤销审核
+              </NButton>
+            </NSpace>
+          </div>
+
           <!-- 审核状态和撤销按钮 -->
           <div v-if="item.reviewStatus !== undefined && item.reviewStatus !== 0" class="flex items-center gap-2 mt-2">
             <NTag v-if="item.reviewStatus === 1" type="warning" size="small">
@@ -300,7 +319,6 @@ onMounted(async () => {
     <EditMicroApp
       v-model:visible="editDialogShow"
       :micro-app-info="editInfo"
-      :author-id="myDeveloperId"
       :category-options="categoryOptions"
       @done="handleDone"
     />

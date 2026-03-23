@@ -18,12 +18,10 @@ const (
 )
 
 type BaseModel struct {
-	gorm.Model
-	// Db *gorm.DB `gorm:"_"`
-	ID        uint      `gorm:"primarykey" json:"id"`
+	ID        uint `gorm:"primarykey" json:"id"`
 	CreatedAt time.Time `json:"createTime"`
 	UpdatedAt time.Time `json:"updateTime"`
-	// DeletedAt DeletedAt `gorm:"index"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt,omitempty"`
 }
 
 type BaseModelNoId struct {
@@ -53,6 +51,8 @@ func GetDb() (*gorm.DB, error) {
 
 	dbModels := []interface{}{
 		&User{},
+		&MicroApp{},
+		&MicroAppReview{},
 	}
 	dbDrive := "mysql"
 

@@ -31,8 +31,7 @@ type MicroAppCreateReq struct {
 	Remark      string                      `json:"remark"`
 	CategoryId  int                         `json:"categoryId" binding:"required"`
 	ChargeType  int                         `json:"chargeType"`
-	Price       float64                     `json:"price"`
-	AuthorId    uint                        `json:"authorId" binding:"required"`
+	Points      int                         `json:"points"`
 	Screenshots string                      `json:"screenshots"`
 	LangMap     map[string]MicroAppLangInfo `json:"langMap"`
 }
@@ -76,6 +75,11 @@ type MicroAppUpdateLangReq struct {
 }
 
 // ==================== 审核相关请求参数 ====================
+
+// SubmitReviewRequest 提交审核请求
+type MicroAppSubmitReviewReq struct {
+	Id uint `json:"id" binding:"required"`
+}
 
 // CancelAppReviewRequest 撤销审核请求
 type MicroAppCancelReviewReq struct {

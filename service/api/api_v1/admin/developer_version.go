@@ -275,6 +275,7 @@ func bizCodeToInt(code string) int {
 		biz.ErrCodeNoPermission:        3001,
 		biz.ErrCodePendingReviewExists: 3002,
 		biz.ErrCodeNoPendingReviewApp:  3003,
+		biz.ErrCodeInvalidParam:        3004,
 	}
 
 	if intCode, ok := codeMap[code]; ok {

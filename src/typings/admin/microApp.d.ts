@@ -74,7 +74,6 @@ declare namespace MicroApp {
     categoryId?: number
     status?: number
     keyWord?: string
-    authorId?: number
   }
 
   // 创建请求
@@ -86,8 +85,7 @@ declare namespace MicroApp {
     remark?: string
     categoryId: number
     chargeType?: number
-    price?: number
-    authorId: number
+    points?: number
     screenshots?: string
     langMap?: Record<string, LangInfo>
   }
@@ -132,6 +130,11 @@ declare namespace MicroApp {
 
   // 撤销审核请求（微应用主信息）
   interface CancelAppReviewRequest {
+    id: number
+  }
+
+  // 提交审核请求（微应用主信息）
+  interface SubmitAppReviewRequest {
     id: number
   }
 

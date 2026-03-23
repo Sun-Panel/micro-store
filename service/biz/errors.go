@@ -24,6 +24,7 @@ const (
 	ErrCodeNoPermission        = "NO_PERMISSION"          // 无权操作此应用
 	ErrCodePendingReviewExists = "PENDING_REVIEW_EXISTS"  // 已有待审核记录
 	ErrCodeNoPendingReviewApp  = "NO_PENDING_REVIEW_APP"  // 没有待审核记录（应用审核）
+	ErrCodeInvalidParam        = "INVALID_PARAM"          // 参数无效
 )
 
 // NewBizError 创建业务错误
@@ -43,7 +44,7 @@ func IsBizError(err error) (string, bool) {
 		ErrCodeVersionExists, ErrCodeVersionCodeExists, ErrCodeStatusNotAllowed,
 		ErrCodeApprovedCannotDelete, ErrCodeNotPendingReview, ErrCodeNoUpdateContent,
 		// 微应用开发者相关
-		ErrCodeAppIdExists, ErrCodeNoPermission, ErrCodePendingReviewExists, ErrCodeNoPendingReviewApp,
+		ErrCodeAppIdExists, ErrCodeNoPermission, ErrCodePendingReviewExists, ErrCodeNoPendingReviewApp, ErrCodeInvalidParam,
 	}
 
 	if slices.Contains(validCodes, errMsg) {

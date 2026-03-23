@@ -1,31 +1,31 @@
 package models
 
 import (
-	"time"
-
 	"gorm.io/gorm"
 )
 
-// 微应用列表
+// MicroAppBaseInfo 微应用基础信息（公共字段）
+type MicroAppBaseInfo struct {
+	// MicroAppId  string  `gorm:"type:varchar(120);not null;index" json:"microAppId"`   // 关联微应用ID（唯一标识）
+	AppName     string `gorm:"type:varchar(100);not null" json:"appName"`            // 应用名称（默认语言）
+	AppIcon     string `gorm:"type:varchar(200);not null" json:"appIcon"`            // 应用图标URL
+	AppDesc     string `gorm:"type:varchar(500)" json:"appDesc"`                     // 应用简介（默认语言）
+	Remark      string `gorm:"type:varchar(500)" json:"remark"`                      // 应用备注
+	CategoryId  int    `gorm:"type:int(11);not null;index" json:"categoryId"`        // 应用分类ID
+	ChargeType  int    `gorm:"type:tinyint(1);not null;default:0" json:"chargeType"` // 收费方式：0-免费 1-积分 2-订阅PRO免费
+	Points      int    `gorm:"type:int(11)" json:"Points"`                           // 价格（积分时）
+	Screenshots string `gorm:"type:varchar(2000)" json:"screenshots"`                // 图集（多个图片URL用逗号分隔）
+}
+
+// 微应用表（只存储生效版本）
 type MicroApp struct {
 	BaseModel
-	MicroAppId      string  `gorm:"type:varchar(50);not null;uniqueIndex" json:"microAppId"` // 关联微应用ID（唯一标识）
-	AppName         string  `gorm:"type:varchar(100);not null" json:"appName"`               // 应用名称（默认语言）
-	AppIcon         string  `gorm:"type:varchar(200);not null" json:"appIcon"`               // 应用图标URL
-	AppDesc         string  `gorm:"type:varchar(500)" json:"appDesc"`                        // 应用简介（默认语言）
-	Remark          string  `gorm:"type:varchar(500)" json:"remark"`                         // 应用备注
-	CategoryId      int     `gorm:"type:int(11);not null;index" json:"categoryId"`           // 应用分类ID
-	ChargeType      int     `gorm:"type:tinyint(1);not null;default:0" json:"chargeType"`    // 收费方式：0-免费 1-积分 2-订阅PRO免费
-	Price           float64 `gorm:"type:decimal(10,2)" json:"price"`                         // 价格（积分时）
-	AuthorId        uint    `gorm:"type:int(11);not null;index" json:"authorId"`             // 开发者ID
-	PermissionLevel int     `gorm:"type:tinyint(1)" json:"permissionLevel"`                  // 应用权限等级
-	Status          int     `gorm:"type:tinyint(1);not null;default:1" json:"status"`        // 状态：0-下架 1-上架 2-审核中
-	Screenshots     string  `gorm:"type:varchar(2000)" json:"screenshots"`                   // 图集（多个图片URL用逗号分隔）
-
-	// 审核相关字段
-	ReviewStatus int        `gorm:"type:tinyint(2);not null;default:0;index" json:"reviewStatus"` // 审核状态：0-无审核 1-审核中 2-已通过 3-已拒绝
-	ReviewId     uint       `gorm:"type:int(11)" json:"reviewId"`                                 // 当前审核记录ID
-	ReviewTime   *time.Time `gorm:"type:datetime" json:"reviewTime"`                              // 最后审核时间
+	MicroAppBaseInfo `gorm:"embedded"` // 嵌入公共字段
+	MicroAppId       string            `gorm:"column:micro_app_id;type:varchar(120);not null;uniqueIndex:idx_micro_app_id_deleted_at" json:"microAppId"` // 覆盖嵌入字段，添加复合唯一约束（支持软删除）
+	DeletedAt        gorm.DeletedAt    `gorm:"uniqueIndex:idx_micro_app_id_deleted_at"`                                                                  // 覆盖基类字段，加入复合唯一索引
+	AuthorId         uint              `gorm:"type:int(11);not null;index" json:"authorId"`                                                              // 开发者ID
+	PermissionLevel  int               `gorm:"type:tinyint(1)" json:"permissionLevel"`                                                                   // 应用权限等级
+	Status           int               `gorm:"type:tinyint(1);not null;default:1" json:"status"`                                                         // 状态：0-下架 1-上架
 
 	// 下架相关字段
 	OfflineType   int    `gorm:"type:tinyint(1);not null;default:0" json:"offlineType"` // 下架类型：0-正常 1-作者下架 2-平台下架
@@ -60,6 +60,18 @@ func (m *MicroApp) GetList(db *gorm.DB, opts MicroAppQueryOptions) ([]MicroApp, 
 
 	query := db.Model(&MicroApp{})
 
+	// 开发者列表：只显示最新版本（优先生效版本）
+	if opts.AuthorId != nil {
+		// 子查询：获取每个 microAppId 的最新记录
+		// 优先选择 review_status=0（生效版本），否则选择最新的记录
+		subQuery := db.Model(&MicroApp{}).
+			Select("COALESCE(MAX(CASE WHEN review_status = 0 THEN id END), MAX(id)) as id").
+			Where("author_id = ?", *opts.AuthorId).
+			Group("micro_app_id")
+
+		query = query.Where("id IN (?)", subQuery)
+	}
+
 	// 状态筛选
 	if opts.Status != nil {
 		query = query.Where("status = ?", *opts.Status)
@@ -68,11 +80,6 @@ func (m *MicroApp) GetList(db *gorm.DB, opts MicroAppQueryOptions) ([]MicroApp, 
 	// 分类筛选
 	if opts.CategoryId != nil {
 		query = query.Where("category_id = ?", *opts.CategoryId)
-	}
-
-	// 开发者筛选
-	if opts.AuthorId != nil {
-		query = query.Where("author_id = ?", *opts.AuthorId)
 	}
 
 	// 关键词搜索

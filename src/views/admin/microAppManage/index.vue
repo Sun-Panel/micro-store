@@ -21,6 +21,7 @@ const categoryOptions = ref<{ label: string, value: number }[]>([])
 // 状态选项
 const statusOptions = [
   { label: '全部', value: null },
+  { label: microAppStatusMap[-1], value: -1 },
   { label: microAppStatusMap[0], value: 0 },
   { label: microAppStatusMap[1], value: 1 },
   { label: microAppStatusMap[2], value: 2 },
@@ -77,7 +78,7 @@ function createColumns({
       width: 90,
       render(row) {
         return h('span', {
-          class: row.status === 1 ? 'text-green-500' : row.status === 2 ? 'text-yellow-500' : 'text-gray-500',
+          class: row.status === 1 ? 'text-green-500' : row.status === 2 ? 'text-yellow-500' : row.status === -1 ? 'text-blue-500' : 'text-gray-500',
         }, microAppStatusMap[row.status] || '未知')
       },
     },

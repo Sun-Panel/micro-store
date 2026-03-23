@@ -40,6 +40,7 @@ const (
 	ErrCodeNoPermission        = 3001
 	ErrCodePendingReviewExists = 3002
 	ErrCodeNoPendingReviewApp  = 3003
+	ErrCodeInvalidParam        = 3004
 )
 
 var ErrorCodeMap = map[int]error{
@@ -78,6 +79,7 @@ var ErrorCodeMap = map[int]error{
 	ErrCodeNoPermission:        errors.New("no permission for this app"),          // 无权操作此应用
 	ErrCodePendingReviewExists: errors.New("pending review already exists"),       // 已有待审核记录
 	ErrCodeNoPendingReviewApp:  errors.New("no pending review for this app"),      // 没有待审核记录
+	ErrCodeInvalidParam:        errors.New("invalid parameter"),                    // 参数无效
 }
 
 func GetError(code int) error {

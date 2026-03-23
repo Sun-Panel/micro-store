@@ -82,6 +82,7 @@ const baseInfoAppDesc = computed(() => getAppDescByLang(baseInfoLangMap.value, b
           <span class="text-gray-500">状态：</span>
           <span
             :class="{
+              'text-blue-500': microAppInfo.status === -1,
               'text-green-500': microAppInfo.status === 1,
               'text-yellow-500': microAppInfo.status === 2,
               'text-gray-500': microAppInfo.status === 0,

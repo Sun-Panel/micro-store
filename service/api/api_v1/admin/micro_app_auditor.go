@@ -94,80 +94,59 @@ func (a *MicroAppAuditorApi) ReviewApp(c *gin.Context) {
 		// 更新审核记录状态
 		now := time.Now()
 		if err := tx.Model(&models.MicroAppReview{}).Where("id = ?", param.ReviewId).Updates(map[string]interface{}{
-			"status":       param.Status,
-			"reviewer_id":  auditorId,
-			"review_note":  param.ReviewNote,
-			"review_time":  now,
+			"status":      param.Status,
+			"reviewer_id": auditorId,
+			"review_note": param.ReviewNote,
+			"review_time": now,
 		}).Error; err != nil {
 			return err
 		}
 
-		// 如果审核通过，将审核快照数据更新到主表
+		// 如果审核通过，更新 micro_app 表
 		if param.Status == 1 {
-			// 反序列化多语言信息
-			var langMap map[string]MicroAppLangInfo
-			json.Unmarshal([]byte(review.LangMap), &langMap)
-
-			// 更新主表
-			if err := tx.Model(&models.MicroApp{}).Where("id = ?", review.AppId).Updates(map[string]interface{}{
-				"app_name":      review.AppName,
-				"app_icon":      review.AppIcon,
-				"app_desc":      review.AppDesc,
-				"category_id":   review.CategoryId,
-				"charge_type":   review.ChargeType,
-				"price":         review.Price,
-				"screenshots":   review.Screenshots,
-				"remark":        review.Remark,
-				"review_status": 2, // 已通过
-				"review_time":   &now,
+			// 更新生效版本
+			if err := tx.Model(&models.MicroApp{}).Where("id = ?", review.AppRecordId).Updates(map[string]interface{}{
+				"app_name":    review.AppName,
+				"app_icon":    review.AppIcon,
+				"app_desc":    review.AppDesc,
+				"category_id": review.CategoryId,
+				"charge_type": review.ChargeType,
+				"points":      review.Points,
+				"screenshots": review.Screenshots,
+				"remark":      review.Remark,
 			}).Error; err != nil {
 				return err
 			}
 
 			// 更新多语言信息
-			m := models.MicroApp{}
-			app, _ := m.GetById(tx, review.AppId)
-			if app.MicroAppId != "" {
-				// 先删除当前的多语言记录
-				if err := tx.Where("micro_app_id = ?", app.MicroAppId).Delete(&models.MicroAppLang{}).Error; err != nil {
-					return err
-				}
-
-				// 然后插入新的多语言记录
-				for lang, langInfo := range langMap {
-					// 先尝试查找已存在的记录（包括软删除的）
-					var existingLang models.MicroAppLang
-					err := tx.Unscoped().Where("micro_app_id = ? AND lang = ?", app.MicroAppId, lang).First(&existingLang).Error
-
-					if err == nil {
-						// 记录已存在，更新它（包括软删除的记录）
-						existingLang.AppName = langInfo.AppName
-						existingLang.AppDesc = langInfo.AppDesc
-						existingLang.DeletedAt = gorm.DeletedAt{} // 取消软删除标记
-						if err := tx.Save(&existingLang).Error; err != nil {
-							return err
-						}
-					} else {
-						// 记录不存在，创建新记录
+			var langMap map[string]map[string]string
+			json.Unmarshal([]byte(review.LangMap), &langMap)
+			for lang, langInfo := range langMap {
+				// 查找或创建语言记录
+				var existLang models.MicroAppLang
+				err := tx.Where("micro_app_id = ? AND lang = ?", review.MicroAppId, lang).First(&existLang).Error
+				if err == gorm.ErrRecordNotFound {
+					if langInfo["appName"] != "" || langInfo["appDesc"] != "" {
 						langModel := models.MicroAppLang{
-							MicroAppId: app.MicroAppId,
+							MicroAppId: review.MicroAppId,
 							Lang:       lang,
-							AppName:    langInfo.AppName,
-							AppDesc:    langInfo.AppDesc,
+							AppName:    langInfo["appName"],
+							AppDesc:    langInfo["appDesc"],
 						}
 						if err := tx.Create(&langModel).Error; err != nil {
 							return err
 						}
 					}
+				} else if err == nil {
+					if err := tx.Model(&models.MicroAppLang{}).Where("id = ?", existLang.ID).Updates(map[string]interface{}{
+						"app_name": langInfo["appName"],
+						"app_desc": langInfo["appDesc"],
+					}).Error; err != nil {
+						return err
+					}
+				} else {
+					return err
 				}
-			}
-		} else {
-			// 审核拒绝
-			if err := tx.Model(&models.MicroApp{}).Where("id = ?", review.AppId).Updates(map[string]interface{}{
-				"review_status": 3, // 已拒绝
-				"review_time":   &now,
-			}).Error; err != nil {
-				return err
 			}
 		}
 

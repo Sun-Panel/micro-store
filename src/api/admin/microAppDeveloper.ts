@@ -50,6 +50,14 @@ export function cancelReview<T>(data: MicroApp.CancelAppReviewRequest) {
   })
 }
 
+// 提交审核
+export function submitReview<T>(data: MicroApp.SubmitAppReviewRequest) {
+  return post<T>({
+    url: '/admin/developer/myMicroApp/submitReview',
+    data,
+  })
+}
+
 // 获取审核历史
 export function getReviewHistory<T>(data: MicroApp.GetReviewHistoryRequest) {
   return post<T>({

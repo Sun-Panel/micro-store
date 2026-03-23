@@ -35,6 +35,7 @@ func InitMicroAppRouter(router *gin.RouterGroup) {
 		myMicroAppRouter.POST("developer/myMicroApp/create", apiGroup.MicroAppDeveloperApi.Create)
 		myMicroAppRouter.POST("developer/myMicroApp/update", apiGroup.MicroAppDeveloperApi.Update)
 		myMicroAppRouter.POST("developer/myMicroApp/updateLang", apiGroup.MicroAppDeveloperApi.UpdateLang)
+		myMicroAppRouter.POST("developer/myMicroApp/submitReview", apiGroup.MicroAppDeveloperApi.SubmitReview)
 		myMicroAppRouter.POST("developer/myMicroApp/cancelReview", apiGroup.MicroAppDeveloperApi.CancelReview)
 		myMicroAppRouter.POST("developer/myMicroApp/getReviewHistory", apiGroup.MicroAppDeveloperApi.GetReviewHistory)
 		myMicroAppRouter.POST("developer/myMicroApp/list", apiGroup.MicroAppDeveloperApi.GetMyList)

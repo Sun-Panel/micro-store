@@ -11,7 +11,6 @@ import { apiRespErrMsgAndCustomCodeNeg1Msg } from '@/utils/cmn/apiMessage'
 interface Props {
   visible: boolean
   microAppInfo?: MicroApp.MicroAppInfo
-  authorId: number
   categoryOptions: { label: string, value: number }[]
 }
 
@@ -36,7 +35,6 @@ const formInitValue = {
   categoryId: 0,
   chargeType: 0,
   price: 0,
-  authorId: 0,
 }
 
 const model = ref({ ...formInitValue })
@@ -107,7 +105,6 @@ watch(show, (newValue) => {
         categoryId: props.microAppInfo.categoryId,
         chargeType: props.microAppInfo.chargeType,
         price: props.microAppInfo.price,
-        authorId: props.authorId,
       }
       // 初始化已有图片列表
       const screenshots = props.microAppInfo.screenshots ? props.microAppInfo.screenshots.split(',').filter(Boolean) : []
@@ -122,7 +119,7 @@ watch(show, (newValue) => {
     }
     else {
       // 创建模式
-      model.value = { ...formInitValue, authorId: props.authorId }
+      model.value = { ...formInitValue }
       screenshotList.value = []
       // 创建模式默认添加中文
       addedLangs.value = ['zh-CN']
@@ -212,8 +209,7 @@ async function submit() {
         remark: model.value.remark,
         categoryId: model.value.categoryId,
         chargeType: model.value.chargeType,
-        price: model.value.price,
-        authorId: props.authorId,
+        points: model.value.price,
         screenshots: screenshotsStr,
         langMap: localLangMap.value,
       })

@@ -254,20 +254,29 @@ onMounted(async () => {
           <NButton @click="handlePreview">
             查看公开页面
           </NButton>
-          <NButton v-if="microAppInfo?.status === 0" type="success" @click="handleChangeStatus(1)">
-            上架
-          </NButton>
+          <!-- 草稿状态 -->
+          <template v-if="microAppInfo?.status === -1">
+            <NButton type="primary" disabled>
+              等待开发者提交审核
+            </NButton>
+          </template>
+          <!-- 审核中状态 -->
+          <template v-else-if="microAppInfo?.reviewStatus === 1">
+            <NButton type="warning" @click="handleReject">
+              拒绝
+            </NButton>
+            <NButton type="success" @click="handleApprove">
+              通过
+            </NButton>
+          </template>
+          <!-- 已上架状态 -->
           <NButton v-else-if="microAppInfo?.status === 1" @click="openOfflineDialog">
             下架
           </NButton>
-          <NPopconfirm @positive-click="handleDelete">
-            <template #trigger>
-              <NButton type="error">
-                删除
-              </NButton>
-            </template>
-            确定删除该微应用吗？删除后无法恢复。
-          </NPopconfirm>
+          <!-- 已下架状态 -->
+          <NButton v-else-if="microAppInfo?.status === 0" type="success" @click="handleChangeStatus(1)">
+            上架
+          </NButton>
         </NSpace>
       </div>
     </NCard>

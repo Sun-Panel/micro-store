@@ -69,7 +69,7 @@ func (a *MicroAppDeveloperApi) Create(c *gin.Context) {
 	// 转换 langMap
 	langMap := convertToBizLangMap(param.LangMap)
 
-	result, err := biz.MicroAppDeveloper.CreateApp(global.Db, param.MicroAppId, param.AppName, param.AppIcon, param.AppDesc, param.Remark, param.CategoryId, param.ChargeType, param.Price, developer.ID, param.Screenshots, langMap)
+	result, err := biz.MicroAppDeveloper.CreateApp(global.Db, param.MicroAppId, param.AppName, param.AppIcon, param.AppDesc, param.Remark, param.CategoryId, param.ChargeType, param.Points, developer.ID, param.Screenshots, langMap)
 	if err != nil {
 		handleBizError(c, err)
 		return
@@ -78,7 +78,7 @@ func (a *MicroAppDeveloperApi) Create(c *gin.Context) {
 	apiReturn.SuccessData(c, result)
 }
 
-// Update 更新微应用（开发者专用，修改即提交审核）
+// Update 更新微应用（开发者专用，不提交审核）
 func (a *MicroAppDeveloperApi) Update(c *gin.Context) {
 	param := MicroAppUpdateReq{}
 	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
@@ -95,16 +95,15 @@ func (a *MicroAppDeveloperApi) Update(c *gin.Context) {
 
 	langMap := convertToBizLangMap(param.LangMap)
 
-	reviewId, err := biz.MicroAppDeveloper.SubmitAppUpdate(global.Db, param.Id, developer.ID, param.AppName, param.AppIcon, param.AppDesc, param.Remark, param.CategoryId, param.ChargeType, param.Price, param.Screenshots, langMap)
-	if err != nil {
+	if err := biz.MicroAppDeveloper.UpdateApp(global.Db, param.Id, developer.ID, param.AppName, param.AppIcon, param.AppDesc, param.Remark, param.CategoryId, param.ChargeType, param.Price, param.Screenshots, langMap); err != nil {
 		handleBizError(c, err)
 		return
 	}
 
-	apiReturn.SuccessData(c, gin.H{"reviewId": reviewId})
+	apiReturn.Success(c)
 }
 
-// UpdateLang 更新微应用语言（开发者专用，修改即提交审核）
+// UpdateLang 更新微应用语言（开发者专用，不提交审核）
 func (a *MicroAppDeveloperApi) UpdateLang(c *gin.Context) {
 	param := MicroAppUpdateLangReq{}
 	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
@@ -116,13 +115,30 @@ func (a *MicroAppDeveloperApi) UpdateLang(c *gin.Context) {
 
 	langMap := convertToBizLangMap(param.LangMap)
 
-	reviewId, err := biz.MicroAppDeveloper.SubmitLangUpdate(global.Db, param.Id, developer.ID, langMap)
-	if err != nil {
+	if err := biz.MicroAppDeveloper.UpdateLang(global.Db, param.Id, developer.ID, langMap); err != nil {
 		handleBizError(c, err)
 		return
 	}
 
-	apiReturn.SuccessData(c, gin.H{"reviewId": reviewId})
+	apiReturn.Success(c)
+}
+
+// SubmitReview 提交微应用审核（开发者专用）
+func (a *MicroAppDeveloperApi) SubmitReview(c *gin.Context) {
+	param := MicroAppSubmitReviewReq{}
+	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	developer := base.GetCurrentDeveloper(c)
+
+	if err := biz.MicroAppDeveloper.SubmitAppReview(global.Db, param.Id, developer.ID); err != nil {
+		handleBizError(c, err)
+		return
+	}
+
+	apiReturn.Success(c)
 }
 
 // CancelReview 撤销微应用主信息审核（开发者专用）
