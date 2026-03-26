@@ -94,7 +94,7 @@ declare namespace MicroApp {
   // 微应用审核信息
   interface MicroAppReviewInfo extends BaseInfo {
     id: number
-    appId: number
+    appRecordId: number
     langMap?: Record<string, LangInfo>
     status: number // 审核状态：0-待审核 1-已通过 2-已拒绝
     reviewerId?: number

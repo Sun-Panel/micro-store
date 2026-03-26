@@ -16,10 +16,10 @@ type MicroAppReview struct {
 	LangMap          datatype.MapJson  `gorm:"type:json" json:"langMap"`                                               // 多语言信息JSON
 
 	// 审核信息
-	Status         int        `gorm:"type:tinyint(2);not null;default:0;index" json:"status"` // 审核状态：-1-草稿 0-待审核 1-已通过 2-已拒绝
-	ReviewerUserId uint       `gorm:"type:int(11)" json:"reviewerId"`                         // 审核人ID，userID
-	ReviewNote     string     `gorm:"type:varchar(500)" json:"reviewNote"`                    // 审核备注
-	ReviewTime     *time.Time `gorm:"type:datetime" json:"reviewTime"`                        // 审核时间
+	Status     int        `gorm:"type:tinyint(2);not null;default:0;index" json:"status"` // 审核状态：-1-草稿 0-待审核 1-已通过 2-已拒绝
+	ReviewerId uint       `gorm:"type:int(11)" json:"reviewerId"`                         // 审核人ID，userID
+	ReviewNote string     `gorm:"type:varchar(500)" json:"reviewNote"`                    // 审核备注
+	ReviewTime *time.Time `gorm:"type:datetime" json:"reviewTime"`                        // 审核时间
 }
 
 // 表名
@@ -88,7 +88,7 @@ func (m *MicroAppReview) GetPendingList(db *gorm.DB, page, limit int) ([]MicroAp
 
 	// 分页查询
 	offset, limitSize := calcPage(page, limit)
-	err = query.Order("id ASC").Offset(offset).Limit(limitSize).Find(&list).Error
+	err = query.Order("updated_at ASC").Offset(offset).Limit(limitSize).Find(&list).Error
 
 	return list, total, err
 }

@@ -11,13 +11,13 @@ export enum MicroAppStatus {
 /** 微应用审核状态枚举（用于区分版本状态） */
 export enum MicroAppReviewStatus {
   /** 审核通过（生效版本） */
-  APPROVED = 0,
+  APPROVED = 1,
   /** 审核中 */
-  REVIEWING = 1,
+  REVIEWING = 0,
   /** 审核拒绝 */
   REJECTED = 2,
   /** 草稿 */
-  DRAFT = 3,
+  DRAFT = -1,
 }
 
 /** 微应用审核状态映射 */

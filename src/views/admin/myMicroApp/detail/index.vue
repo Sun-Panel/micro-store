@@ -412,9 +412,9 @@ onMounted(async () => {
             <NButton v-if="microAppInfo?.microApp?.status === 1" @click="handleChangeStatus(0)">
               下架
             </NButton>
-            <NButton v-else-if="microAppInfo?.microApp?.status === 0" type="success" @click="handleChangeStatus(1)">
+            <!-- <NButton v-else-if="microAppInfo?.microApp?.status === 0" type="success" @click="handleChangeStatus(1)">
               上架
-            </NButton>
+            </NButton> -->
             <NPopconfirm @positive-click="handleDelete">
               <template #trigger>
                 <NButton type="error">

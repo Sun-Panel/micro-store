@@ -9,10 +9,18 @@ export function getPendingList<T>(data: MicroApp.GetPendingReviewListRequest) {
 }
 
 // 获取审核详情（审核员专用）
-export function getInfo<T>(reviewId: number) {
+export function getReviewInfo<T>(reviewId: number) {
   return post<T>({
-    url: '/admin/review/getInfo',
+    url: '/admin/review/getReviewInfo',
     data: { reviewId },
+  })
+}
+
+// 获取审核详情（审核员专用）
+export function getMicroAppInfo<T>(id: number) {
+  return post<T>({
+    url: '/admin/review/getMicroAppInfo',
+    data: { id },
   })
 }
 

@@ -2,6 +2,8 @@ package admin
 
 import (
 	"sun-panel/api/api_v1/common/apiReturn"
+	"sun-panel/api/api_v1/common/base"
+	"sun-panel/biz"
 	"sun-panel/global"
 	"sun-panel/models"
 	"time"
@@ -57,6 +59,23 @@ func (a *MicroAppAuditorApi) GetReviewInfo(c *gin.Context) {
 	apiReturn.SuccessData(c, review)
 }
 
+// GetMicroAppInfo 获取微应用信息
+func (a *MicroAppAuditorApi) GetMicroAppInfo(c *gin.Context) {
+	req := models.MicroApp{}
+	if err := c.ShouldBindBodyWith(&req, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	microApp, err := biz.MicroApp.GetById(global.Db, req.ID)
+	if err != nil {
+		base.HandleBizErrorAndReturn(c, err)
+		return
+	}
+
+	apiReturn.SuccessData(c, microApp)
+}
+
 // ReviewApp 审核微应用主信息（审核员专用）
 func (a *MicroAppAuditorApi) ReviewApp(c *gin.Context) {
 	param := MicroAppReviewAppReq{}
@@ -64,6 +83,8 @@ func (a *MicroAppAuditorApi) ReviewApp(c *gin.Context) {
 		apiReturn.ErrorParamFomat(c, err.Error())
 		return
 	}
+
+	userInfo, _ := base.GetCurrentUserInfo(c)
 
 	// 验证审核状态
 	if param.Status != 1 && param.Status != 2 {
@@ -85,23 +106,20 @@ func (a *MicroAppAuditorApi) ReviewApp(c *gin.Context) {
 		return
 	}
 
-	// 获取当前审核员ID（从token中获取）
-	auditorId := c.GetUint("adminId")
-
 	// 开启事务
 	err = global.Db.Transaction(func(tx *gorm.DB) error {
 		// 更新审核记录状态
 		now := time.Now()
 		if err := tx.Model(&models.MicroAppReview{}).Where("id = ?", param.ReviewId).Updates(map[string]interface{}{
 			"status":      param.Status,
-			"reviewer_id": auditorId,
+			"reviewer_id": userInfo.ID,
 			"review_note": param.ReviewNote,
 			"review_time": now,
 		}).Error; err != nil {
 			return err
 		}
 
-		// 如果审核通过，更新 micro_app 表
+		// 如果审核通过，更新 micro_app 表,并自动上架
 		if param.Status == 1 {
 			// 更新生效版本
 			if err := tx.Model(&models.MicroApp{}).Where("id = ?", review.AppRecordId).Updates(map[string]interface{}{
@@ -113,6 +131,7 @@ func (a *MicroAppAuditorApi) ReviewApp(c *gin.Context) {
 				"points":      review.Points,
 				"screenshots": review.Screenshots,
 				"remark":      review.Remark,
+				"status":      1, // 上架
 			}).Error; err != nil {
 				return err
 			}
