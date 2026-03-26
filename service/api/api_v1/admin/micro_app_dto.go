@@ -1,5 +1,7 @@
 package admin
 
+import "sun-panel/models"
+
 // 微应用管理 API 请求参数定义
 
 // GetListRequest 获取微应用列表请求
@@ -37,18 +39,7 @@ type MicroAppCreateReq struct {
 }
 
 // UpdateRequest 更新微应用请求
-type MicroAppUpdateReq struct {
-	Id          uint                        `json:"id" binding:"required"`
-	AppName     string                      `json:"appName" binding:"required"`
-	AppIcon     string                      `json:"appIcon" binding:"required"`
-	AppDesc     string                      `json:"appDesc"`
-	Remark      string                      `json:"remark"`
-	CategoryId  int                         `json:"categoryId" binding:"required"`
-	ChargeType  int                         `json:"chargeType"`
-	Price       float64                     `json:"price"`
-	Screenshots string                      `json:"screenshots"`
-	LangMap     map[string]MicroAppLangInfo `json:"langMap"`
-}
+type MicroAppUpdateReq models.MicroAppReview
 
 // DeletesRequest 删除微应用请求
 type MicroAppDeletesReq struct {

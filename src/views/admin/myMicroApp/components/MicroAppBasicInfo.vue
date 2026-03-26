@@ -10,6 +10,7 @@ const props = defineProps<{
   createTime?: string
   shelvesStatus?: number
   categoryOptions?: { label: string, value: number }[]
+  langs?: string[]
   showEditButton?: boolean
 }>()
 

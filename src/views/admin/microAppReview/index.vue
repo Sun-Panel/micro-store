@@ -139,7 +139,7 @@ onMounted(() => {
     <ReviewDetail
       v-model:visible="reviewShow"
       :review-info="currentReview"
-      :micro-app-model-id="currentReview?.appId || 0"
+      :micro-app-model-id="currentReview?.appRecordId || 0"
       @done="fetchList"
     />
   </div>

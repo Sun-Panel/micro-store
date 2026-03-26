@@ -196,10 +196,8 @@ func (a *MicroAppDeveloperApi) Update(c *gin.Context) {
 
 	developer := base.GetCurrentDeveloper(c)
 
-	langMap := convertToBizLangMap(param.LangMap)
-
 	opts := biz.DeveloperAppOptions{
-		ID: param.Id,
+		ID: param.ID,
 		MicroAppBaseInfo: models.MicroAppBaseInfo{
 			AppName:     param.AppName,
 			AppIcon:     param.AppIcon,
@@ -207,14 +205,14 @@ func (a *MicroAppDeveloperApi) Update(c *gin.Context) {
 			Remark:      param.Remark,
 			CategoryId:  param.CategoryId,
 			ChargeType:  param.ChargeType,
-			Points:      int(param.Price),
+			Points:      param.Points,
 			Screenshots: param.Screenshots,
 		},
-		LangMap:     langMap,
+		LangMap:     param.LangMap,
 		DeveloperId: developer.ID,
 	}
 
-	if err := biz.MicroAppDeveloper.UpdateApp(global.Db, opts); err != nil {
+	if err := biz.MicroAppDeveloper.UpdateDraftApp(global.Db, opts); err != nil {
 		handleBizError(c, err)
 		return
 	}

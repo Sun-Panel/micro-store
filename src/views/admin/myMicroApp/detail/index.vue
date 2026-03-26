@@ -438,6 +438,7 @@ onMounted(async () => {
       :micro-app-info="microAppInfo?.microAppReview ?? undefined"
       :shelves-status="microAppInfo?.microApp.status"
       :create-time="microAppInfo?.microApp.createTime"
+      :lang="microAppInfo?.microAppReview?.langMap"
       :category-options="categoryOptions"
     />
 

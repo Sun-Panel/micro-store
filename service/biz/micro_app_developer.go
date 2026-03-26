@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"sun-panel/global"
-	"sun-panel/lib/cmn"
 	"sun-panel/models"
 	"sun-panel/models/datatype"
 
@@ -164,10 +163,8 @@ func (s *MicroAppDeveloperService) CreateAppAndReview(db *gorm.DB, opts Develope
 		OfflineType:      3,
 	}
 
-	global.Logger.Debugln("m:", cmn.AnyToJsonStr(m))
-
 	// 事务保存主应用、审核记录和多语言信息
-	err := db.Debug().Transaction(func(tx *gorm.DB) error {
+	err := db.Transaction(func(tx *gorm.DB) error {
 		// 保存主应用记录
 		if err := tx.Create(&m).Error; err != nil {
 			return err
@@ -277,9 +274,15 @@ func (s *MicroAppDeveloperService) SubmitAppReview(db *gorm.DB, reviewId, develo
 
 // GetOrCreateDraftApp 获取或创建草稿版本
 // 在 micro_app_review 表中查找或创建草稿
-func (s *MicroAppDeveloperService) GetOrCreateDraftApp(db *gorm.DB, appId, developerId uint) (*models.MicroAppReview, error) {
+func (s *MicroAppDeveloperService) GetOrCreateDraftApp(db *gorm.DB, reviewId, developerId uint) (*models.MicroAppReview, error) {
+	var review models.MicroAppReview
+	review, err := review.GetById(db, reviewId)
+	if err != nil {
+		return nil, err
+	}
+
 	// 获取生效版本，验证权限
-	app, err := s.getAppAndCheckPermission(db, appId, developerId)
+	app, err := s.getAppAndCheckPermission(db, review.AppRecordId, developerId)
 	if err != nil {
 		return nil, err
 	}
@@ -336,25 +339,27 @@ func (s *MicroAppDeveloperService) GetOrCreateDraftApp(db *gorm.DB, appId, devel
 
 // UpdateApp 更新应用信息（更新草稿版本）
 // 自动获取或创建草稿版本，然后更新
-func (s *MicroAppDeveloperService) UpdateApp(db *gorm.DB, opts DeveloperAppOptions) error {
-	// 获取生效版本，验证权限
-	app, err := s.getAppAndCheckPermission(db, opts.ID, opts.DeveloperId)
-	if err != nil {
-		return err
-	}
+func (s *MicroAppDeveloperService) UpdateDraftApp(db *gorm.DB, opts DeveloperAppOptions) error {
+	// // 获取生效版本，验证权限
+	// app, err := s.getAppAndCheckPermission(db, opts.ID, opts.DeveloperId)
+	// if err != nil {
+	// 	return err
+	// }
 
-	// 检查是否已在审核中
-	var pendingReviewCount int64
-	db.Model(&models.MicroAppReview{}).Where("micro_app_id = ? AND status = 0", app.MicroAppId).Count(&pendingReviewCount)
-	if pendingReviewCount > 0 {
-		return NewBizError(ErrCodePendingReviewExists)
-	}
+	// // 检查是否已在审核中
+	// var pendingReviewCount int64
+	// db.Model(&models.MicroAppReview{}).Where("micro_app_id = ? AND status = 0", app.MicroAppId).Count(&pendingReviewCount)
+	// if pendingReviewCount > 0 {
+	// 	return NewBizError(ErrCodePendingReviewExists)
+	// }
 
 	// 获取或创建草稿
 	draft, err := s.GetOrCreateDraftApp(db, opts.ID, opts.DeveloperId)
 	if err != nil {
 		return err
 	}
+
+	global.Logger.Debug("opts", opts)
 
 	// 更新草稿记录
 	err = db.Transaction(func(tx *gorm.DB) error {
@@ -368,6 +373,7 @@ func (s *MicroAppDeveloperService) UpdateApp(db *gorm.DB, opts DeveloperAppOptio
 			"charge_type": opts.MicroAppBaseInfo.ChargeType,
 			"points":      opts.MicroAppBaseInfo.Points,
 			"screenshots": opts.MicroAppBaseInfo.Screenshots,
+			"lang_map":    opts.LangMap,
 		}).Error; err != nil {
 			return err
 		}
@@ -384,13 +390,13 @@ func (s *MicroAppDeveloperService) UpdateApp(db *gorm.DB, opts DeveloperAppOptio
 
 			// 查找是否已存在该语言的记录
 			var existLang models.MicroAppLang
-			err := tx.Where("micro_app_id = ? AND lang = ?", app.MicroAppId, lang).First(&existLang).Error
+			err := tx.Where("micro_app_id = ? AND lang = ?", draft.MicroAppId, lang).First(&existLang).Error
 
 			if err == gorm.ErrRecordNotFound {
 				// 创建新的语言记录
 				if appName != "" || appDesc != "" {
 					langModel := models.MicroAppLang{
-						MicroAppId: app.MicroAppId,
+						MicroAppId: draft.MicroAppId,
 						Lang:       lang,
 						AppName:    appName,
 						AppDesc:    appDesc,
