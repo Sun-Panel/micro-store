@@ -2,17 +2,15 @@
 import { NCard, NImage, NImageGroup, NSelect, NTag } from 'naive-ui'
 import { computed, ref } from 'vue'
 import { microAppChargeTypeMap, microAppStatusMap } from '@/enums/panel'
-import { getCurrentLang, getLangListFromAppInfo, getLangMapFromAppInfo, getAppNameByLang, getAppDescByLang } from '@/utils/functions'
 import { timeFormat } from '@/utils/cmn'
+import { getAppDescByLang, getAppNameByLang, getCurrentLang, getLangListFromAppInfo, getLangMapFromAppInfo } from '@/utils/functions'
 
 const props = defineProps<{
-  microAppInfo?: MicroApp.MicroAppInfo
+  microAppInfo?: MicroApp.BaseInfo
+  createTime?: string
+  shelvesStatus?: number
   categoryOptions?: { label: string, value: number }[]
   showEditButton?: boolean
-}>()
-
-const emit = defineEmits<{
-  edit: []
 }>()
 
 // 分类名称
@@ -77,17 +75,17 @@ const baseInfoAppDesc = computed(() => getAppDescByLang(baseInfoLangMap.value, b
           </div>
         </div>
       </div>
-      <div class="grid grid-cols-2 gap-2 text-sm">
+      <div v-if="shelvesStatus !== undefined" class="grid grid-cols-2 gap-2 text-sm">
         <div>
           <span class="text-gray-500">状态：</span>
           <span
             :class="{
-              'text-blue-500': microAppInfo.status === -1,
-              'text-green-500': microAppInfo.status === 1,
-              'text-yellow-500': microAppInfo.status === 2,
-              'text-gray-500': microAppInfo.status === 0,
+              'text-blue-500': shelvesStatus === -1,
+              'text-green-500': shelvesStatus === 1,
+              'text-yellow-500': shelvesStatus === 2,
+              'text-gray-500': shelvesStatus === 0,
             }"
-          >{{ microAppStatusMap[microAppInfo.status] }}</span>
+          >{{ microAppStatusMap[shelvesStatus] }}</span>
         </div>
         <div>
           <span class="text-gray-500">收费方式：</span>
@@ -99,7 +97,7 @@ const baseInfoAppDesc = computed(() => getAppDescByLang(baseInfoLangMap.value, b
         </div>
         <div>
           <span class="text-gray-500">创建时间：</span>
-          <span>{{ timeFormat(String(microAppInfo.createTime)) }}</span>
+          <span>{{ timeFormat(String(createTime)) }}</span>
         </div>
       </div>
       <div class="col-span-2">

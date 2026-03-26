@@ -17,7 +17,7 @@ const currentAppId = ref<number>(0) // 当前查看审核历史的应用ID
 const keyWord = ref<string>()
 const statusFilter = ref<number | null>(null)
 const categoryFilter = ref<number | null>(null)
-const editInfo = ref<MicroApp.MicroAppInfo>()
+const editInfo = ref<MicroApp.Info>()
 const dialog = useDialog()
 const categoryOptions = ref<{ label: string, value: number }[]>([])
 
@@ -30,14 +30,14 @@ const statusOptions = [
 ]
 
 // 卡片列表数据
-const dataList = ref<MicroApp.MicroAppInfo[]>([])
+const dataList = ref<MicroApp.Info[]>([])
 
 async function fetchCategoryOptions() {
   try {
     const res = await getCategoryList<any>()
     categoryOptions.value = res.data?.map((item: any) => ({
       label: item.name,
-      value: item.ID,
+      value: item.id,
     })) || []
   }
   catch (error) {
@@ -59,7 +59,7 @@ async function fetchList() {
     req.categoryId = categoryFilter.value
 
   try {
-    const { data } = await getList<Common.ListResponse<MicroApp.MicroAppInfo[]>>(req)
+    const { data } = await getList<Common.ListResponse<MicroApp.Info[]>>(req)
     dataList.value = data.list || []
   }
   catch (error) {
@@ -83,7 +83,7 @@ async function handleDelete(id: number) {
   }
 }
 
-async function handleChangeStatus(row: MicroApp.MicroAppInfo, status?: number) {
+async function handleChangeStatus(row: MicroApp.Info, status?: number) {
   const newStatus = status ?? (row.status === 1 ? 0 : 1)
   // 开发者只能下架自己的应用，不能上架（上架需要审核通过）
   if (newStatus === 1) {
@@ -129,7 +129,7 @@ function handleAdd() {
 }
 
 // 处理下拉菜单选择
-function handleDropdownSelect(key: string, item: MicroApp.MicroAppInfo) {
+function handleDropdownSelect(key: string, item: MicroApp.Info) {
   if (key === 'offline')
     handleChangeStatus(item, 0)
   if (key === 'online')
@@ -140,26 +140,31 @@ function handleDropdownSelect(key: string, item: MicroApp.MicroAppInfo) {
       content: `确定删除微应用"${item.appName}"吗？`,
       positiveText: '确定',
       negativeText: '取消',
-      onPositiveClick: () => handleDelete(item.id),
+      onPositiveClick: () => {
+        if (item.id !== undefined)
+          handleDelete(item.id)
+      },
     })
   }
 }
 
 // 跳转到详情页
-function handleViewDetail(item: MicroApp.MicroAppInfo) {
+function handleViewDetail(item: MicroApp.Info) {
   router.push(`/admin/myMicroApp/detail/${item.id}`)
 }
 
 // 打开审核历史弹窗
-function handleViewReviewHistory(item: MicroApp.MicroAppInfo) {
-  currentAppId.value = item.id
-  reviewHistoryShow.value = true
+function handleViewReviewHistory(item: MicroApp.Info) {
+  if (item.id) {
+    currentAppId.value = item.id
+    reviewHistoryShow.value = true
+  }
 }
 
 // 撤销审核
-async function handleCancelReview(item: MicroApp.MicroAppInfo) {
+async function handleCancelReview(item: MicroApp.Info) {
   try {
-    const { code } = await cancelReview({ id: item.id })
+    const { code } = await cancelReview({ reviewId: item.id })
     if (code === 0) {
       message.success('已撤销审核')
       fetchList()
@@ -171,7 +176,7 @@ async function handleCancelReview(item: MicroApp.MicroAppInfo) {
 }
 
 // 提交审核
-async function handleSubmitReview(item: MicroApp.MicroAppInfo) {
+async function handleSubmitReview(item: MicroApp.Info) {
   try {
     const { code, msg } = await submitReview({ id: item.id })
     if (code === 0) {

@@ -17,6 +17,12 @@ export function getInfo<T>(id: number) {
     data: { id },
   })
 }
+export function getMicroInfoAndReviewInfoByMicroAppModelId<T>(id: number) {
+  return post<T>({
+    url: '/admin/developer/myMicroApp/getMicroInfoAndReviewInfoByMicroAppModelId',
+    data: { id },
+  })
+}
 
 // 创建微应用
 export function create<T>(data: MicroApp.CreateRequest) {

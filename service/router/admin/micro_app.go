@@ -14,7 +14,7 @@ func InitMicroAppRouter(router *gin.RouterGroup) {
 
 	// ==================== 管理员专用接口（微应用） ====================
 	loginRouter.POST("microApp/getList", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.MicroAppAdminApi.GetList)
-	loginRouter.POST("microApp/getInfo", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.MicroAppAdminApi.GetInfo)
+	// loginRouter.POST("microApp/getInfo", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.MicroAppAdminApi.GetInfo)
 	loginRouter.POST("microApp/updateStatus", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.MicroAppAdminApi.UpdateStatus)
 
 	// 管理员和开发者共享接口
@@ -34,12 +34,14 @@ func InitMicroAppRouter(router *gin.RouterGroup) {
 		// ==================== 微应用 ====================
 		myMicroAppRouter.POST("developer/myMicroApp/create", apiGroup.MicroAppDeveloperApi.Create)
 		myMicroAppRouter.POST("developer/myMicroApp/update", apiGroup.MicroAppDeveloperApi.Update)
+		// myMicroAppRouter.POST("developer/myMicroApp/getInfo", apiGroup.MicroAppDeveloperApi.GetInfo)
 		myMicroAppRouter.POST("developer/myMicroApp/updateLang", apiGroup.MicroAppDeveloperApi.UpdateLang)
 		myMicroAppRouter.POST("developer/myMicroApp/submitReview", apiGroup.MicroAppDeveloperApi.SubmitReview)
 		myMicroAppRouter.POST("developer/myMicroApp/cancelReview", apiGroup.MicroAppDeveloperApi.CancelReview)
 		myMicroAppRouter.POST("developer/myMicroApp/getReviewHistory", apiGroup.MicroAppDeveloperApi.GetReviewHistory)
 		myMicroAppRouter.POST("developer/myMicroApp/list", apiGroup.MicroAppDeveloperApi.GetMyList)
-		myMicroAppRouter.POST("developer/myMicroApp/info", apiGroup.MicroAppDeveloperApi.GetMyInfo)
+		myMicroAppRouter.POST("developer/myMicroApp/info", apiGroup.MicroAppDeveloperApi.GetInfo)
+		myMicroAppRouter.POST("developer/myMicroApp/getMicroInfoAndReviewInfoByMicroAppModelId", apiGroup.MicroAppDeveloperApi.GetMicroInfoAndReviewInfoByMicroAppModelId)
 
 		// ==================== 微应用版本管理 ====================
 		myMicroAppRouter.POST("developer/version/getList", apiGroup.DeveloperVersionApi.GetList)

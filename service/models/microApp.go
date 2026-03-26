@@ -13,7 +13,7 @@ type MicroAppBaseInfo struct {
 	Remark      string `gorm:"type:varchar(500)" json:"remark"`                      // 应用备注
 	CategoryId  int    `gorm:"type:int(11);not null;index" json:"categoryId"`        // 应用分类ID
 	ChargeType  int    `gorm:"type:tinyint(1);not null;default:0" json:"chargeType"` // 收费方式：0-免费 1-积分 2-订阅PRO免费
-	Points      int    `gorm:"type:int(11)" json:"Points"`                           // 价格（积分时）
+	Points      int    `gorm:"type:int(11)" json:"Points"`                           // 价格（积分数值）
 	Screenshots string `gorm:"type:varchar(2000)" json:"screenshots"`                // 图集（多个图片URL用逗号分隔）
 }
 
@@ -23,17 +23,17 @@ type MicroApp struct {
 	MicroAppBaseInfo `gorm:"embedded"` // 嵌入公共字段
 	MicroAppId       string            `gorm:"column:micro_app_id;type:varchar(120);not null;uniqueIndex:idx_micro_app_id_deleted_at" json:"microAppId"` // 覆盖嵌入字段，添加复合唯一约束（支持软删除）
 	DeletedAt        gorm.DeletedAt    `gorm:"uniqueIndex:idx_micro_app_id_deleted_at"`                                                                  // 覆盖基类字段，加入复合唯一索引
-	AuthorId         uint              `gorm:"type:int(11);not null;index" json:"authorId"`                                                              // 开发者ID
-	PermissionLevel  int               `gorm:"type:tinyint(1)" json:"permissionLevel"`                                                                   // 应用权限等级
-	Status           int               `gorm:"type:tinyint(1);not null;default:1" json:"status"`                                                         // 状态：0-下架 1-上架
+	DeveloperId      uint              `gorm:"type:int(11);not null;index" json:"developerId"`                                                           // 开发者ID                                                              // 应用权限等级
+	Status           int               `gorm:"type:tinyint(1);not null;default:0" json:"status"`                                                         // 状态：0-下架 1-上架
 
 	// 下架相关字段
-	OfflineType   int    `gorm:"type:tinyint(1);not null;default:0" json:"offlineType"` // 下架类型：0-正常 1-作者下架 2-平台下架
+	OfflineType   int    `gorm:"type:tinyint(1);not null;default:0" json:"offlineType"` // 下架类型：0-正常 1-作者下架 2-平台下架 3-首次创建
 	OfflineReason string `gorm:"type:varchar(500)" json:"offlineReason"`                // 下架原因
 
 	// 关联多语言信息
-	LangList  []MicroAppLang `gorm:"foreignKey:MicroAppId;references:MicroAppId" json:"langList,omitempty"`
-	Developer Developer      `gorm:"foreignKey:ID;references:AuthorId" json:"developer"`
+	LangList        []MicroAppLang `gorm:"foreignKey:MicroAppId;references:MicroAppId" json:"langList,omitempty"`
+	DefaultLangInfo MicroAppLang   `gorm:"foreignKey:MicroAppId;references:MicroAppId" json:"defaultLangInfo"`
+	Developer       Developer      `gorm:"foreignKey:DeveloperId;references:ID" json:"developer"`
 }
 
 // 表名
@@ -47,7 +47,7 @@ type MicroAppQueryOptions struct {
 	Limit            int
 	Status           *int
 	CategoryId       *int
-	AuthorId         *uint
+	DeveloperId      *uint
 	KeyWord          string
 	Lang             string // 可选,用于多语言查询
 	IncludeDeveloper bool   // 是否查询开发者信息
@@ -61,12 +61,12 @@ func (m *MicroApp) GetList(db *gorm.DB, opts MicroAppQueryOptions) ([]MicroApp, 
 	query := db.Model(&MicroApp{})
 
 	// 开发者列表：只显示最新版本（优先生效版本）
-	if opts.AuthorId != nil {
+	if opts.DeveloperId != nil {
 		// 子查询：获取每个 microAppId 的最新记录
 		// 优先选择 review_status=0（生效版本），否则选择最新的记录
 		subQuery := db.Model(&MicroApp{}).
 			Select("COALESCE(MAX(CASE WHEN review_status = 0 THEN id END), MAX(id)) as id").
-			Where("author_id = ?", *opts.AuthorId).
+			Where("developer_id = ?", *opts.DeveloperId).
 			Group("micro_app_id")
 
 		query = query.Where("id IN (?)", subQuery)
@@ -181,7 +181,7 @@ func (m *MicroApp) Offline(db *gorm.DB, id uint, offlineType int, reason string)
 // 获取开发者的应用数量
 func (m *MicroApp) GetCountByAuthorId(db *gorm.DB, authorId uint) (int64, error) {
 	var count int64
-	err := db.Model(&MicroApp{}).Where("author_id = ?", authorId).Count(&count).Error
+	err := db.Model(&MicroApp{}).Where("developer_id = ?", authorId).Count(&count).Error
 	return count, err
 }
 
@@ -223,8 +223,8 @@ func (m *MicroApp) GetListWithAllLangs(db *gorm.DB, opts MicroAppQueryOptions) (
 	}
 
 	// 开发者筛选
-	if opts.AuthorId != nil {
-		query = query.Where("micro_app.author_id = ?", *opts.AuthorId)
+	if opts.DeveloperId != nil {
+		query = query.Where("micro_app.developer_id = ?", *opts.DeveloperId)
 	}
 
 	// 关键词搜索
@@ -282,7 +282,7 @@ func (m *MicroApp) GetListWithLang(db *gorm.DB, opts MicroAppQueryOptions) ([]Mi
 				user.name as developer_name,
 				user.avatar as developer_avatar
 			`).
-			Joins("LEFT JOIN user ON micro_app.author_id = user.id")
+			Joins("LEFT JOIN user ON micro_app.developer_id = user.id")
 	}
 
 	// 状态筛选
@@ -296,8 +296,8 @@ func (m *MicroApp) GetListWithLang(db *gorm.DB, opts MicroAppQueryOptions) ([]Mi
 	}
 
 	// 开发者筛选
-	if opts.AuthorId != nil {
-		query = query.Where("micro_app.author_id = ?", *opts.AuthorId)
+	if opts.DeveloperId != nil {
+		query = query.Where("micro_app.developer_id = ?", *opts.DeveloperId)
 	}
 
 	// 关键词搜索（搜索多语言内容或默认内容）

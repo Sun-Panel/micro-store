@@ -2,6 +2,7 @@ package admin
 
 import (
 	"sun-panel/api/api_v1/common/apiReturn"
+	"sun-panel/api/api_v1/common/base"
 	"sun-panel/biz"
 	"sun-panel/global"
 	"sun-panel/models"
@@ -249,37 +250,5 @@ func (a *DeveloperVersionApi) Review(c *gin.Context) {
 
 // handleBizError 统一处理业务错误
 func handleBizError(c *gin.Context, err error) {
-	// 业务错误：转换为数字错误码，前端统一处理
-	if errCode, ok := biz.IsBizError(err); ok {
-		intCode := bizCodeToInt(errCode) // API层负责转换
-		apiReturn.ErrorByCode(c, intCode)
-		return
-	}
-	// 其他错误：数据库错误
-	apiReturn.ErrorDatabase(c, err.Error())
-}
-
-// bizCodeToInt 业务错误码转数字错误码（API层负责转换）
-func bizCodeToInt(code string) int {
-	codeMap := map[string]int{
-		biz.ErrCodeAppNotFound:          2000,
-		biz.ErrCodeVersionNotFound:      2001,
-		biz.ErrCodeVersionExists:        2002,
-		biz.ErrCodeVersionCodeExists:    2003,
-		biz.ErrCodeStatusNotAllowed:     2004,
-		biz.ErrCodeApprovedCannotDelete: 2005,
-		biz.ErrCodeNotPendingReview:     2006,
-		biz.ErrCodeNoUpdateContent:      2007,
-		// 微应用开发者相关 3000-3099
-		biz.ErrCodeAppIdExists:         3000,
-		biz.ErrCodeNoPermission:        3001,
-		biz.ErrCodePendingReviewExists: 3002,
-		biz.ErrCodeNoPendingReviewApp:  3003,
-		biz.ErrCodeInvalidParam:        3004,
-	}
-
-	if intCode, ok := codeMap[code]; ok {
-		return intCode
-	}
-	return -1
+	base.HandleBizErrorAndReturn(c, err)
 }

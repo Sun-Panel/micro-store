@@ -3,9 +3,17 @@ import { post } from '@/utils/request'
 // ==================== 前台/公开 API ====================
 
 // 获取微应用详情（公开接口）
+// export function getInfo<T>(id: number) {
+//   return post<T>({
+//     url: '/admin/microApp/getInfo',
+//     data: { id },
+//   })
+// }
+
+// 获取微应用详情（公开接口 - 新增）
 export function getInfo<T>(id: number) {
   return post<T>({
-    url: '/admin/microApp/getInfo',
+    url: '/microApp/getInfo',
     data: { id },
   })
 }

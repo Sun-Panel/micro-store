@@ -10,7 +10,7 @@ import { apiRespErrMsgAndCustomCodeNeg1Msg } from '@/utils/cmn/apiMessage'
 
 interface Props {
   visible: boolean
-  microAppInfo?: MicroApp.MicroAppInfo
+  microAppInfo?: MicroApp.MicroAppReviewInfo
   categoryOptions: { label: string, value: number }[]
 }
 
@@ -25,7 +25,7 @@ interface Emit {
 const authStore = useAuthStore()
 
 // 表单初始值
-const formInitValue = {
+const formInitValue: MicroApp.Info = {
   id: 0,
   microAppId: '',
   appName: '',
@@ -34,7 +34,8 @@ const formInitValue = {
   appIcon: '',
   categoryId: 0,
   chargeType: 0,
-  price: 0,
+  points: 0,
+  status: 0,
 }
 
 const model = ref({ ...formInitValue })
@@ -96,6 +97,7 @@ watch(show, (newValue) => {
     if (props.microAppInfo?.id) {
       // 编辑模式
       model.value = {
+        ...formInitValue,
         id: props.microAppInfo.id,
         microAppId: props.microAppInfo.microAppId,
         appName: props.microAppInfo.appName || '',
@@ -104,7 +106,7 @@ watch(show, (newValue) => {
         appIcon: props.microAppInfo.appIcon,
         categoryId: props.microAppInfo.categoryId,
         chargeType: props.microAppInfo.chargeType,
-        price: props.microAppInfo.price,
+        points: props.microAppInfo.points,
       }
       // 初始化已有图片列表
       const screenshots = props.microAppInfo.screenshots ? props.microAppInfo.screenshots.split(',').filter(Boolean) : []
@@ -130,18 +132,9 @@ watch(show, (newValue) => {
 
 // 初始化多语言数据
 function initLangData() {
-  if (props.microAppInfo?.langList && props.microAppInfo.langList.length > 0) {
-    const map: Record<string, { appName: string, appDesc: string }> = {}
-    const langs: string[] = []
-    props.microAppInfo.langList.forEach((lang) => {
-      map[lang.lang] = {
-        appName: lang.appName,
-        appDesc: lang.appDesc,
-      }
-      langs.push(lang.lang)
-    })
-    localLangMap.value = map
-    addedLangs.value = langs
+  if (props.microAppInfo?.langMap && Object.keys(props.microAppInfo.langMap).length > 0) {
+    localLangMap.value = props.microAppInfo.langMap
+    addedLangs.value = Object.keys(props.microAppInfo.langMap)
   }
   else {
     // 如果没有语言，默认添加中文
@@ -194,7 +187,7 @@ async function submit() {
         remark: model.value.remark,
         categoryId: model.value.categoryId,
         chargeType: model.value.chargeType,
-        price: model.value.price,
+        points: model.value.points,
         screenshots: screenshotsStr,
         langMap: localLangMap.value,
       })
@@ -209,7 +202,7 @@ async function submit() {
         remark: model.value.remark,
         categoryId: model.value.categoryId,
         chargeType: model.value.chargeType,
-        points: model.value.price,
+        points: model.value.points,
         screenshots: screenshotsStr,
         langMap: localLangMap.value,
       })
@@ -326,7 +319,7 @@ function handleScreenshotFinish({ file, event }: { file: any, event?: any }) {
 
           <!-- 积分数量：仅收费方式为积分时显示 -->
           <NFormItem v-if="model.chargeType === 1" path="price" label="积分数量">
-            <NInputNumber v-model:value="model.price" :min="1" :precision="0" style="width: 100%;" />
+            <NInputNumber v-model:value="model.points" :min="1" :precision="0" style="width: 100%;" />
           </NFormItem>
 
           <!-- 应用备注 -->

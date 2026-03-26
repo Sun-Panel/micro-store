@@ -4,6 +4,7 @@ import (
 	"sun-panel/global"
 
 	"sun-panel/router/admin"
+	microApp "sun-panel/router/micro_app"
 	"sun-panel/router/oauth2"
 	"sun-panel/router/openness"
 	"sun-panel/router/panel"
@@ -23,6 +24,7 @@ func InitRouters(addr string) error {
 	system.Init(routerGroup)
 	admin.Init(routerGroup)
 	panel.Init(routerGroup)
+	microApp.Init(routerGroup)
 	openness.Init(routerGroup)
 	oauth2.Init(routerGroup)
 

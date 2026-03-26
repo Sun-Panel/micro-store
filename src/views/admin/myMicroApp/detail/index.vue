@@ -3,7 +3,7 @@ import { NButton, NCard, NInput, NModal, NPopconfirm, NSpace, NTag, useMessage }
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
-import { cancelReview, deletes, getInfo as getMicroAppInfo, offline, submitReview } from '@/api/admin/microAppDeveloper'
+import { cancelReview, deletes, getMicroInfoAndReviewInfoByMicroAppModelId, offline, submitReview } from '@/api/admin/microAppDeveloper'
 import { cancelReview as cancelVersionReview, deleteVersion, getVersionList, offlineVersion as offlineVersionApi, submitReview as submitVersionReview } from '@/api/admin/microAppVersion'
 import ReviewHistoryModal from '@/components/common/ReviewHistoryModal/index.vue'
 import AddVersionModal from '@/components/common/VersionManagement/AddVersionModal.vue'
@@ -14,6 +14,12 @@ import MicroAppBasicInfo from '../components/MicroAppBasicInfo.vue'
 import MicroAppVersionInfo from '../components/MicroAppVersionInfo.vue'
 import EditMicroApp from '../EditMicroApp/index.vue'
 
+// 分类选项类型
+interface CategoryOption {
+  label: string
+  value: number
+}
+
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
@@ -22,14 +28,14 @@ const message = useMessage()
 const microAppId = computed(() => Number(route.params.id))
 
 // 数据
-const microAppInfo = ref<MicroApp.MicroAppInfo>()
+const microAppInfo = ref<MicroApp.GetInfoWithReviewResponse | null>(null)
 const versionList = ref<MicroApp.VersionInfo[]>([])
 const loading = ref(false)
 const versionLoading = ref(false)
 
 // 编辑弹窗
 const editDialogShow = ref(false)
-const categoryOptions = ref<{ label: string, value: number }[]>([])
+const categoryOptions = ref<CategoryOption[]>([])
 
 // 审核历史
 const reviewHistoryShow = ref(false)
@@ -49,11 +55,8 @@ const offlineReason = ref('')
 // 获取分类选项
 async function fetchCategoryOptions() {
   try {
-    const res = await getCategoryList<any>()
-    categoryOptions.value = res.data?.map((item: any) => ({
-      label: item.name,
-      value: item.ID,
-    })) || []
+    const res = await getCategoryList<{ list: CategoryOption[] }>()
+    categoryOptions.value = res.data?.list || []
   }
   catch (error) {
     apiRespErrMsg(error)
@@ -79,13 +82,13 @@ function getStatusTagType(status: number) {
 // 获取审核状态标签类型
 function getReviewStatusTagType(reviewStatus: number) {
   switch (reviewStatus) {
-    case 0:
-      return 'success' // 已通过
     case 1:
+      return 'success' // 已通过
+    case 0:
       return 'warning' // 审核中
     case 2:
       return 'error' // 已拒绝
-    case 3:
+    case -1:
       return 'info' // 草稿
     default:
       return 'default'
@@ -96,12 +99,12 @@ function getReviewStatusTagType(reviewStatus: number) {
 function getReviewStatusText(reviewStatus: number) {
   switch (reviewStatus) {
     case 0:
-      return '已通过'
-    case 1:
       return '审核中'
+    case 1:
+      return '已通过'
     case 2:
       return '已拒绝'
-    case 3:
+    case -1:
       return '草稿'
     default:
       return ''
@@ -112,8 +115,8 @@ function getReviewStatusText(reviewStatus: number) {
 async function fetchMicroAppInfo() {
   loading.value = true
   try {
-    const { data } = await getMicroAppInfo<any>(microAppId.value)
-    microAppInfo.value = data
+    const res = await getMicroInfoAndReviewInfoByMicroAppModelId<MicroApp.GetInfoWithReviewResponse>(microAppId.value)
+    microAppInfo.value = res.data
   }
   catch (error) {
     apiRespErrMsg(error)
@@ -127,12 +130,12 @@ async function fetchMicroAppInfo() {
 async function fetchVersionList() {
   versionLoading.value = true
   try {
-    const { data } = await getVersionList<Common.ListResponse<MicroApp.VersionInfo[]>>({
+    const res = await getVersionList<Common.ListResponse<MicroApp.VersionInfo[]>>({
       appId: microAppId.value,
       page: 1,
       limit: 100,
     })
-    versionList.value = data.list || []
+    versionList.value = res.data.list || []
   }
   catch (error) {
     apiRespErrMsg(error)
@@ -145,7 +148,7 @@ async function fetchVersionList() {
 // 提交版本审核
 async function handleVersionSubmitReview(versionId: number) {
   try {
-    const res = await submitVersionReview<any>({ versionId })
+    const res = await submitVersionReview<Common.Response<null>>({ versionId })
     if (res.code === 0) {
       message.success('已提交审核')
       fetchVersionList()
@@ -162,7 +165,7 @@ async function handleVersionSubmitReview(versionId: number) {
 // 撤销版本审核
 async function handleVersionCancelReview(versionId: number) {
   try {
-    const res = await cancelVersionReview<any>({ versionId })
+    const res = await cancelVersionReview<Common.Response<null>>({ versionId })
     if (res.code === 0) {
       message.success('已撤销审核')
       fetchVersionList()
@@ -179,7 +182,7 @@ async function handleVersionCancelReview(versionId: number) {
 // 删除版本
 async function handleDeleteVersion(ids: number[]) {
   try {
-    const res = await deleteVersion<any>(ids)
+    const res = await deleteVersion<Common.Response<null>>(ids)
     if (res.code === 0) {
       message.success('删除成功')
       fetchVersionList()
@@ -205,7 +208,7 @@ async function handleOfflineVersion() {
   if (!offlineVersion.value)
     return
   try {
-    const res = await offlineVersionApi<any>({
+    const res = await offlineVersionApi<Common.Response<null>>({
       id: offlineVersion.value.id,
       type: 1, // 作者下架
       reason: offlineReason.value || undefined,
@@ -232,7 +235,7 @@ function openVersionDetail(version: MicroApp.VersionInfo) {
 
 // 上架/下架
 async function handleChangeStatus(status: number) {
-  if (!microAppInfo.value)
+  if (!microAppInfo.value?.microApp?.id)
     return
   // 开发者只能下架自己的应用，不能上架（上架需要审核通过）
   if (status === 1) {
@@ -241,7 +244,7 @@ async function handleChangeStatus(status: number) {
   }
 
   try {
-    const res = await offline({ id: microAppInfo.value.id, type: 1, reason: '作者主动下架' })
+    const res = await offline<Common.Response<null>>({ id: microAppInfo.value.microApp.id, offlineType: 1, reason: '作者主动下架' })
     if (res.code === 0) {
       message.success('已下架')
       fetchMicroAppInfo()
@@ -257,10 +260,10 @@ async function handleChangeStatus(status: number) {
 
 // 删除微应用
 async function handleDelete() {
-  if (!microAppInfo.value)
+  if (!microAppInfo.value?.microApp?.id)
     return
   try {
-    const res = await deletes([microAppInfo.value.id])
+    const res = await deletes<Common.Response<null>>([microAppInfo.value.microApp.id])
     if (res.code === 0) {
       message.success('删除成功')
       router.push('/admin/myMicroApp')
@@ -276,26 +279,26 @@ async function handleDelete() {
 
 // 撤销微应用主信息审核
 async function handleCancelAppReview() {
-  if (!microAppInfo.value)
+  if (!microAppInfo.value?.microApp?.id)
     return
   try {
-    const { code } = await cancelReview({ id: microAppInfo.value.id })
+    const { code } = await cancelReview<Common.Response<null>>({ reviewId: microAppInfo.value.microAppReview?.id || 0 })
     if (code === 0) {
       message.success('已撤销审核')
       fetchMicroAppInfo()
     }
   }
-  catch (error) {
+  catch {
     message.error('撤销审核失败')
   }
 }
 
 // 提交审核
 async function handleSubmitReview() {
-  if (!microAppInfo.value)
+  if (!microAppInfo.value?.microApp?.id)
     return
   try {
-    const { code, msg } = await submitReview({ id: microAppInfo.value.id })
+    const { code, msg } = await submitReview<Common.Response<null>>({ reviewId: microAppInfo.value.microAppReview?.id || 0 })
     if (code === 0) {
       message.success('已提交审核')
       fetchMicroAppInfo()
@@ -348,79 +351,68 @@ onMounted(async () => {
           <NButton @click="handleBack">
             返回列表
           </NButton>
-          <span class="text-lg font-bold">{{ microAppInfo?.appName || '微应用详情' }}</span>
+          <span class="text-lg font-bold">{{ microAppInfo?.microAppReview?.appName || '微应用详情' }}</span>
           <!-- 应用状态和审核状态 -->
           <div class="flex items-center gap-2">
             <!-- 应用状态 -->
-            <NTag v-if="microAppInfo?.status !== undefined" :type="getStatusTagType(microAppInfo.status)" size="small">
-              {{ microAppStatusMap[microAppInfo.status] }}
+            <NTag v-if="microAppInfo?.microApp?.status !== undefined" :type="getStatusTagType(microAppInfo.microApp.status)" size="small">
+              {{ microAppStatusMap[microAppInfo.microApp.status] }}
             </NTag>
             <!-- 审核状态 -->
-            <NTag v-if="microAppInfo?.reviewStatus && microAppInfo.reviewStatus !== 0" :type="getReviewStatusTagType(microAppInfo.reviewStatus)" size="small">
-              {{ getReviewStatusText(microAppInfo.reviewStatus) }}
+            <NTag v-if="microAppInfo?.microAppReview?.status !== undefined && microAppInfo?.microAppReview.status !== 1" :type="getReviewStatusTagType(microAppInfo.microAppReview.status)" size="small">
+              {{ getReviewStatusText(microAppInfo.microAppReview.status) }}
             </NTag>
+
+            <!-- 草稿显示提交按钮 -->
+            <NButton
+              v-if="microAppInfo?.microAppReview?.status === -1"
+              size="tiny"
+              type="success"
+              @click="handleSubmitReview"
+            >
+              提交审核（基本信息）
+            </NButton>
+            <!-- 草稿和已拒绝状态显示提交审核按钮 -->
+            <NButton v-else-if="microAppInfo?.microAppReview?.status === 2" type="primary" @click="handleSubmitReview">
+              重新提交审核
+            </NButton>
+
+            <!-- 审核中显示撤销按钮 -->
+            <NButton
+              v-if="microAppInfo?.microAppReview?.status === 0"
+              size="tiny"
+              type="error"
+              text
+              @click="handleCancelAppReview"
+            >
+              撤销
+            </NButton>
           </div>
         </div>
         <NSpace>
-          <NButton @click="handlePreview">
+          <!-- <NButton type="primary" @click="editDialogShow = true">
+            编辑信息
+          </NButton> -->
+          <NButton :disabled="microAppInfo?.microApp?.status === 0" @click="handlePreview">
             查看公开页面
+          </NButton>
+          <NButton type="primary" @click="addVersionShow = true">
+            添加版本
           </NButton>
           <!-- 数据加载中 -->
           <template v-if="loading">
             <span class="text-gray-400">加载中...</span>
           </template>
-          <!-- 审核中状态：显示撤销审核、查看审核内容 -->
-          <template v-else-if="microAppInfo?.reviewStatus === 1">
-            <NButton @click="handleCancelAppReview">
-              撤销审核
-            </NButton>
-            <NButton @click="handleViewReviewHistory">
-              查看审核内容
-            </NButton>
-          </template>
-          <!-- 草稿状态：显示提交审核、编辑、删除 -->
-          <template v-else-if="microAppInfo?.reviewStatus === 3">
-            <NButton type="primary" @click="handleSubmitReview">
-              提交审核
-            </NButton>
-            <NButton type="primary" @click="editDialogShow = true">
-              编辑信息
-            </NButton>
-            <NPopconfirm @positive-click="handleDelete">
-              <template #trigger>
-                <NButton type="error">
-                  删除应用
-                </NButton>
-              </template>
-              确定要删除此应用吗？删除后将无法恢复。
-            </NPopconfirm>
-          </template>
-          <!-- 审核拒绝状态：显示重新提交审核、编辑、删除 -->
-          <template v-else-if="microAppInfo?.reviewStatus === 2">
-            <NButton type="primary" @click="handleSubmitReview">
-              重新提交审核
-            </NButton>
-            <NButton type="primary" @click="editDialogShow = true">
-              编辑信息
-            </NButton>
-            <NPopconfirm @positive-click="handleDelete">
-              <template #trigger>
-                <NButton type="error">
-                  删除应用
-                </NButton>
-              </template>
-              确定要删除此应用吗？删除后将无法恢复。
-            </NPopconfirm>
-          </template>
           <!-- 审核通过状态：显示编辑、上架/下架、删除 -->
-          <template v-else-if="microAppInfo?.reviewStatus === 0">
-            <NButton type="primary" @click="editDialogShow = true">
+          <template v-else>
+            <!-- 编辑: 非审核中状态显示 -->
+            <NButton type="primary" :disabled="microAppInfo?.microAppReview?.status === 0" @click="editDialogShow = true">
               编辑信息
             </NButton>
-            <NButton v-if="microAppInfo?.status === 1" @click="handleChangeStatus(0)">
+            <NButton v-if="microAppInfo?.microApp?.status === 1" @click="handleChangeStatus(0)">
               下架
             </NButton>
-            <NButton v-else-if="microAppInfo?.status === 0" type="success" @click="handleChangeStatus(1)">
+            <NButton v-else-if="microAppInfo?.microApp?.status === 0" type="success" @click="handleChangeStatus(1)">
               上架
             </NButton>
             <NPopconfirm @positive-click="handleDelete">
@@ -433,9 +425,9 @@ onMounted(async () => {
             </NPopconfirm>
           </template>
           <!-- 数据加载完成但无有效状态 -->
-          <template v-else-if="!loading && microAppInfo">
-            <span class="text-red-400">状态异常 (reviewStatus: {{ microAppInfo.reviewStatus }})</span>
-          </template>
+          <!-- <template v-else-if="!loading && microAppInfo">
+            <span class="text-red-400">状态异常 (reviewStatus: {{ microAppInfo.microAppReview?.status }})</span>
+          </template> -->
         </NSpace>
       </div>
     </NCard>
@@ -443,7 +435,9 @@ onMounted(async () => {
     <!-- 基本信息组件 -->
     <MicroAppBasicInfo
       class="mb-[20px]"
-      :micro-app-info="microAppInfo"
+      :micro-app-info="microAppInfo?.microAppReview ?? undefined"
+      :shelves-status="microAppInfo?.microApp.status"
+      :create-time="microAppInfo?.microApp.createTime"
       :category-options="categoryOptions"
     />
 
@@ -466,8 +460,8 @@ onMounted(async () => {
     <!-- 编辑弹窗 -->
     <EditMicroApp
       v-model:visible="editDialogShow"
-      :micro-app-info="microAppInfo"
-      :author-id="microAppInfo?.authorId || 0"
+      :micro-app-info="microAppInfo?.microAppReview ?? undefined"
+      :author-id="microAppInfo?.microApp?.developerId || 0"
       :category-options="categoryOptions"
       @done="handleEditDone"
     />
@@ -483,7 +477,7 @@ onMounted(async () => {
     <VersionDetailModal
       v-model:visible="versionDetailShow"
       :version-info="currentVersionDetail"
-      :micro-app-info="microAppInfo"
+      :micro-app-info="microAppInfo?.microApp"
       @done="fetchMicroAppInfo"
     />
 

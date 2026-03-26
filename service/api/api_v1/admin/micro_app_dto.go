@@ -78,12 +78,13 @@ type MicroAppUpdateLangReq struct {
 
 // SubmitReviewRequest 提交审核请求
 type MicroAppSubmitReviewReq struct {
-	Id uint `json:"id" binding:"required"`
+	// MicroAppModelId uint `json:"microAppModelId" binding:"required"`
+	ReviewId uint `json:"reviewId" binding:"required"`
 }
 
 // CancelAppReviewRequest 撤销审核请求
 type MicroAppCancelReviewReq struct {
-	Id uint `json:"id" binding:"required"`
+	ReviewId uint `json:"reviewId" binding:"required"`
 }
 
 // ReviewAppRequest 审核微应用主信息请求
@@ -109,4 +110,9 @@ type MicroAppGetReviewInfoReq struct {
 type MicroAppGetPendingReviewListReq struct {
 	Page  int `json:"page"`
 	Limit int `json:"limit"`
+}
+
+// GetReviewInfoByModelIdRequest 根据微应用自增ID获取审核信息请求
+type MicroAppGetReviewInfoByModelIdReq struct {
+	Id uint `json:"id" binding:"required"`
 }

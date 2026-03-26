@@ -40,54 +40,53 @@ func (a *MicroAppAdminApi) GetList(c *gin.Context) {
 	apiReturn.SuccessListData(c, list, total)
 }
 
-// GetInfo 获取微应用详情（管理员专用）
-func (a *MicroAppAdminApi) GetInfo(c *gin.Context) {
-	param := MicroAppGetInfoReq{}
-	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
-		apiReturn.ErrorParamFomat(c, err.Error())
-		return
-	}
+// // GetInfo 获取微应用详情（管理员专用）
+// func (a *MicroAppAdminApi) GetInfo(c *gin.Context) {
+// 	param := MicroAppGetInfoReq{}
+// 	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
+// 		apiReturn.ErrorParamFomat(c, err.Error())
+// 		return
+// 	}
 
-	m := models.MicroApp{}
-	// 管理员可以查看任何应用详情
-	err := global.Db.Preload("LangList").Where("id = ?", param.Id).First(&m).Error
-	if err != nil {
-		apiReturn.ErrorDataNotFound(c)
-		return
-	}
+// 	m := models.MicroApp{}
+// 	// 管理员可以查看任何应用详情
+// 	err := global.Db.Preload("LangList").Where("id = ?", param.Id).First(&m).Error
+// 	if err != nil {
+// 		apiReturn.ErrorDataNotFound(c)
+// 		return
+// 	}
 
-	// 查询作者名字
-	var authorName string
-	if m.AuthorId > 0 {
-		var user models.User
-		if err := global.Db.Select("name").Where("id = ?", m.AuthorId).First(&user).Error; err == nil {
-			authorName = user.Name
-		}
-	}
+// 	// 查询作者名字
+// 	var authorName string
+// 	if m.DeveloperId > 0 {
+// 		var user models.User
+// 		if err := global.Db.Select("name").Where("id = ?", m.DeveloperId).First(&user).Error; err == nil {
+// 			authorName = user.Name
+// 		}
+// 	}
 
-	// 返回数据，包含作者名字
-	result := gin.H{
-		"id":              m.ID,
-		"microAppId":      m.MicroAppId,
-		"appName":         m.AppName,
-		"appIcon":         m.AppIcon,
-		"appDesc":         m.AppDesc,
-		"remark":          m.Remark,
-		"categoryId":      m.CategoryId,
-		"chargeType":      m.ChargeType,
-		"points":          m.Points,
-		"authorId":        m.AuthorId,
-		"authorName":      authorName,
-		"permissionLevel": m.PermissionLevel,
-		"status":          m.Status,
-		"screenshots":     m.Screenshots,
-		"langList":        m.LangList,
-		"createTime":      m.CreatedAt,
-		"updateTime":      m.UpdatedAt,
-	}
+// 	// 返回数据，包含作者名字
+// 	result := gin.H{
+// 		"id":          m.ID,
+// 		"microAppId":  m.MicroAppId,
+// 		"appName":     m.AppName,
+// 		"appIcon":     m.AppIcon,
+// 		"appDesc":     m.AppDesc,
+// 		"remark":      m.Remark,
+// 		"categoryId":  m.CategoryId,
+// 		"chargeType":  m.ChargeType,
+// 		"points":      m.Points,
+// 		"authorId":    m.DeveloperId,
+// 		"authorName":  authorName,
+// 		"status":      m.Status,
+// 		"screenshots": m.Screenshots,
+// 		"langList":    m.LangList,
+// 		"createTime":  m.CreatedAt,
+// 		"updateTime":  m.UpdatedAt,
+// 	}
 
-	apiReturn.SuccessData(c, result)
-}
+// 	apiReturn.SuccessData(c, result)
+// }
 
 // Deletes 删除微应用（管理员专用）
 func (a *MicroAppAdminApi) Deletes(c *gin.Context) {

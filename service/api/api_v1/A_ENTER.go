@@ -2,6 +2,7 @@ package api_v1
 
 import (
 	"sun-panel/api/api_v1/admin"
+	microApp "sun-panel/api/api_v1/micro_app"
 	"sun-panel/api/api_v1/oAuth2"
 	"sun-panel/api/api_v1/openness"
 	"sun-panel/api/api_v1/panel"
@@ -18,6 +19,7 @@ type ApiGroup struct {
 	ApiProAuthorize proAuthorize.ApiProAuthorize
 	ApiOAuth2       oAuth2.OAuth2
 	ApiSunStore     sunStore.ApiSunStore
+	MicroAppApi     microApp.MicroAppApi
 }
 
 var ApiGroupApp = new(ApiGroup)

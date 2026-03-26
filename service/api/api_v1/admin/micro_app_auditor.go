@@ -1,7 +1,6 @@
 package admin
 
 import (
-	"encoding/json"
 	"sun-panel/api/api_v1/common/apiReturn"
 	"sun-panel/global"
 	"sun-panel/models"
@@ -119,19 +118,26 @@ func (a *MicroAppAuditorApi) ReviewApp(c *gin.Context) {
 			}
 
 			// 更新多语言信息
-			var langMap map[string]map[string]string
-			json.Unmarshal([]byte(review.LangMap), &langMap)
-			for lang, langInfo := range langMap {
+			// review.LangMap 现在是 datatype.MapJson (map[string]interface{})
+			for lang, langInfo := range review.LangMap {
+				// 类型断言获取 map[string]interface{}
+				infoMap, ok := langInfo.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				appName, _ := infoMap["appName"].(string)
+				appDesc, _ := infoMap["appDesc"].(string)
+
 				// 查找或创建语言记录
 				var existLang models.MicroAppLang
 				err := tx.Where("micro_app_id = ? AND lang = ?", review.MicroAppId, lang).First(&existLang).Error
 				if err == gorm.ErrRecordNotFound {
-					if langInfo["appName"] != "" || langInfo["appDesc"] != "" {
+					if appName != "" || appDesc != "" {
 						langModel := models.MicroAppLang{
 							MicroAppId: review.MicroAppId,
 							Lang:       lang,
-							AppName:    langInfo["appName"],
-							AppDesc:    langInfo["appDesc"],
+							AppName:    appName,
+							AppDesc:    appDesc,
 						}
 						if err := tx.Create(&langModel).Error; err != nil {
 							return err
@@ -139,8 +145,8 @@ func (a *MicroAppAuditorApi) ReviewApp(c *gin.Context) {
 					}
 				} else if err == nil {
 					if err := tx.Model(&models.MicroAppLang{}).Where("id = ?", existLang.ID).Updates(map[string]interface{}{
-						"app_name": langInfo["appName"],
-						"app_desc": langInfo["appDesc"],
+						"app_name": appName,
+						"app_desc": appDesc,
 					}).Error; err != nil {
 						return err
 					}

@@ -7,6 +7,13 @@ declare namespace Common {
         msg: string
         code: number
     }
+
+    // 数据响应类型（只有一个 data 字段）
+    interface DataResponse<T = any> {
+        data: T
+        code: number
+        msg: string
+    }
     
     interface ListResponse<T> {	
         list:T

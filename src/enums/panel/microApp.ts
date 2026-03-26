@@ -8,9 +8,9 @@ export enum MicroAppStatus {
   PENDING = 2,
 }
 
-/** 微应用审核状态枚举（用于区分版本状态）*/
+/** 微应用审核状态枚举（用于区分版本状态） */
 export enum MicroAppReviewStatus {
-  /** 审核通过（生效版本）*/
+  /** 审核通过（生效版本） */
   APPROVED = 0,
   /** 审核中 */
   REVIEWING = 1,
@@ -30,8 +30,8 @@ export const microAppReviewStatusMap: Record<number, string> = {
 
 /** 微应用状态映射 */
 export const microAppStatusMap: Record<number, string> = {
-  [MicroAppStatus.OFFLINE]: '下架',
-  [MicroAppStatus.ONLINE]: '上架',
+  [MicroAppStatus.OFFLINE]: '已下架',
+  [MicroAppStatus.ONLINE]: '已上架',
   [MicroAppStatus.PENDING]: '审核中',
 }
 

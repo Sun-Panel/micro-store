@@ -1,8 +1,10 @@
 package models
 
 import (
-	"gorm.io/gorm"
+	"sun-panel/models/datatype"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // 微应用审核快照表
@@ -10,14 +12,14 @@ type MicroAppReview struct {
 	BaseModel
 	MicroAppBaseInfo `gorm:"embedded"` // 嵌入公共字段
 	MicroAppId       string            `gorm:"column:micro_app_id;type:varchar(120);not null;index" json:"microAppId"` // 覆盖嵌入字段
-	AppRecordId      uint   `gorm:"type:int(11);not null;index" json:"appRecordId"`      // 关联 micro_app.id（可选）
-	LangMap          string `gorm:"type:json" json:"langMap"`                            // 多语言信息JSON
+	AppRecordId      uint              `gorm:"type:int(11);not null;index" json:"appRecordId"`                         // 关联 micro_app.id（可选）
+	LangMap          datatype.MapJson  `gorm:"type:json" json:"langMap"`                                               // 多语言信息JSON
 
 	// 审核信息
-	Status     int        `gorm:"type:tinyint(2);not null;default:0;index" json:"status"` // 审核状态：-1-草稿 0-待审核 1-已通过 2-已拒绝
-	ReviewerId uint       `gorm:"type:int(11)" json:"reviewerId"`                          // 审核人ID
-	ReviewNote string     `gorm:"type:varchar(500)" json:"reviewNote"`                     // 审核备注
-	ReviewTime *time.Time `gorm:"type:datetime" json:"reviewTime"`                         // 审核时间
+	Status         int        `gorm:"type:tinyint(2);not null;default:0;index" json:"status"` // 审核状态：-1-草稿 0-待审核 1-已通过 2-已拒绝
+	ReviewerUserId uint       `gorm:"type:int(11)" json:"reviewerId"`                         // 审核人ID，userID
+	ReviewNote     string     `gorm:"type:varchar(500)" json:"reviewNote"`                    // 审核备注
+	ReviewTime     *time.Time `gorm:"type:datetime" json:"reviewTime"`                        // 审核时间
 }
 
 // 表名
@@ -34,6 +36,13 @@ func (m *MicroAppReview) Create(db *gorm.DB) error {
 func (m *MicroAppReview) GetById(db *gorm.DB, id uint) (MicroAppReview, error) {
 	var review MicroAppReview
 	err := db.Where("id = ?", id).First(&review).Error
+	return review, err
+}
+
+// 根据应用自增ID获取最新记录
+func (m *MicroAppReview) GetLatestByAppRecordId(db *gorm.DB, appRecordId uint) (MicroAppReview, error) {
+	var review MicroAppReview
+	err := db.Where("app_record_id = ?", appRecordId).Order("created_at DESC").First(&review).Error
 	return review, err
 }
 

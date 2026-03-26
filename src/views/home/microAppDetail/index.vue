@@ -15,7 +15,7 @@ const message = useMessage()
 const microAppId = computed(() => Number(route.params.id))
 
 // 数据
-const microAppInfo = ref<MicroApp.MicroAppInfo>()
+const microAppInfo = ref<MicroApp.Info>()
 const versionList = ref<MicroApp.VersionInfo[]>([])
 const categoryOptions = ref<{ label: string, value: number }[]>([])
 const loading = ref(false)
@@ -39,20 +39,20 @@ function getBrowserLang(): string {
 const baseInfoLangList = computed(() => {
   if (!microAppInfo.value)
     return ['zh-CN']
-  const langList = (microAppInfo.value as any).langList || []
+  const langList = microAppInfo.value.langList || []
   if (langList.length > 0) {
-    return langList.map((l: any) => l.lang)
+    return langList.map(l => l.lang)
   }
   return ['zh-CN']
 })
 
 // 微应用语言 Map
 const baseInfoLangMap = computed(() => {
-  const result: Record<string, any> = {}
+  const result: Record<string, MicroApp.LangInfo> = {}
   if (!microAppInfo.value)
     return result
-  const langList = (microAppInfo.value as any).langList || []
-  langList.forEach((l: any) => {
+  const langList = microAppInfo.value.langList || []
+  langList.forEach((l) => {
     result[l.lang] = l
   })
   return result
@@ -109,7 +109,7 @@ const latestApprovedVersion = computed(() => {
 async function fetchMicroAppInfo() {
   loading.value = true
   try {
-    const { data } = await getInfo<any>(microAppId.value)
+    const { data } = await getInfo<MicroApp.MicroAppInfo>(microAppId.value)
     microAppInfo.value = data
   }
   catch (error) {
@@ -222,25 +222,19 @@ onMounted(async () => {
 
             <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-500 mb-3">
               <span>AppID: {{ microAppInfo.microAppId }}</span>
-              <span>作者: {{ microAppInfo.authorName || '未知' }}</span>
+              <span>作者: {{ microAppInfo.developer?.name || '未知' }}</span>
               <span>分类: {{ categoryName }}</span>
               <span>收费: {{ microAppChargeTypeMap[microAppInfo.chargeType] || '免费' }}</span>
-              <!-- <span>创建时间: {{ timeFormat(String(microAppInfo.createTime)) }}</span> -->
+              <!-- <span>创建时间: {{ timeFormat(microAppInfo) }}</span> -->
             </div>
 
-            <p class="text-gray-600">
-              权限:
-            </p>
-            <p class="text-gray-600 leading-relaxed">
-              -
-            </p>
+            <!-- <p class="text-gray-600 mb-1">
+              权限: {{ microAppInfo.permissionLevel }}
+            </p> -->
 
-            <p class="text-gray-600">
-              支持的语言:
-            </p>
-            <p class="text-gray-600 leading-relaxed">
-              -
-            </p>
+            <!-- <p class="text-gray-600 mb-1">
+              支持的语言: {{ baseInfoLangList.join(', ') }}
+            </p> -->
 
             <p class="text-gray-600">
               介绍:
@@ -260,9 +254,9 @@ onMounted(async () => {
         <NImageGroup>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <NImage
-              v-for="(screenshot, index) in microAppInfo.screenshots.split(',')"
+              v-for="(screenshot, index) in microAppInfo.screenshots.split(',').filter(s => s.trim())"
               :key="index"
-              :src="screenshot"
+              :src="screenshot.trim()"
               class="rounded-lg"
             />
           </div>
