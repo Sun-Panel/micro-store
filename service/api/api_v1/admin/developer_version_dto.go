@@ -6,10 +6,10 @@ import "sun-panel/models"
 
 // MicroAppVersionGetListReq 获取版本列表请求
 type MicroAppVersionGetListReq struct {
-	Page   int  `json:"page"`
-	Limit  int  `json:"limit"`
-	AppId  uint `json:"appId"`
-	Status *int `json:"status"`
+	Page        int  `json:"page"`
+	Limit       int  `json:"limit"`
+	AppRecordId uint `json:"appId"`
+	Status      *int `json:"status"`
 }
 
 // MicroAppVersionGetInfoReq 获取版本详情请求
@@ -19,12 +19,12 @@ type MicroAppVersionGetInfoReq struct {
 
 // MicroAppVersionCreateReq 创建版本请求
 type MicroAppVersionCreateReq struct {
-	AppId       uint                       `json:"appId" binding:"required"`
-	Version     string                     `json:"version" binding:"required"`
-	VersionCode int                        `json:"versionCode" binding:"required"`
-	PackageUrl  string                     `json:"packageUrl" binding:"required"`
-	PackageHash string                     `json:"packageHash"`
-	VersionDesc string                     `json:"versionDesc"`
+	AppRecordId uint                         `json:"appId" binding:"required"`
+	Version     string                       `json:"version" binding:"required"`
+	VersionCode int                          `json:"versionCode" binding:"required"`
+	PackageUrl  string                       `json:"packageUrl" binding:"required"`
+	PackageHash string                       `json:"packageHash"`
+	VersionDesc string                       `json:"versionDesc"`
 	Config      *models.MicroAppVersionConfig `json:"config"` // 完整配置信息
 }
 
@@ -62,10 +62,10 @@ type MicroAppVersionOfflineReq struct {
 
 // AdminVersionGetListReq 管理员获取版本列表请求
 type AdminVersionGetListReq struct {
-	Page   int  `json:"page"`
-	Limit  int  `json:"limit"`
-	AppId  uint `json:"appId"`
-	Status *int `json:"status"`
+	Page        int  `json:"page"`
+	Limit       int  `json:"limit"`
+	AppRecordId uint `json:"appId"`
+	Status      *int `json:"status"`
 }
 
 // AdminVersionGetPendingListReq 获取待审核列表请求

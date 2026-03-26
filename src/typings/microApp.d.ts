@@ -21,20 +21,43 @@ declare namespace MicroApp {
   // 版本信息
   interface VersionInfo {
     id: number
-    appId: number
+    appRecordId: number
     microAppId: string
     version: string
-    type: 'release' | 'beta' | 'alpha' | 'rc' | 'dev'
-    releaseTime: string
-    description: string
-    downloadURL: string
-    pageUrl: string
+    versionCode: number
+    packageUrl: string
+    packageHash: string
+    versionDesc: string
+    config?: MicroAppVersionConfig
     status: number // 审核状态：-1-草稿 0-待审核 1-已通过 2-已拒绝 3-已下架
+    reviewTime?: string
     reviewerId?: number
     reviewNote?: string
-    reviewTime?: string
+    offlineType: number // 下架类型：0-正常 1-作者下架 2-平台下架
+    offlineReason?: string
+    appName?: string
     createdAt?: string
     updatedAt?: string
+    microApp?: MicroApp.Info
+    createTime?: string
+    updateTime?: string
+  }
+
+  // 版本配置信息
+  interface MicroAppVersionConfig {
+    appJsonVersion?: string
+    microAppId?: string
+    version?: string
+    apiVersion?: string
+    author?: string
+    entry?: string
+    icon?: string
+    debug?: boolean
+    components?: Record<string, any>
+    permissions?: string[]
+    dataNodes?: Record<string, any>
+    networkDomains?: string[]
+    appInfo?: Record<string, AppInfo>
   }
 
   // 开发者信息
@@ -154,20 +177,20 @@ declare namespace MicroApp {
 
   // 获取微应用版本列表请求
   interface GetVersionListRequest {
-    appId: number
+    appRecordId: number
     page?: number
     limit?: number
   }
 
   // 创建版本请求
   interface CreateVersionRequest {
-    appId: number
+    appRecordId: number
     version: string
-    type: 'release' | 'beta' | 'alpha' | 'rc' | 'dev'
-    releaseTime: string
-    description: string
-    downloadURL: string
-    pageUrl: string
+    versionCode: number
+    packageUrl: string
+    packageHash?: string
+    versionDesc?: string
+    config?: MicroAppVersionConfig
   }
 
   // 更新版本请求
@@ -292,7 +315,7 @@ declare namespace MicroApp {
 
   // 获取审核历史请求
   interface GetReviewHistoryRequest {
-    appId: number
+    appRecordId: number
     page?: number
     limit?: number
   }

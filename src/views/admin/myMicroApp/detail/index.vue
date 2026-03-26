@@ -131,7 +131,7 @@ async function fetchVersionList() {
   versionLoading.value = true
   try {
     const res = await getVersionList<Common.ListResponse<MicroApp.VersionInfo[]>>({
-      appId: microAppId.value,
+      appRecordId: microAppId.value,
       page: 1,
       limit: 100,
     })
@@ -470,7 +470,7 @@ onMounted(async () => {
     <!-- 添加版本弹窗 -->
     <AddVersionModal
       v-model:visible="addVersionShow"
-      :app-id="microAppId"
+      :app-record-id="microAppId"
       @done="fetchVersionList"
     />
 
@@ -483,7 +483,7 @@ onMounted(async () => {
     />
 
     <!-- 审核历史弹窗 -->
-    <ReviewHistoryModal v-model:visible="reviewHistoryShow" :app-id="microAppId" />
+    <ReviewHistoryModal v-model:visible="reviewHistoryShow" :app-record-id="microAppId" />
 
     <!-- 版本下架弹窗 -->
     <NModal

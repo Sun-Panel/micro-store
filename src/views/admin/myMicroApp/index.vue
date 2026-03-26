@@ -329,6 +329,6 @@ onMounted(async () => {
     />
 
     <!-- 审核历史弹窗 -->
-    <ReviewHistoryModal v-model:visible="reviewHistoryShow" :app-id="currentAppId" />
+    <ReviewHistoryModal v-model:visible="reviewHistoryShow" :app-record-id="currentAppId" />
   </div>
 </template>

@@ -30,7 +30,7 @@ func (a *DeveloperVersionApi) GetList(c *gin.Context) {
 	}
 
 	m := models.MicroAppVersion{}
-	list, total, err := m.GetList(global.Db, param.Page, param.Limit, &param.AppId, param.Status)
+	list, total, err := m.GetList(global.Db, param.Page, param.Limit, &param.AppRecordId, param.Status)
 	if err != nil {
 		apiReturn.ErrorDatabase(c, err.Error())
 		return
@@ -66,7 +66,7 @@ func (a *DeveloperVersionApi) Create(c *gin.Context) {
 	}
 
 	version := &models.MicroAppVersion{
-		AppId:       param.AppId,
+		AppRecordId: param.AppRecordId,
 		Version:     param.Version,
 		VersionCode: param.VersionCode,
 		PackageUrl:  param.PackageUrl,
@@ -186,7 +186,7 @@ func (a *DeveloperVersionApi) GetVersionList(c *gin.Context) {
 	}
 
 	m := models.MicroAppVersion{}
-	list, total, err := m.GetList(global.Db, param.Page, param.Limit, &param.AppId, param.Status)
+	list, total, err := m.GetList(global.Db, param.Page, param.Limit, &param.AppRecordId, param.Status)
 	if err != nil {
 		apiReturn.ErrorDatabase(c, err.Error())
 		return

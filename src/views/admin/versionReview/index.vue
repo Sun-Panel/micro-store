@@ -47,8 +47,19 @@ function createColumns(): DataTableColumns<MicroApp.VersionInfo> {
     },
     {
       title: '应用名称',
-      key: 'appName',
-      width: 150,
+      key: 'microApp.appName',
+      width: 180,
+      render(row) {
+        return h('div', { class: 'flex items-center gap-2' }, [
+          h('img', {
+            src: row.microApp?.appIcon || '',
+            alt: 'icon',
+            class: 'w-8 h-8 rounded object-cover',
+            onError: (e: any) => { e.target.style.display = 'none' },
+          }),
+          h('span', row.microApp?.appName || '-'),
+        ])
+      },
     },
     {
       title: '版本号',
@@ -71,7 +82,7 @@ function createColumns(): DataTableColumns<MicroApp.VersionInfo> {
       key: 'createdAt',
       width: 160,
       render(row) {
-        return timeFormat(String(row.createdAt))
+        return timeFormat(String(row.createTime))
       },
     },
     {

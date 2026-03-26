@@ -73,7 +73,7 @@ async function fetchVersionList() {
   versionLoading.value = true
   try {
     const { data } = await getVersionList<Common.ListResponse<MicroApp.VersionInfo[]>>({
-      appId: microAppId.value,
+      appRecordId: microAppId.value,
       page: 1,
       limit: 100,
     })

@@ -13,13 +13,13 @@ type MicroAppVersionService struct{}
 func (s *MicroAppVersionService) CreateWithCheck(db *gorm.DB, version *models.MicroAppVersion) error {
 	// 1. 检查应用是否存在
 	app := models.MicroApp{}
-	if _, err := app.GetById(db, version.AppId); err != nil {
+	if _, err := app.GetById(db, version.AppRecordId); err != nil {
 		return NewBizError(ErrCodeAppNotFound)
 	}
 
 	// 2. 检查版本号是否存在
 	m := models.MicroAppVersion{}
-	exists, err := m.CheckVersionExist(db, version.AppId, version.Version, 0)
+	exists, err := m.CheckVersionExist(db, version.AppRecordId, version.Version, 0)
 	if err != nil {
 		return err // 数据库错误，直接返回
 	}
@@ -28,7 +28,7 @@ func (s *MicroAppVersionService) CreateWithCheck(db *gorm.DB, version *models.Mi
 	}
 
 	// 3. 检查版本号数字是否存在
-	exists, err = m.CheckVersionCodeExist(db, version.AppId, version.VersionCode, 0)
+	exists, err = m.CheckVersionCodeExist(db, version.AppRecordId, version.VersionCode, 0)
 	if err != nil {
 		return err // 数据库错误，直接返回
 	}
@@ -53,10 +53,10 @@ func (s *MicroAppVersionService) GetPendingListWithAppInfo(db *gorm.DB, page, li
 		return nil, 0, err
 	}
 
-	// 收集所有 AppId
+	// 收集所有 AppRecordId
 	appIds := make([]uint, 0, len(list))
 	for _, v := range list {
-		appIds = append(appIds, v.AppId)
+		appIds = append(appIds, v.AppRecordId)
 	}
 
 	// 批量查询应用信息（避免 N+1）
@@ -75,7 +75,7 @@ func (s *MicroAppVersionService) GetPendingListWithAppInfo(db *gorm.DB, page, li
 	for i, v := range list {
 		appInfo := map[string]interface{}{
 			"id":          v.ID,
-			"appId":       v.AppId,
+			"appId":       v.AppRecordId,
 			"version":     v.Version,
 			"versionCode": v.VersionCode,
 			"packageUrl":  v.PackageUrl,
@@ -84,7 +84,7 @@ func (s *MicroAppVersionService) GetPendingListWithAppInfo(db *gorm.DB, page, li
 			"reviewTime":  v.ReviewTime,
 			"reviewNote":  v.ReviewNote,
 		}
-		if app, ok := appMap[v.AppId]; ok {
+		if app, ok := appMap[v.AppRecordId]; ok {
 			appInfo["appName"] = app.AppName
 			appInfo["appIcon"] = app.AppIcon
 		}
@@ -206,39 +206,3 @@ func (s *MicroAppVersionService) GetLatestOnlineByAppModelId(db *gorm.DB, appMod
 	m := models.MicroAppVersion{}
 	return m.GetLatestOnlineByAppId(db, appModelId)
 }
-
-// // 全局实例
-// var MicroAppVersionSvc = &MicroAppVersionService{}
-
-// // 便捷函数
-// func CreateVersionWithCheck(db *gorm.DB, version *models.MicroAppVersion) error {
-// 	return MicroAppVersionSvc.CreateWithCheck(db, version)
-// }
-
-// func GetPendingListWithAppInfo(db *gorm.DB, page, limit int) ([]map[string]interface{}, int64, error) {
-// 	return MicroAppVersionSvc.GetPendingListWithAppInfo(db, page, limit)
-// }
-
-// func UpdateVersion(db *gorm.DB, id uint, version string, versionCode int) error {
-// 	return MicroAppVersionSvc.UpdateVersion(db, id, version, versionCode)
-// }
-
-// func SubmitReview(db *gorm.DB, versionId uint) error {
-// 	return MicroAppVersionSvc.SubmitReview(db, versionId)
-// }
-
-// func CancelReview(db *gorm.DB, versionId uint) error {
-// 	return MicroAppVersionSvc.CancelReview(db, versionId)
-// }
-
-// func DeleteVersion(db *gorm.DB, ids []uint) error {
-// 	return MicroAppVersionSvc.DeleteVersion(db, ids)
-// }
-
-// func ReviewVersion(db *gorm.DB, versionId uint, status int, reviewNote string) error {
-// 	return MicroAppVersionSvc.Review(db, versionId, status, 0, reviewNote)
-// }
-
-// func ReviewVersionWithReviewer(db *gorm.DB, versionId uint, status int, reviewerId uint, reviewNote string) error {
-// 	return MicroAppVersionSvc.Review(db, versionId, status, reviewerId, reviewNote)
-// }

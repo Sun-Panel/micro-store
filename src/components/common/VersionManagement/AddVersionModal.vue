@@ -6,7 +6,7 @@ import { apiRespErrMsg } from '@/utils/cmn/apiMessage'
 
 interface Props {
   visible: boolean
-  appId: number
+  appRecordId: number
 }
 
 const props = defineProps<Props>()
@@ -108,7 +108,7 @@ async function handleAddVersion() {
   try {
     // 创建版本
     const createRes = await createVersion<any>({
-      appId: props.appId,
+      appId: props.appRecordId,
       version: versionForm.value.version,
       versionCode: versionForm.value.versionCode,
       packageUrl: versionForm.value.packageUrl,

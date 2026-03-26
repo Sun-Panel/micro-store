@@ -6,7 +6,7 @@ import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 
 interface Props {
   visible: boolean
-  appId: number
+  appRecordId: number
 }
 
 const props = defineProps<Props>()
@@ -30,7 +30,7 @@ const categoryMap = computed(() => {
 const show = ref(props.visible)
 watch(() => props.visible, (val) => {
   show.value = val
-  if (val && props.appId) {
+  if (val && props.appRecordId) {
     fetchCategoryList()
     fetchReviewHistory()
   }
@@ -54,7 +54,7 @@ async function fetchCategoryList() {
 async function fetchReviewHistory() {
   try {
     const { data } = await getReviewHistory<Common.ListResponse<MicroApp.MicroAppReviewInfo[]>>({
-      appId: props.appId,
+      appRecordId: props.appRecordId,
     })
     // 解析 langMap，确保是对象格式
     const processedList = (data?.list || []).map((review: any) => {

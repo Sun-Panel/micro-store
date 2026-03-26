@@ -46,9 +46,9 @@ type MicroAppVersion struct {
 	ReviewerId  uint                   `gorm:"type:int(11)" json:"reviewerId"`                    // 审核人ID
 	ReviewNote  string                 `gorm:"type:varchar(500)" json:"reviewNote"`               // 审核备注
 	// 下架相关字段
-	OfflineType   int      `gorm:"type:tinyint(1);not null;default:0" json:"offlineType"` // 下架类型：0-正常 1-作者下架 2-平台下架
-	OfflineReason string   `gorm:"type:varchar(500)" json:"offlineReason"`                // 下架原因
-	MicroAppInfo  MicroApp `gorm:"foreignKey:AppRecordId" json:"microAppInfo"`
+	OfflineType   int       `gorm:"type:tinyint(1);not null;default:0" json:"offlineType"` // 下架类型：0-正常 1-作者下架 2-平台下架
+	OfflineReason string    `gorm:"type:varchar(500)" json:"offlineReason"`                // 下架原因
+	MicroApp      *MicroApp `gorm:"foreignKey:AppRecordId" json:"microApp"`
 }
 
 // 表名

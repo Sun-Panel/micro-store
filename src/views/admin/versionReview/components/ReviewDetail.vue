@@ -36,7 +36,7 @@ watch(() => props.visible, async (visible) => {
 
     // 获取当前最新已通过版本
     try {
-      const { data } = await getLatestOnlineByAppModelId<MicroApp.VersionInfo>(props.versionInfo.appId)
+      const { data } = await getLatestOnlineByAppModelId<MicroApp.VersionInfo>(props.versionInfo.appRecordId)
       currentApprovedVersion.value = data
     }
     catch (error: any) {

@@ -30,7 +30,7 @@ func (a *MicroAppVersionAdminApi) GetVersionList(c *gin.Context) {
 	}
 
 	m := models.MicroAppVersion{}
-	list, total, err := m.GetList(global.Db, param.Page, param.Limit, &param.AppId, param.Status)
+	list, total, err := m.GetList(global.Db, param.Page, param.Limit, &param.AppRecordId, param.Status)
 	if err != nil {
 		apiReturn.ErrorDatabase(c, err.Error())
 		return
@@ -57,7 +57,8 @@ func (a *MicroAppVersionAdminApi) GetPendingList(c *gin.Context) {
 	m := models.MicroAppVersion{}
 	// 状态 0 表示审核中
 	status := 0
-	list, total, err := m.GetList(global.Db, param.Page, param.Limit, nil, &status)
+	db := global.Db.Preload("MicroApp.LangList").Preload("MicroApp.DefaultLangInfo")
+	list, total, err := m.GetList(db, param.Page, param.Limit, nil, &status)
 	if err != nil {
 		apiReturn.ErrorDatabase(c, err.Error())
 		return
