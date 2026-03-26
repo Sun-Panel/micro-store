@@ -2,6 +2,7 @@ package admin
 
 import (
 	"sun-panel/api/api_v1/common/apiReturn"
+	"sun-panel/api/api_v1/common/base"
 	"sun-panel/biz"
 	"sun-panel/global"
 	"sun-panel/models"
@@ -54,8 +55,8 @@ func (a *MicroAppVersionAdminApi) GetPendingList(c *gin.Context) {
 	}
 
 	m := models.MicroAppVersion{}
-	// 状态 1 表示审核中
-	status := 1
+	// 状态 0 表示审核中
+	status := 0
 	list, total, err := m.GetList(global.Db, param.Page, param.Limit, nil, &status)
 	if err != nil {
 		apiReturn.ErrorDatabase(c, err.Error())
@@ -83,7 +84,7 @@ func (a *MicroAppVersionAdminApi) Review(c *gin.Context) {
 	reviewerId := c.GetUint("adminId")
 
 	// 调用业务层审核方法
-	if err := biz.ReviewVersionWithReviewer(global.Db, param.VersionId, param.Status, reviewerId, param.ReviewNote); err != nil {
+	if err := biz.MicroAppVersion.Review(global.Db, param.VersionId, param.Status, reviewerId, param.ReviewNote); err != nil {
 		handleBizError(c, err)
 		return
 	}
@@ -112,4 +113,20 @@ func (a *MicroAppVersionAdminApi) Offline(c *gin.Context) {
 	}
 
 	apiReturn.Success(c)
+}
+
+// GetLatestOnlineByAppModelId 获取最新在线版本（审核员专用）
+func (this *MicroAppVersionAdminApi) GetLatestOnlineByAppModelId(c *gin.Context) {
+	req := models.MicroApp{}
+	if err := c.ShouldBindBodyWith(&req, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+	// biz.MicroApp.GetById(global.Db, req.ID)
+	version, err := biz.MicroAppVersion.GetLatestOnlineByAppModelId(global.Db, req.ID)
+	if err != nil {
+		base.HandleBizErrorAndReturn(c, err)
+		return
+	}
+	apiReturn.SuccessData(c, version)
 }

@@ -202,38 +202,43 @@ func (s *MicroAppVersionService) Review(db *gorm.DB, versionId uint, status int,
 	return nil
 }
 
-// 全局实例
-var MicroAppVersionSvc = &MicroAppVersionService{}
-
-// 便捷函数
-func CreateVersionWithCheck(db *gorm.DB, version *models.MicroAppVersion) error {
-	return MicroAppVersionSvc.CreateWithCheck(db, version)
+func (s *MicroAppVersionService) GetLatestOnlineByAppModelId(db *gorm.DB, appModelId uint) (models.MicroAppVersion, error) {
+	m := models.MicroAppVersion{}
+	return m.GetLatestOnlineByAppId(db, appModelId)
 }
 
-func GetPendingListWithAppInfo(db *gorm.DB, page, limit int) ([]map[string]interface{}, int64, error) {
-	return MicroAppVersionSvc.GetPendingListWithAppInfo(db, page, limit)
-}
+// // 全局实例
+// var MicroAppVersionSvc = &MicroAppVersionService{}
 
-func UpdateVersion(db *gorm.DB, id uint, version string, versionCode int) error {
-	return MicroAppVersionSvc.UpdateVersion(db, id, version, versionCode)
-}
+// // 便捷函数
+// func CreateVersionWithCheck(db *gorm.DB, version *models.MicroAppVersion) error {
+// 	return MicroAppVersionSvc.CreateWithCheck(db, version)
+// }
 
-func SubmitReview(db *gorm.DB, versionId uint) error {
-	return MicroAppVersionSvc.SubmitReview(db, versionId)
-}
+// func GetPendingListWithAppInfo(db *gorm.DB, page, limit int) ([]map[string]interface{}, int64, error) {
+// 	return MicroAppVersionSvc.GetPendingListWithAppInfo(db, page, limit)
+// }
 
-func CancelReview(db *gorm.DB, versionId uint) error {
-	return MicroAppVersionSvc.CancelReview(db, versionId)
-}
+// func UpdateVersion(db *gorm.DB, id uint, version string, versionCode int) error {
+// 	return MicroAppVersionSvc.UpdateVersion(db, id, version, versionCode)
+// }
 
-func DeleteVersion(db *gorm.DB, ids []uint) error {
-	return MicroAppVersionSvc.DeleteVersion(db, ids)
-}
+// func SubmitReview(db *gorm.DB, versionId uint) error {
+// 	return MicroAppVersionSvc.SubmitReview(db, versionId)
+// }
 
-func ReviewVersion(db *gorm.DB, versionId uint, status int, reviewNote string) error {
-	return MicroAppVersionSvc.Review(db, versionId, status, 0, reviewNote)
-}
+// func CancelReview(db *gorm.DB, versionId uint) error {
+// 	return MicroAppVersionSvc.CancelReview(db, versionId)
+// }
 
-func ReviewVersionWithReviewer(db *gorm.DB, versionId uint, status int, reviewerId uint, reviewNote string) error {
-	return MicroAppVersionSvc.Review(db, versionId, status, reviewerId, reviewNote)
-}
+// func DeleteVersion(db *gorm.DB, ids []uint) error {
+// 	return MicroAppVersionSvc.DeleteVersion(db, ids)
+// }
+
+// func ReviewVersion(db *gorm.DB, versionId uint, status int, reviewNote string) error {
+// 	return MicroAppVersionSvc.Review(db, versionId, status, 0, reviewNote)
+// }
+
+// func ReviewVersionWithReviewer(db *gorm.DB, versionId uint, status int, reviewerId uint, reviewNote string) error {
+// 	return MicroAppVersionSvc.Review(db, versionId, status, reviewerId, reviewNote)
+// }

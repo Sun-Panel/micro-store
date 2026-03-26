@@ -75,7 +75,7 @@ func (a *DeveloperVersionApi) Create(c *gin.Context) {
 		Config:      param.Config,
 	}
 
-	if err := biz.CreateVersionWithCheck(global.Db, version); err != nil {
+	if err := biz.MicroAppVersion.CreateWithCheck(global.Db, version); err != nil {
 		handleBizError(c, err)
 		return
 	}
@@ -91,7 +91,7 @@ func (a *DeveloperVersionApi) Update(c *gin.Context) {
 		return
 	}
 
-	if err := biz.UpdateVersion(global.Db, param.Id, param.Version, param.VersionCode); err != nil {
+	if err := biz.MicroAppVersion.UpdateVersion(global.Db, param.Id, param.Version, param.VersionCode); err != nil {
 		handleBizError(c, err)
 		return
 	}
@@ -107,7 +107,7 @@ func (a *DeveloperVersionApi) SubmitReview(c *gin.Context) {
 		return
 	}
 
-	if err := biz.SubmitReview(global.Db, param.VersionId); err != nil {
+	if err := biz.MicroAppVersion.SubmitReview(global.Db, param.VersionId); err != nil {
 		handleBizError(c, err)
 		return
 	}
@@ -123,7 +123,7 @@ func (a *DeveloperVersionApi) CancelReview(c *gin.Context) {
 		return
 	}
 
-	if err := biz.CancelReview(global.Db, param.VersionId); err != nil {
+	if err := biz.MicroAppVersion.CancelReview(global.Db, param.VersionId); err != nil {
 		handleBizError(c, err)
 		return
 	}
@@ -139,7 +139,7 @@ func (a *DeveloperVersionApi) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := biz.DeleteVersion(global.Db, param.Ids); err != nil {
+	if err := biz.MicroAppVersion.DeleteVersion(global.Db, param.Ids); err != nil {
 		handleBizError(c, err)
 		return
 	}
@@ -240,7 +240,7 @@ func (a *DeveloperVersionApi) Review(c *gin.Context) {
 	reviewerId := c.GetUint("adminId")
 
 	// 调用业务层审核方法
-	if err := biz.ReviewVersionWithReviewer(global.Db, param.VersionId, param.Status, reviewerId, param.ReviewNote); err != nil {
+	if err := biz.MicroAppVersion.Review(global.Db, param.VersionId, param.Status, reviewerId, param.ReviewNote); err != nil {
 		handleBizError(c, err)
 		return
 	}

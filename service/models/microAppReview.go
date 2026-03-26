@@ -73,12 +73,12 @@ func (m *MicroAppReview) GetListByAppId(db *gorm.DB, appId uint, page, limit int
 	return list, total, err
 }
 
-// 获取待审核列表（管理员用）
+// 获取待审核列表
 func (m *MicroAppReview) GetPendingList(db *gorm.DB, page, limit int) ([]MicroAppReview, int64, error) {
 	var list []MicroAppReview
 	var total int64
 
-	query := db.Model(&MicroAppReview{}).Where("status = ?", 0)
+	query := db.Model(&MicroAppReview{}).Order("updated_at ASC").Where("status = ?", 0)
 
 	// 获取总数
 	err := query.Count(&total).Error

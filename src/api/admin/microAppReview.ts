@@ -3,7 +3,7 @@ import { post } from '@/utils/request'
 // 获取待审核列表（审核员专用）
 export function getPendingList<T>(data: MicroApp.GetPendingReviewListRequest) {
   return post<T>({
-    url: '/admin/review/getPendingList',
+    url: '/admin/review/microApp/getPendingList',
     data,
   })
 }

@@ -76,3 +76,10 @@ export function offlineVersion<T>(data: { id: number, type: number, reason?: str
     data,
   })
 }
+
+export function getLatestOnlineByAppModelId<T>(id: number) {
+  return post<T>({
+    url: '/admin/review/microApp/version/getLatestOnlineByAppModelId',
+    data: { id },
+  })
+}

@@ -5,7 +5,7 @@ import { post } from '@/utils/request'
 // 获取待审核应用列表（审核员专用）
 export function getPendingAppList<T>(data: Common.ListRequest) {
   return post<T>({
-    url: '/admin/review/getPendingList',
+    url: '/admin/review/microApp/getPendingList',
     data,
   })
 }
@@ -31,7 +31,7 @@ export function approveApp<T>(data: MicroApp.ReviewAppRequest) {
 // 获取待审核版本列表（审核员专用）
 export function getPendingVersionList<T>(data: Common.ListRequest) {
   return post<T>({
-    url: '/admin/reviewVersion/getPendingList',
+    url: '/admin/review/microApp/version/getPendingList',
     data,
   })
 }
