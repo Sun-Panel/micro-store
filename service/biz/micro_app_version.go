@@ -11,9 +11,10 @@ type MicroAppVersionService struct{}
 
 // CreateWithCheck 创建版本（包含业务检查）
 func (s *MicroAppVersionService) CreateWithCheck(db *gorm.DB, version *models.MicroAppVersion) error {
-	// 1. 检查应用是否存在
+	// 1. 检查应用是否存在并获取 microAppId
 	app := models.MicroApp{}
-	if _, err := app.GetById(db, version.AppRecordId); err != nil {
+	app, err := app.GetById(db, version.AppRecordId)
+	if err != nil {
 		return NewBizError(ErrCodeAppNotFound)
 	}
 
@@ -36,7 +37,10 @@ func (s *MicroAppVersionService) CreateWithCheck(db *gorm.DB, version *models.Mi
 		return NewBizError(ErrCodeVersionCodeExists)
 	}
 
-	// 4. 创建版本
+	// 4. 设置 AppId
+	version.AppRecordId = app.ID
+
+	// 5. 创建版本
 	version.Status = -1 // 默认草稿状态
 	if err := version.Create(db); err != nil {
 		return err // 数据库错误，直接返回

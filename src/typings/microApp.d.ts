@@ -28,7 +28,7 @@ declare namespace MicroApp {
     packageUrl: string
     packageHash: string
     versionDesc: string
-    config?: MicroAppVersionConfig
+    config?: VersionConfig
     status: number // 审核状态：-1-草稿 0-待审核 1-已通过 2-已拒绝 3-已下架
     reviewTime?: string
     reviewerId?: number
@@ -44,7 +44,7 @@ declare namespace MicroApp {
   }
 
   // 版本配置信息
-  interface MicroAppVersionConfig {
+  interface VersionConfig {
     appJsonVersion?: string
     microAppId?: string
     version?: string

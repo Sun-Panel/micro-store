@@ -49,7 +49,7 @@ func (m *MicroAppReview) GetLatestByAppRecordId(db *gorm.DB, appRecordId uint) (
 // 获取应用的待审核记录
 func (m *MicroAppReview) GetPendingByAppId(db *gorm.DB, appId uint) (MicroAppReview, error) {
 	var review MicroAppReview
-	err := db.Where("app_id = ? AND status = ?", appId, 0).First(&review).Error
+	err := db.Where("app_record_id = ? AND status = ?", appId, 0).First(&review).Error
 	return review, err
 }
 
@@ -58,7 +58,7 @@ func (m *MicroAppReview) GetListByAppId(db *gorm.DB, appId uint, page, limit int
 	var list []MicroAppReview
 	var total int64
 
-	query := db.Model(&MicroAppReview{}).Where("app_id = ?", appId)
+	query := db.Model(&MicroAppReview{}).Where("app_record_id = ?", appId)
 
 	// 获取总数
 	err := query.Count(&total).Error
@@ -106,7 +106,7 @@ func (m *MicroAppReview) UpdateStatus(db *gorm.DB, id uint, status int, reviewer
 
 // 删除应用的审核记录
 func (m *MicroAppReview) DeleteByAppId(db *gorm.DB, appId uint) error {
-	return db.Where("app_id = ?", appId).Delete(&MicroAppReview{}).Error
+	return db.Where("app_record_id = ?", appId).Delete(&MicroAppReview{}).Error
 }
 
 // 根据业务ID获取审核记录列表

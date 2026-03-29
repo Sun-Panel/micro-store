@@ -1,23 +1,24 @@
 package models
 
 import (
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // 应用安装记录表
 type MicroAppInstall struct {
 	BaseModel
-	AppId          uint      `gorm:"type:int(11);not null;index" json:"appId"`                              // 微应用ID
-	VersionId      uint      `gorm:"type:int(11);not null;index" json:"versionId"`                          // 版本ID
-	UserId         uint      `gorm:"type:int(11);index" json:"userId"`                                      // 用户ID
-	ClientId       string    `gorm:"type:varchar(100);not null;index" json:"clientId"`                      // 客户端标识
-	IntranetIp     string    `gorm:"type:varchar(50)" json:"intranetIp"`                                    // 内网IP
-	PublicIp       string    `gorm:"type:varchar(50);not null" json:"publicIp"`                             // 公网IP
-	InstallTime    time.Time `gorm:"type:datetime;not null;default:CURRENT_TIMESTAMP" json:"installTime"`  // 安装时间
-	UserIsPro      bool      `gorm:"type:tinyint(1);default:0" json:"userIsPro"`                            // 安装时用户是否为PRO
-	PointValue     int       `gorm:"type:int(11)" json:"pointValue"`                                        // 本次积分值
-	AuthorPointRule string   `gorm:"type:varchar(500)" json:"authorPointRule"`                              // 作者当前积分规则JSON
+	AppRecordId     uint      `gorm:"type:int(11);not null;index" json:"appRecordId"`                      // 微应用ID
+	VersionId       uint      `gorm:"type:int(11);not null;index" json:"versionId"`                        // 版本ID
+	UserId          uint      `gorm:"type:int(11);index" json:"userId"`                                    // 用户ID
+	ClientId        string    `gorm:"type:varchar(100);not null;index" json:"clientId"`                    // 客户端标识
+	IntranetIp      string    `gorm:"type:varchar(50)" json:"intranetIp"`                                  // 内网IP
+	PublicIp        string    `gorm:"type:varchar(50);not null" json:"publicIp"`                           // 公网IP
+	InstallTime     time.Time `gorm:"type:datetime;not null;default:CURRENT_TIMESTAMP" json:"installTime"` // 安装时间
+	UserIsPro       bool      `gorm:"type:tinyint(1);default:0" json:"userIsPro"`                          // 安装时用户是否为PRO
+	PointValue      int       `gorm:"type:int(11)" json:"pointValue"`                                      // 本次积分值
+	AuthorPointRule string    `gorm:"type:varchar(500)" json:"authorPointRule"`                            // 作者当前积分规则JSON
 }
 
 // 表名
@@ -34,7 +35,7 @@ func (m *MicroAppInstall) GetList(db *gorm.DB, page, limit int, appId *uint, ver
 
 	// 应用ID筛选
 	if appId != nil {
-		query = query.Where("app_id = ?", *appId)
+		query = query.Where("app_record_id = ?", *appId)
 	}
 
 	// 版本ID筛选
@@ -73,7 +74,7 @@ func (m *MicroAppInstall) Create(db *gorm.DB) error {
 // 获取应用的安装次数
 func (m *MicroAppInstall) GetInstallCountByAppId(db *gorm.DB, appId uint) (int64, error) {
 	var count int64
-	err := db.Model(&MicroAppInstall{}).Where("app_id = ?", appId).Count(&count).Error
+	err := db.Model(&MicroAppInstall{}).Where("app_record_id = ?", appId).Count(&count).Error
 	return count, err
 }
 
@@ -105,14 +106,14 @@ func (m *MicroAppInstall) GetInstalledAppsByClientId(db *gorm.DB, clientId strin
 // 检查用户是否安装过该应用
 func (m *MicroAppInstall) CheckUserInstalled(db *gorm.DB, userId uint, appId uint) (bool, error) {
 	var count int64
-	err := db.Model(&MicroAppInstall{}).Where("user_id = ? AND app_id = ?", userId, appId).Count(&count).Error
+	err := db.Model(&MicroAppInstall{}).Where("user_id = ? AND app_record_id = ?", userId, appId).Count(&count).Error
 	return count > 0, err
 }
 
 // 获取应用在某客户端的安装记录
 func (m *MicroAppInstall) GetInstallByClientIdAndAppId(db *gorm.DB, clientId string, appId uint) (MicroAppInstall, error) {
 	var install MicroAppInstall
-	err := db.Where("client_id = ? AND app_id = ?", clientId, appId).
+	err := db.Where("client_id = ? AND app_record_id = ?", clientId, appId).
 		Order("install_time DESC").
 		First(&install).Error
 	return install, err

@@ -29,30 +29,30 @@ type MicroAppPackageResult struct {
 
 // MicroAppPackageResultV2 微应用包处理结果（带类型化 Config）
 type MicroAppPackageResultV2 struct {
-	URL        string         `json:"url"`        // 文件相对路径
-	Hash       string         `json:"hash"`       // 文件 MD5
-	Config     *MicroAppCfg   `json:"config"`     // 解析的配置
-	FileName   string         `json:"fileName"`   // 文件名
-	FileSize   int64          `json:"fileSize"`   // 文件大小
-	FolderName string         `json:"folderName"` // 文件夹名
-	IconURL    string         `json:"iconURL"`    // 图标 URL
+	URL        string       `json:"url"`        // 文件相对路径
+	Hash       string       `json:"hash"`       // 文件 MD5
+	Config     *MicroAppCfg `json:"config"`     // 解析的配置
+	FileName   string       `json:"fileName"`   // 文件名
+	FileSize   int64        `json:"fileSize"`   // 文件大小
+	FolderName string       `json:"folderName"` // 文件夹名
+	IconURL    string       `json:"iconURL"`    // 图标 URL
 }
 
 // MicroAppCfg 微应用配置
 type MicroAppCfg struct {
-	AppJsonVersion string                    `json:"appJsonVersion"`
-	MicroAppId     string                    `json:"microAppId"`
-	Version        string                    `json:"version"`
-	APIVersion     string                    `json:"apiVersion"`
-	Author         string                    `json:"author"`
-	Entry          string                    `json:"entry"`
-	Icon           string                    `json:"icon"`
-	Debug          bool                      `json:"debug"`
-	Components     map[string]interface{}    `json:"components"`
-	Permissions    []string                  `json:"permissions"`
-	DataNodes      map[string]interface{}    `json:"dataNodes"`
-	NetworkDomains []string                  `json:"networkDomains"`
-	AppInfo        map[string]AppInfoConfig  `json:"appInfo"`
+	AppJsonVersion string                   `json:"appJsonVersion"`
+	MicroAppId     string                   `json:"microAppId"`
+	Version        string                   `json:"version"`
+	APIVersion     string                   `json:"apiVersion"`
+	Author         string                   `json:"author"`
+	Entry          string                   `json:"entry"`
+	Icon           string                   `json:"icon"`
+	Debug          bool                     `json:"debug"`
+	Components     map[string]interface{}   `json:"components"`
+	Permissions    []string                 `json:"permissions"`
+	DataNodes      map[string]interface{}   `json:"dataNodes"`
+	NetworkDomains []string                 `json:"networkDomains"`
+	AppInfo        map[string]AppInfoConfig `json:"appInfo"`
 }
 
 // AppInfoConfig 应用信息配置
@@ -62,8 +62,11 @@ type AppInfoConfig struct {
 	NetworkDescription string `json:"networkDescription"`
 }
 
+// MicroAppPackageService 微应用包处理服务
+type MicroAppPackageService struct{}
+
 // UploadMicroAppPackage 上传并处理微应用包
-func UploadMicroAppPackage(fileData []byte, fileName string) (*MicroAppPackageResult, error) {
+func (s *MicroAppPackageService) UploadMicroAppPackage(fileData []byte, fileName string) (*MicroAppPackageResult, error) {
 	// 获取保存路径
 	configUpload := global.Config.GetValueString("base", "micro_app_source_path")
 	if configUpload == "" {
@@ -90,7 +93,7 @@ func UploadMicroAppPackage(fileData []byte, fileName string) (*MicroAppPackageRe
 	}
 
 	// 计算文件 MD5 校验值
-	fileHash, err := calculateFileMD5(filePath)
+	fileHash, err := s.calculateFileMD5(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("计算文件校验值失败: %w", err)
 	}
@@ -103,15 +106,15 @@ func UploadMicroAppPackage(fileData []byte, fileName string) (*MicroAppPackageRe
 	defer os.RemoveAll(tempDir) // 清理临时目录
 
 	// 解压文件
-	if err := unzipFile(filePath, tempDir); err != nil {
+	if err := s.unzipFile(filePath, tempDir); err != nil {
 		return nil, fmt.Errorf("解压文件失败: %w", err)
 	}
 
 	// 查找并解析配置文件
-	config := parseAppConfig(tempDir)
+	config := s.parseAppConfig(tempDir)
 
 	// 提取图标并保存到静态资源目录
-	iconURL := extractAndSaveIcon(tempDir, config, newFileName)
+	iconURL := s.extractAndSaveIcon(tempDir, config, newFileName)
 
 	// 返回结果
 	relativePath := filePath[len(configUpload)-1:]
@@ -128,7 +131,7 @@ func UploadMicroAppPackage(fileData []byte, fileName string) (*MicroAppPackageRe
 }
 
 // calculateFileMD5 计算文件的 MD5 校验值
-func calculateFileMD5(filePath string) (string, error) {
+func (s *MicroAppPackageService) calculateFileMD5(filePath string) (string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return "", err
@@ -144,7 +147,7 @@ func calculateFileMD5(filePath string) (string, error) {
 }
 
 // unzipFile 解压 zip 文件
-func unzipFile(zipPath, destDir string) error {
+func (s *MicroAppPackageService) unzipFile(zipPath, destDir string) error {
 	zipReader, err := zip.OpenReader(zipPath)
 	if err != nil {
 		return err
@@ -166,7 +169,7 @@ func unzipFile(zipPath, destDir string) error {
 		}
 
 		// 解压文件
-		if err := extractFile(file, filePath); err != nil {
+		if err := s.extractFile(file, filePath); err != nil {
 			return err
 		}
 	}
@@ -175,7 +178,7 @@ func unzipFile(zipPath, destDir string) error {
 }
 
 // extractFile 解压单个文件
-func extractFile(file *zip.File, destPath string) error {
+func (s *MicroAppPackageService) extractFile(file *zip.File, destPath string) error {
 	targetFile, err := os.Create(destPath)
 	if err != nil {
 		return err
@@ -193,7 +196,7 @@ func extractFile(file *zip.File, destPath string) error {
 }
 
 // parseAppConfig 解析应用配置文件
-func parseAppConfig(tempDir string) map[string]interface{} {
+func (s *MicroAppPackageService) parseAppConfig(tempDir string) map[string]interface{} {
 	// 尝试查找 app.config.js 或 app.config.json
 	configFiles := []string{
 		"app.config.js",
@@ -205,7 +208,7 @@ func parseAppConfig(tempDir string) map[string]interface{} {
 	for _, configFile := range configFiles {
 		configPath := filepath.Join(tempDir, configFile)
 		if _, err := os.Stat(configPath); err == nil {
-			if config := parseConfigFile(configPath); config != nil {
+			if config := s.parseConfigFile(configPath); config != nil {
 				return config
 			}
 		}
@@ -218,7 +221,7 @@ func parseAppConfig(tempDir string) map[string]interface{} {
 			return err
 		}
 		if !info.IsDir() && (strings.HasSuffix(info.Name(), "app.config.js") || strings.HasSuffix(info.Name(), "app.config.json") || strings.HasSuffix(info.Name(), ".config.js")) {
-			if config := parseConfigFile(walkPath); config != nil {
+			if config := s.parseConfigFile(walkPath); config != nil {
 				foundConfig = config
 				return filepath.SkipDir
 			}
@@ -230,7 +233,7 @@ func parseAppConfig(tempDir string) map[string]interface{} {
 }
 
 // parseConfigFile 解析配置文件
-func parseConfigFile(configPath string) map[string]interface{} {
+func (s *MicroAppPackageService) parseConfigFile(configPath string) map[string]interface{} {
 	content, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil
@@ -249,7 +252,7 @@ func parseConfigFile(configPath string) map[string]interface{} {
 	}
 
 	// 移除 JavaScript 注释
-	strContent = removeJSComments(strContent)
+	strContent = s.removeJSComments(strContent)
 
 	var config map[string]interface{}
 	if err := json.Unmarshal([]byte(strContent), &config); err != nil {
@@ -268,7 +271,7 @@ func parseConfigFile(configPath string) map[string]interface{} {
 }
 
 // removeJSComments 移除 JavaScript 注释
-func removeJSComments(content string) string {
+func (s *MicroAppPackageService) removeJSComments(content string) string {
 	var result []rune
 	inString := false
 	stringChar := ' '
@@ -330,7 +333,7 @@ func removeJSComments(content string) string {
 }
 
 // extractAndSaveIcon 从解压目录中提取图标并保存到静态资源目录
-func extractAndSaveIcon(tempDir string, config map[string]interface{}, versionFileName string) string {
+func (s *MicroAppPackageService) extractAndSaveIcon(tempDir string, config map[string]interface{}, versionFileName string) string {
 	if config == nil {
 		return ""
 	}
@@ -395,4 +398,14 @@ func extractAndSaveIcon(tempDir string, config map[string]interface{}, versionFi
 
 	// 返回图标的访问 URL
 	return "/uploads/micro_app_icon/" + iconNewName
+}
+
+// GenerateDownloadURL 生成完整的下载 URL
+// 参数示例: "d/2026/03/15/YM-music-player-free-2.1.0-375993e6dcdd.zip"
+// 返回完整的浏览器可访问下载地址
+func (s *MicroAppPackageService) GenerateDownloadURL(relativePath string) string {
+	if relativePath == "" {
+		return ""
+	}
+	return "/uploads" + strings.Trim(relativePath, "/")
 }

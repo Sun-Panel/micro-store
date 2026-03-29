@@ -30,7 +30,7 @@ func (a *DeveloperVersionApi) GetList(c *gin.Context) {
 	}
 
 	m := models.MicroAppVersion{}
-	list, total, err := m.GetList(global.Db, param.Page, param.Limit, &param.AppRecordId, param.Status)
+	list, total, err := m.GetList(global.Db, param.Page, param.Limit, &param.AppRecordId, nil)
 	if err != nil {
 		apiReturn.ErrorDatabase(c, err.Error())
 		return
@@ -70,6 +70,7 @@ func (a *DeveloperVersionApi) Create(c *gin.Context) {
 		Version:     param.Version,
 		VersionCode: param.VersionCode,
 		PackageUrl:  param.PackageUrl,
+		PackageSrc:  param.PackageUrl, // 设置 PackageSrc 为与 PackageUrl 相同的值
 		PackageHash: param.PackageHash,
 		VersionDesc: param.VersionDesc,
 		Config:      param.Config,

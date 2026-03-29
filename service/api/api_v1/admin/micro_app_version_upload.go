@@ -42,7 +42,7 @@ func (a *MicroAppVersionUploadApi) Upload(c *gin.Context) {
 	}
 
 	// 调用业务层处理
-	result, err := biz.UploadMicroAppPackage(fileData, f.Filename)
+	result, err := biz.MicroAppPackage.UploadMicroAppPackage(fileData, f.Filename)
 	if err != nil {
 		apiReturn.Error(c, err.Error())
 		return

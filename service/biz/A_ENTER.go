@@ -13,6 +13,7 @@ var (
 	MicroAppDeveloper = new(MicroAppDeveloperService)
 	MicroApp          = new(microApp)
 	MicroAppVersion   = new(MicroAppVersionService)
+	MicroAppPackage   = new(MicroAppPackageService)
 	// AES          = new(AESType)
 )
 

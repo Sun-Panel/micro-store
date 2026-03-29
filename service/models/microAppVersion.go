@@ -38,6 +38,7 @@ type MicroAppVersion struct {
 	Version     string                 `gorm:"type:varchar(20);not null" json:"version"`          // 版本号（如 1.0.0）
 	VersionCode int                    `gorm:"type:int(11);not null" json:"versionCode"`          // 版本号（数字）
 	PackageUrl  string                 `gorm:"type:varchar(500);not null" json:"packageUrl"`      // 应用包下载地址
+	PackageSrc  string                 `gorm:"type:varchar(500);not null" json:"packageSrc"`      // 应用包源
 	PackageHash string                 `gorm:"type:varchar(100);not null" json:"packageHash"`     // 版本校验值（MD5/SHA）
 	VersionDesc string                 `gorm:"type:varchar(1000)" json:"versionDesc"`             // 版本说明
 	Config      *MicroAppVersionConfig `gorm:"type:json;serializer:json" json:"config"`           // 完整配置信息（JSON）
@@ -57,15 +58,15 @@ func (MicroAppVersion) TableName() string {
 }
 
 // 获取版本列表（支持分页和筛选）
-func (m *MicroAppVersion) GetList(db *gorm.DB, page, limit int, appId *uint, status *int) ([]MicroAppVersion, int64, error) {
+func (m *MicroAppVersion) GetList(db *gorm.DB, page, limit int, appRecordId *uint, status *int) ([]MicroAppVersion, int64, error) {
 	var list []MicroAppVersion
 	var total int64
 
 	query := db.Model(&MicroAppVersion{})
 
 	// 应用ID筛选
-	if appId != nil {
-		query = query.Where("app_id = ?", *appId)
+	if appRecordId != nil {
+		query = query.Where("app_record_id = ?", *appRecordId)
 	}
 
 	// 状态筛选
@@ -96,16 +97,16 @@ func (m *MicroAppVersion) GetById(db *gorm.DB, id uint) (MicroAppVersion, error)
 // 获取应用的最新版本
 func (m *MicroAppVersion) GetLatestOnlineByAppId(db *gorm.DB, appId uint) (MicroAppVersion, error) {
 	var version MicroAppVersion
-	err := db.Where("app_id = ? AND status = ? AND offline_type = ?", appId, 1, 0). // 只获取已通过审核的版本并且未下架的版本
-											Order("created_at DESC").
-											First(&version).Error
+	err := db.Where("app_record_id = ? AND status = ? AND offline_type = ?", appId, 1, 0). // 只获取已通过审核的版本并且未下架的版本
+												Order("created_at DESC").
+												First(&version).Error
 	return version, err
 }
 
 // 获取应用的所有已发布版本
 func (m *MicroAppVersion) GetPublishedVersions(db *gorm.DB, appId uint) ([]MicroAppVersion, error) {
 	var versions []MicroAppVersion
-	err := db.Where("app_id = ? AND status = ?", appId, 1).
+	err := db.Where("app_record_id = ? AND status = ?", appId, 1).
 		Order("version_code DESC").
 		Find(&versions).Error
 	return versions, err
@@ -166,9 +167,9 @@ func (m *MicroAppVersion) GetPendingList(db *gorm.DB, page, limit int) ([]MicroA
 }
 
 // 检查版本号是否存在
-func (m *MicroAppVersion) CheckVersionExist(db *gorm.DB, appId uint, version string, excludeId uint) (bool, error) {
+func (m *MicroAppVersion) CheckVersionExist(db *gorm.DB, appRecordId uint, version string, excludeId uint) (bool, error) {
 	var count int64
-	query := db.Model(&MicroAppVersion{}).Where("app_id = ? AND version = ?", appId, version)
+	query := db.Model(&MicroAppVersion{}).Where("app_record_id = ? AND version = ?", appRecordId, version)
 
 	if excludeId > 0 {
 		query = query.Where("id != ?", excludeId)
@@ -181,7 +182,7 @@ func (m *MicroAppVersion) CheckVersionExist(db *gorm.DB, appId uint, version str
 // 检查版本号数字是否存在
 func (m *MicroAppVersion) CheckVersionCodeExist(db *gorm.DB, appId uint, versionCode int, excludeId uint) (bool, error) {
 	var count int64
-	query := db.Model(&MicroAppVersion{}).Where("app_id = ? AND version_code = ?", appId, versionCode)
+	query := db.Model(&MicroAppVersion{}).Where("app_record_id = ? AND version_code = ?", appId, versionCode)
 
 	if excludeId > 0 {
 		query = query.Where("id != ?", excludeId)

@@ -8,7 +8,7 @@ import "sun-panel/models"
 type MicroAppVersionGetListReq struct {
 	Page        int  `json:"page"`
 	Limit       int  `json:"limit"`
-	AppRecordId uint `json:"appId"`
+	AppRecordId uint `json:"appRecordId"`
 	Status      *int `json:"status"`
 }
 
@@ -19,12 +19,12 @@ type MicroAppVersionGetInfoReq struct {
 
 // MicroAppVersionCreateReq 创建版本请求
 type MicroAppVersionCreateReq struct {
-	AppRecordId uint                         `json:"appId" binding:"required"`
-	Version     string                       `json:"version" binding:"required"`
-	VersionCode int                          `json:"versionCode" binding:"required"`
-	PackageUrl  string                       `json:"packageUrl" binding:"required"`
-	PackageHash string                       `json:"packageHash"`
-	VersionDesc string                       `json:"versionDesc"`
+	AppRecordId uint                          `json:"appId" binding:"required"`
+	Version     string                        `json:"version" binding:"required"`
+	VersionCode int                           `json:"versionCode" binding:"required"`
+	PackageUrl  string                        `json:"packageUrl" binding:"required"`
+	PackageHash string                        `json:"packageHash"`
+	VersionDesc string                        `json:"versionDesc"`
 	Config      *models.MicroAppVersionConfig `json:"config"` // 完整配置信息
 }
 
@@ -54,8 +54,8 @@ type MicroAppVersionDeleteReq struct {
 // MicroAppVersionOfflineReq 版本下架请求
 type MicroAppVersionOfflineReq struct {
 	Id     uint   `json:"id" binding:"required"`
-	Type   int    `json:"type" binding:"required"`   // 下架类型：1-作者下架 2-平台下架
-	Reason string `json:"reason"`                     // 下架原因
+	Type   int    `json:"type" binding:"required"` // 下架类型：1-作者下架 2-平台下架
+	Reason string `json:"reason"`                  // 下架原因
 }
 
 // ==================== 管理员端版本审核 DTO ====================

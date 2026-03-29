@@ -108,7 +108,7 @@ async function handleAddVersion() {
   try {
     // 创建版本
     const createRes = await createVersion<any>({
-      appId: props.appRecordId,
+      appRecordId: props.appRecordId,
       version: versionForm.value.version,
       versionCode: versionForm.value.versionCode,
       packageUrl: versionForm.value.packageUrl,
@@ -145,7 +145,7 @@ async function handleAddVersion() {
 </script>
 
 <template>
-  <NModal v-model:show="show" preset="card" style="width: 500px" title="添加版本">
+  <NModal v-model:show="show" preset="card" style="width: 500px" title="添加版本" :mask-closable="false">
     <div class="space-y-4">
       <div>
         <div class="mb-2">
