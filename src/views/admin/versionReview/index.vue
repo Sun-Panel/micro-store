@@ -153,6 +153,7 @@ onMounted(() => {
     <ReviewDetail
       v-model:visible="reviewShow"
       :version-info="currentVersion"
+      :micro-app="currentVersion?.microApp"
       @done="fetchList"
     />
   </div>

@@ -25,6 +25,7 @@ const reviewForm = ref({
   status: 1,
   reviewNote: '',
 })
+const iframeModalVisible = ref(false)
 
 // 监听弹窗打开，获取已发布版本信息
 watch(() => props.visible, async (visible) => {
@@ -84,10 +85,27 @@ async function handleReview() {
 function handleDownload(url: string) {
   window.open(url, '_blank')
 }
+
+// 打开应用公开页面
+function handleOpenMicroAppPublic() {
+  iframeModalVisible.value = true
+}
 </script>
 
 <template>
   <NModal :show="visible" preset="card" style="width: 1200px;" title="审核版本" @update:show="emit('update:visible', $event)">
+    <template #header>
+      <div class="flex gap-2 items-center">
+        <div class="flex justify-between">
+          审核版本
+        </div>
+        <div>
+          <NButton size="small" @click="handleOpenMicroAppPublic">
+            查看应用公开页面
+          </NButton>
+        </div>
+      </div>
+    </template>
     <div v-if="versionInfo" class="space-y-6">
       <!-- 对比展示 -->
       <div class="flex gap-6">
@@ -178,13 +196,15 @@ function handleDownload(url: string) {
           <div class="text-sm text-gray-500 mb-2">
             当前版本权限
           </div>
-          <div class="space-y-1">
-            <div v-for="(perm, index) in currentApprovedVersion.config.permissions" v-if="currentApprovedVersion?.config?.permissions?.length" :key="index" class="px-3 py-1 bg-gray-100 rounded text-sm">
-              {{ perm }}
+          <template v-if="currentApprovedVersion?.config?.permissions?.length">
+            <div class="space-y-1">
+              <div v-for="(perm, index) in currentApprovedVersion.config.permissions" :key="index" class="px-3 py-1 bg-gray-100 rounded text-sm">
+                {{ perm }}
+              </div>
             </div>
-            <div v-else class="text-gray-400 text-sm">
-              无权限要求
-            </div>
+          </template>
+          <div v-else class="text-gray-400 text-sm">
+            无权限要求
           </div>
         </div>
         <div class="flex-1">
@@ -266,5 +286,23 @@ function handleDownload(url: string) {
         </NButton>
       </NSpace>
     </template>
+  </NModal>
+
+  <!-- 应用公开页面 Modal -->
+  <NModal
+    :show="iframeModalVisible"
+    preset="card"
+    style="width: 1200px; height: 800px;"
+    title="应用公开页面"
+    @update:show="iframeModalVisible = $event"
+  >
+    <div class="h-full">
+      <iframe
+        v-if="microApp?.id"
+        :src="`/microApp/${microApp?.id}`"
+        frameborder="0"
+        style="width: 100%; height: 700px; border: none;"
+      />
+    </div>
   </NModal>
 </template>

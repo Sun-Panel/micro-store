@@ -24,6 +24,7 @@ const reviewForm = ref({
   status: 1,
   reviewNote: '',
 })
+const iframeModalVisible = ref(false)
 
 // ==================== 多语言处理 ====================
 // 浏览器语言检测
@@ -186,6 +187,11 @@ watch(() => props.visible, async (visible) => {
   }
 })
 
+// 打开应用公开页面
+function handleOpenMicroAppPublic() {
+  iframeModalVisible.value = true
+}
+
 // 提交审核
 async function handleReview() {
   if (!props.reviewInfo)
@@ -221,7 +227,19 @@ async function handleReview() {
 </script>
 
 <template>
-  <NModal :show="visible" preset="card" style="width: 1200px;" title="审核微应用" @update:show="emit('update:visible', $event)">
+  <NModal :show="visible" preset="card" style="width: 1200px;" @update:show="emit('update:visible', $event)">
+    <template #header>
+      <div class="flex gap-2 items-center">
+        <div>
+          审核微应用
+        </div>
+        <div>
+          <NButton size="small" @click="handleOpenMicroAppPublic">
+            查看应用公开页面
+          </NButton>
+        </div>
+      </div>
+    </template>
     <div v-if="reviewInfo" class="space-y-6">
       <!-- 对比展示 -->
       <div class="flex gap-6">
@@ -459,5 +477,23 @@ async function handleReview() {
         </NButton>
       </NSpace>
     </template>
+  </NModal>
+
+  <!-- 应用公开页面 Modal -->
+  <NModal
+    :show="iframeModalVisible"
+    preset="card"
+    style="width: 1200px; height: 800px;"
+    title="应用公开页面"
+    @update:show="iframeModalVisible = $event"
+  >
+    <div class="h-full">
+      <iframe
+        v-if="reviewInfo?.microAppId"
+        :src="`/microApp/${reviewInfo.appRecordId}`"
+        frameborder="0"
+        style="width: 100%; height: 700px; border: none;"
+      />
+    </div>
   </NModal>
 </template>
