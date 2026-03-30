@@ -40,7 +40,7 @@ func InitRouters(addr string) error {
 		sourcePath := global.Config.GetValueString("base", "source_path")
 		router.Static("/uploads", sourcePath)
 		microAppSourcePath := global.Config.GetValueString("base", "micro_app_source_path")
-		router.Static("/micro_app_upload", microAppSourcePath)
+		router.Static("/micro_app_uploads", microAppSourcePath)
 
 		// 自定义风格文件夹
 		customPath := global.Config.GetValueString("base", "custom_style_path")

@@ -66,7 +66,7 @@ func (a *MicroAppVersionAdminApi) GetPendingList(c *gin.Context) {
 
 	for i, item := range list {
 		// 处理每个待审核版本项
-		list[i].PackageUrl = biz.MicroAppPackage.GenerateDownloadURL(item.PackageUrl)
+		list[i].PackageUrl = biz.MicroAppPackage.GenerateDownloadURL(item.PackageSrc)
 	}
 
 	apiReturn.SuccessListData(c, list, total)

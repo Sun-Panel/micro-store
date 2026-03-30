@@ -91,11 +91,12 @@ func (s *MicroAppPackageService) UploadMicroAppPackage(fileData []byte, fileName
 	// 获取保存路径
 	configUpload := s.getSavePath()
 
-	// 创建日期目录
-	dateDir := fmt.Sprintf("%s/%d/%02d/%02d/", configUpload, time.Now().Year(), time.Now().Month(), time.Now().Day())
-	isExist, _ := cmn.PathExists(dateDir)
+	// 创建日期目录部分
+	dateDir := fmt.Sprintf("%d/%02d/%02d/", time.Now().Year(), time.Now().Month(), time.Now().Day())
+	fullDir := fmt.Sprintf("%s/%s", configUpload, dateDir)
+	isExist, _ := cmn.PathExists(fullDir)
 	if !isExist {
-		os.MkdirAll(dateDir, os.ModePerm)
+		os.MkdirAll(fullDir, os.ModePerm)
 	}
 
 	// 先计算文件 MD5 校验值（用于生成文件名）
@@ -128,9 +129,10 @@ func (s *MicroAppPackageService) UploadMicroAppPackage(fileData []byte, fileName
 	fileExt := strings.ToLower(path.Ext(fileName))
 	newFileName := fmt.Sprintf("%s_%s_%s%s", config.MicroAppId, config.Version, fileHash[:16], fileExt)
 	filePath := dateDir + newFileName
+	fullFilePath := fmt.Sprintf("%s/%s", configUpload, filePath) // 完整的保存路径
 
 	// 保存文件（如果存在则覆盖）
-	if err := os.WriteFile(filePath, fileData, 0644); err != nil {
+	if err := os.WriteFile(fullFilePath, fileData, 0644); err != nil {
 		return MicroAppPackageResult{}, fmt.Errorf("文件保存失败: %w", err)
 	}
 
@@ -419,15 +421,17 @@ func (s *MicroAppPackageService) extractAndSaveIcon(tempDir string, config model
 }
 
 // GenerateDownloadURL 生成完整的下载 URL
-// 参数示例: "./micro_app_upload/2026/03/30/ce3b0a0b94ca-yTJJM77I.zip"
+// 参数示例: 相对路径: "2026/03/30/ce3b0a0b94ca-yTJJM77I.zip"，
+// 完整真实路径: "./micro_app_upload/2026/03/30/ce3b0a0b94ca-yTJJM77I.zip"，
+// 固定的下载地址路径："/micro_app_uploads/2026/03/30/ce3b0a0b94ca-yTJJM77I.zip"
 // 返回完整的浏览器可访问下载地址
-func (s *MicroAppPackageService) GenerateDownloadURL(relativePath string) string {
-	return strings.TrimPrefix(relativePath, ".")
+func (s *MicroAppPackageService) GenerateDownloadURL(relativeSrcPath string) string {
+	// return strings.TrimPrefix(relativePath, ".")
 	// savePath := s.getSavePath()
 	// if relativePath == "" {
 	// 	return ""
 	// }
-	// return savePath + "/" + strings.Trim(relativePath, "/")
+	return "/micro_app_uploads/" + strings.Trim(relativeSrcPath, "/")
 }
 
 func (s *MicroAppPackageService) getSavePath() string {
