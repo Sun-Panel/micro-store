@@ -102,14 +102,18 @@ const latestApprovedVersion = computed(() => {
   if (approvedVersions.length === 0)
     return null
   // 按创建时间排序，最新的在前面
-  return approvedVersions.sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime())[0]
+  return approvedVersions.sort((a, b) => {
+    const timeA = new Date(a.createTime ?? 0).getTime()
+    const timeB = new Date(b.createTime ?? 0).getTime()
+    return timeB - timeA
+  })[0]
 })
 
 // 获取微应用详情
 async function fetchMicroAppInfo() {
   loading.value = true
   try {
-    const { data } = await getInfo<MicroApp.MicroAppInfo>(microAppId.value)
+    const { data } = await getInfo<MicroApp.Info>(microAppId.value)
     microAppInfo.value = data
   }
   catch (error) {
@@ -139,7 +143,7 @@ async function fetchCategoryOptions() {
 async function fetchVersionList() {
   try {
     const { data } = await getVersionList<Common.ListResponse<MicroApp.VersionInfo[]>>({
-      appId: microAppId.value,
+      appRecordId: microAppId.value,
       page: 1,
       limit: 100,
     })

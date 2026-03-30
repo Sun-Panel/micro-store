@@ -55,7 +55,7 @@ async function handleUploadChange(options: { file: any }) {
 
   uploadLoading.value = true
   try {
-    const res = await uploadVersionPackage<any>(file)
+    const res = await uploadVersionPackage<any>(file, String(props.appRecordId))
     if (res.code === 0 && res.data) {
       versionForm.value.packageUrl = res.data.url
       versionForm.value.packageHash = res.data.hash || ''

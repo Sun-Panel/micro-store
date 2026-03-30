@@ -3,9 +3,10 @@ import { post } from '@/utils/request'
 // ==================== 开发者专用接口（版本管理） ====================
 
 // 上传版本包
-export function uploadVersionPackage<T>(file: File) {
+export function uploadVersionPackage<T>(file: File, appRecordId: string) {
   const formData = new FormData()
   formData.append('file', file)
+  formData.append('appRecordId', appRecordId)
   return post<T>({
     url: '/admin/developer/version/upload',
     data: formData,

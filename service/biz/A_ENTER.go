@@ -19,4 +19,5 @@ var (
 
 func InitBIZ() {
 	ClientCache.Init()
+	MicroAppPackage.Init()
 }

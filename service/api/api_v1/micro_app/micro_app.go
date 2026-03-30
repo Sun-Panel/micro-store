@@ -36,3 +36,33 @@ func (a *MicroAppApi) GetInfo(c *gin.Context) {
 
 	apiReturn.SuccessData(c, info)
 }
+
+// GetList 获取版本列表
+func (a *MicroAppApi) GetList(c *gin.Context) {
+	req := MicroAppVersionGetListReq{}
+	if err := c.ShouldBindBodyWith(&req, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	if req.Page < 1 {
+		req.Page = 1
+	}
+	if req.Limit < 1 {
+		req.Limit = 1
+	}
+
+	m := models.MicroAppVersion{}
+	status := 1
+	list, total, err := m.GetList(global.Db, req.Page, req.Limit, &req.AppRecordId, &status)
+	if err != nil {
+		apiReturn.ErrorDatabase(c, err.Error())
+		return
+	}
+
+	for k, v := range list {
+		list[k].PackageUrl = biz.MicroAppPackage.GenerateDownloadURL(v.PackageSrc)
+	}
+
+	apiReturn.SuccessListData(c, list, total)
+}

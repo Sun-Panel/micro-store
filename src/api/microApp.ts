@@ -21,7 +21,7 @@ export function getInfo<T>(id: number) {
 // 获取微应用版本列表（只返回审核通过的）
 export function getVersionList<T>(data: MicroApp.GetVersionListRequest) {
   return post<T>({
-    url: '/developer/version/getList',
+    url: '/microApp/version/getList',
     data,
   })
 }

@@ -12,12 +12,14 @@ import (
 	"path/filepath"
 	"strings"
 	"sun-panel/global"
+	"sun-panel/lib/cache"
 	"sun-panel/lib/cmn"
 	"time"
 )
 
 // MicroAppPackageResult 微应用包处理结果
 type MicroAppPackageResult struct {
+	Src        string                 `json:"src"`        // 文件源路径
 	URL        string                 `json:"url"`        // 文件相对路径
 	Hash       string                 `json:"hash"`       // 文件 MD5
 	Config     map[string]interface{} `json:"config"`     // 解析的配置
@@ -25,17 +27,6 @@ type MicroAppPackageResult struct {
 	FileSize   int64                  `json:"fileSize"`   // 文件大小
 	FolderName string                 `json:"folderName"` // 文件夹名
 	IconURL    string                 `json:"iconURL"`    // 图标 URL
-}
-
-// MicroAppPackageResultV2 微应用包处理结果（带类型化 Config）
-type MicroAppPackageResultV2 struct {
-	URL        string       `json:"url"`        // 文件相对路径
-	Hash       string       `json:"hash"`       // 文件 MD5
-	Config     *MicroAppCfg `json:"config"`     // 解析的配置
-	FileName   string       `json:"fileName"`   // 文件名
-	FileSize   int64        `json:"fileSize"`   // 文件大小
-	FolderName string       `json:"folderName"` // 文件夹名
-	IconURL    string       `json:"iconURL"`    // 图标 URL
 }
 
 // MicroAppCfg 微应用配置
@@ -63,10 +54,30 @@ type AppInfoConfig struct {
 }
 
 // MicroAppPackageService 微应用包处理服务
-type MicroAppPackageService struct{}
+type MicroAppPackageService struct {
+	UploadCache cache.Cacher[MicroAppPackageResult]
+}
+
+func (s *MicroAppPackageService) Init() {
+	s.UploadCache = global.NewCache[MicroAppPackageResult](24*time.Hour, 12*time.Hour, "micro_app_package_result")
+}
+
+func (s *MicroAppPackageService) uploadCacheKey(appRecordId, version string) string {
+	return fmt.Sprintf("%s_%s_%s", appRecordId, version, cmn.BuildRandCode(12, cmn.RAND_CODE_MODE1))
+}
+
+func (s *MicroAppPackageService) SetUploadCache(appRecordId string, version string, result MicroAppPackageResult) string {
+	key := s.uploadCacheKey(appRecordId, version)
+	s.UploadCache.SetDefault(key, result)
+	return key
+}
+
+func (s *MicroAppPackageService) GetUploadCache(key string) (MicroAppPackageResult, bool) {
+	return s.UploadCache.Get(key)
+}
 
 // UploadMicroAppPackage 上传并处理微应用包
-func (s *MicroAppPackageService) UploadMicroAppPackage(fileData []byte, fileName string) (*MicroAppPackageResult, error) {
+func (s *MicroAppPackageService) UploadMicroAppPackage(fileData []byte, fileName string) (MicroAppPackageResult, error) {
 	// 获取保存路径
 	configUpload := global.Config.GetValueString("base", "micro_app_source_path")
 	if configUpload == "" {
@@ -89,25 +100,25 @@ func (s *MicroAppPackageService) UploadMicroAppPackage(fileData []byte, fileName
 
 	// 保存文件
 	if err := os.WriteFile(filePath, fileData, 0644); err != nil {
-		return nil, fmt.Errorf("文件保存失败: %w", err)
+		return MicroAppPackageResult{}, fmt.Errorf("文件保存失败: %w", err)
 	}
 
 	// 计算文件 MD5 校验值
 	fileHash, err := s.calculateFileMD5(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("计算文件校验值失败: %w", err)
+		return MicroAppPackageResult{}, fmt.Errorf("计算文件校验值失败: %w", err)
 	}
 
 	// 创建临时解压目录
 	tempDir := filepath.Join(os.TempDir(), "micro_app_extract", hashStr[:16])
 	if err := os.MkdirAll(tempDir, os.ModePerm); err != nil {
-		return nil, fmt.Errorf("创建临时目录失败: %w", err)
+		return MicroAppPackageResult{}, fmt.Errorf("创建临时目录失败: %w", err)
 	}
 	defer os.RemoveAll(tempDir) // 清理临时目录
 
 	// 解压文件
 	if err := s.unzipFile(filePath, tempDir); err != nil {
-		return nil, fmt.Errorf("解压文件失败: %w", err)
+		return MicroAppPackageResult{}, fmt.Errorf("解压文件失败: %w", err)
 	}
 
 	// 查找并解析配置文件
@@ -119,7 +130,8 @@ func (s *MicroAppPackageService) UploadMicroAppPackage(fileData []byte, fileName
 	// 返回结果
 	relativePath := filePath[len(configUpload)-1:]
 
-	return &MicroAppPackageResult{
+	return MicroAppPackageResult{
+		Src:        filePath,
 		URL:        relativePath,
 		Hash:       fileHash,
 		Config:     config,

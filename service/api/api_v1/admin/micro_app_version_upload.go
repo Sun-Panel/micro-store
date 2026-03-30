@@ -19,6 +19,11 @@ func (a *MicroAppVersionUploadApi) Upload(c *gin.Context) {
 		apiReturn.Error(c, "请选择要上传的文件")
 		return
 	}
+	appRecordIdStr := c.PostForm("appRecordId")
+	if appRecordIdStr == "" {
+		apiReturn.Error(c, "not appRecordId")
+		return
+	}
 
 	// 检查文件扩展名
 	fileExt := f.Filename[len(f.Filename)-4:]
@@ -48,14 +53,17 @@ func (a *MicroAppVersionUploadApi) Upload(c *gin.Context) {
 		return
 	}
 
+	cacheKey := biz.MicroAppPackage.SetUploadCache(appRecordIdStr, "none", result)
+
 	// 返回结果
 	apiReturn.SuccessData(c, MicroAppVersionUploadResp{
-		URL:        result.URL,
-		Hash:       result.Hash,
-		Config:     result.Config,
-		FileName:   result.FileName,
-		FileSize:   result.FileSize,
-		FolderName: result.FolderName,
-		IconURL:    result.IconURL,
+		URL:           result.URL,
+		Hash:          result.Hash,
+		Config:        result.Config,
+		FileName:      result.FileName,
+		FileSize:      result.FileSize,
+		FolderName:    result.FolderName,
+		IconURL:       result.IconURL,
+		UploadCacheId: cacheKey,
 	})
 }
