@@ -2,6 +2,7 @@ package admin
 
 import (
 	"io"
+	"strconv"
 	"sun-panel/api/api_v1/common/apiReturn"
 	"sun-panel/biz"
 
@@ -53,11 +54,21 @@ func (a *MicroAppVersionUploadApi) Upload(c *gin.Context) {
 		return
 	}
 
-	cacheKey := biz.MicroAppPackage.SetUploadCache(appRecordIdStr, "none", result)
+	appRecordId, err := strconv.Atoi(appRecordIdStr)
+	if err != nil {
+		apiReturn.Error(c, "not appRecordId")
+		return
+	}
+
+	// 缓存起来，用户手动点击确定创建的时候读取
+	cacheKey := biz.MicroAppPackage.SetUploadCache(uint(appRecordId), "none", biz.MicroAppPackageUploadCache{
+		PackageResult: result,
+		AppRecordId:   uint(appRecordId),
+	})
 
 	// 返回结果
 	apiReturn.SuccessData(c, MicroAppVersionUploadResp{
-		URL:           result.URL,
+		// URL:           result.Src,
 		Hash:          result.Hash,
 		Config:        result.Config,
 		FileName:      result.FileName,

@@ -1,7 +1,5 @@
 package admin
 
-import "sun-panel/models"
-
 // ==================== 开发者端版本管理 DTO ====================
 
 // MicroAppVersionGetListReq 获取版本列表请求
@@ -19,13 +17,14 @@ type MicroAppVersionGetInfoReq struct {
 
 // MicroAppVersionCreateReq 创建版本请求
 type MicroAppVersionCreateReq struct {
-	AppRecordId uint                          `json:"appId" binding:"required"`
-	Version     string                        `json:"version" binding:"required"`
-	VersionCode int                           `json:"versionCode" binding:"required"`
-	PackageUrl  string                        `json:"packageUrl" binding:"required"`
-	PackageHash string                        `json:"packageHash"`
-	VersionDesc string                        `json:"versionDesc"`
-	Config      *models.MicroAppVersionConfig `json:"config"` // 完整配置信息
+	// AppRecordId   uint                          `json:"appId" binding:"required"`
+	// Version       string                        `json:"version" binding:"required"`
+	// VersionCode   int                           `json:"versionCode" binding:"required"`
+	// PackageUrl    string                        `json:"packageUrl" binding:"required"`
+	// PackageHash   string                        `json:"packageHash"`
+	VersionDesc string `json:"versionDesc"`
+	// Config        *models.MicroAppVersionConfig `json:"config"` // 完整配置信息
+	UploadCacheId string `json:"uploadCacheId"`
 }
 
 // MicroAppVersionUpdateReq 更新版本请求

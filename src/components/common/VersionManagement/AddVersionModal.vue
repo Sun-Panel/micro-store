@@ -10,15 +10,19 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits<{
-  'update:visible': [value: boolean]
-  'done': []
-}>()
+
+const emit = defineEmits<Emits>()
+
+interface Emits {
+  (e: 'update:visible', value: boolean): void
+  (e: 'done'): void
+}
 
 const message = useMessage()
 const addVersionLoading = ref(false)
 const uploadLoading = ref(false)
 const uploadedConfig = ref<MicroApp.VersionConfig | null>(null)
+const uploadCacheId = ref('')
 
 // 表单数据
 const versionForm = ref({
@@ -55,7 +59,7 @@ async function handleUploadChange(options: { file: any }) {
 
   uploadLoading.value = true
   try {
-    const res = await uploadVersionPackage<any>(file, String(props.appRecordId))
+    const res = await uploadVersionPackage<MicroApp.MicroAppVersionUploadResp>(file, String(props.appRecordId))
     if (res.code === 0 && res.data) {
       versionForm.value.packageUrl = res.data.url
       versionForm.value.packageHash = res.data.hash || ''
@@ -69,6 +73,7 @@ async function handleUploadChange(options: { file: any }) {
         versionForm.value.version = res.data.config.version
         handleVersionInput(res.data.config.version)
       }
+      uploadCacheId.value = res.data.uploadCacheId
       message.success('上传成功')
     }
     else {
@@ -99,41 +104,37 @@ function handleVersionInput(value: string) {
 
 // 提交添加版本
 async function handleAddVersion() {
-  if (!versionForm.value.packageUrl || !versionForm.value.version) {
-    message.warning('请上传版本包并填写版本号')
-    return
-  }
+  // if (!versionForm.value.packageUrl || !versionForm.value.version) {
+  //   message.warning('请上传版本包并填写版本号')
+  //   return
+  // }
 
   addVersionLoading.value = true
   try {
     // 创建版本
     const createRes = await createVersion<any>({
-      appRecordId: props.appRecordId,
-      version: versionForm.value.version,
-      versionCode: versionForm.value.versionCode,
-      packageUrl: versionForm.value.packageUrl,
-      packageHash: versionForm.value.packageHash || '',
+      // appRecordId: props.appRecordId,
+      // version: versionForm.value.version,
+      // versionCode: versionForm.value.versionCode,
+      // packageUrl: versionForm.value.packageUrl,
+      // packageHash: versionForm.value.packageHash || '',
       versionDesc: versionForm.value.versionDesc,
-      config: uploadedConfig.value || undefined,
+      // config: uploadedConfig.value || undefined,
+      uploadCacheId: uploadCacheId.value,
     })
 
-    if (createRes.code === 0) {
-      // 自动提交审核
-      if (createRes.data?.id) {
-        const reviewRes = await submitReview<any>({ versionId: createRes.data.id })
-        if (reviewRes.code !== 0) {
-          apiRespErrMsg(reviewRes)
-          return
-        }
+    // 自动提交审核
+    if (createRes.data?.id) {
+      const reviewRes = await submitReview<any>({ versionId: createRes.data.id })
+      if (reviewRes.code !== 0) {
+        apiRespErrMsg(reviewRes)
+        return
       }
+    }
 
-      message.success('版本添加成功，已提交审核')
-      show.value = false
-      emit('done')
-    }
-    else {
-      apiRespErrMsg(createRes)
-    }
+    message.success('版本添加成功，已提交审核')
+    show.value = false
+    emit('done')
   }
   catch (error) {
     apiRespErrMsg(error)

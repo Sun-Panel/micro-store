@@ -14,19 +14,25 @@ import (
 	"sun-panel/global"
 	"sun-panel/lib/cache"
 	"sun-panel/lib/cmn"
+	"sun-panel/models"
 	"time"
 )
 
 // MicroAppPackageResult 微应用包处理结果
 type MicroAppPackageResult struct {
-	Src        string                 `json:"src"`        // 文件源路径
-	URL        string                 `json:"url"`        // 文件相对路径
-	Hash       string                 `json:"hash"`       // 文件 MD5
-	Config     map[string]interface{} `json:"config"`     // 解析的配置
-	FileName   string                 `json:"fileName"`   // 文件名
-	FileSize   int64                  `json:"fileSize"`   // 文件大小
-	FolderName string                 `json:"folderName"` // 文件夹名
-	IconURL    string                 `json:"iconURL"`    // 图标 URL
+	Src        string                       `json:"src"`        // 文件源路径
+	URL        string                       `json:"url"`        // 文件相对路径
+	Hash       string                       `json:"hash"`       // 文件 MD5
+	Config     models.MicroAppVersionConfig `json:"config"`     // 解析的配置
+	FileName   string                       `json:"fileName"`   // 文件名
+	FileSize   int64                        `json:"fileSize"`   // 文件大小
+	FolderName string                       `json:"folderName"` // 文件夹名
+	IconURL    string                       `json:"iconURL"`    // 图标 URL
+}
+
+type MicroAppPackageUploadCache struct {
+	PackageResult MicroAppPackageResult `json:"microAppPackageResult"`
+	AppRecordId   uint                  `json:"appRecordId"`
 }
 
 // MicroAppCfg 微应用配置
@@ -55,34 +61,35 @@ type AppInfoConfig struct {
 
 // MicroAppPackageService 微应用包处理服务
 type MicroAppPackageService struct {
-	UploadCache cache.Cacher[MicroAppPackageResult]
+	UploadCache cache.Cacher[MicroAppPackageUploadCache]
 }
 
 func (s *MicroAppPackageService) Init() {
-	s.UploadCache = global.NewCache[MicroAppPackageResult](24*time.Hour, 12*time.Hour, "micro_app_package_result")
+	s.UploadCache = global.NewCache[MicroAppPackageUploadCache](24*time.Hour, 12*time.Hour, "micro_app_package_result")
 }
 
-func (s *MicroAppPackageService) uploadCacheKey(appRecordId, version string) string {
-	return fmt.Sprintf("%s_%s_%s", appRecordId, version, cmn.BuildRandCode(12, cmn.RAND_CODE_MODE1))
+func (s *MicroAppPackageService) uploadCacheKey(appRecordId uint, version string) string {
+	return fmt.Sprintf("%d_%s_%s", appRecordId, version, cmn.BuildRandCode(12, cmn.RAND_CODE_MODE1))
 }
 
-func (s *MicroAppPackageService) SetUploadCache(appRecordId string, version string, result MicroAppPackageResult) string {
+func (s *MicroAppPackageService) SetUploadCache(appRecordId uint, version string, result MicroAppPackageUploadCache) string {
 	key := s.uploadCacheKey(appRecordId, version)
 	s.UploadCache.SetDefault(key, result)
 	return key
 }
 
-func (s *MicroAppPackageService) GetUploadCache(key string) (MicroAppPackageResult, bool) {
+func (s *MicroAppPackageService) GetUploadCache(key string) (MicroAppPackageUploadCache, bool) {
 	return s.UploadCache.Get(key)
+}
+
+func (s *MicroAppPackageService) DelUploadCache(key string) {
+	s.UploadCache.Delete(key)
 }
 
 // UploadMicroAppPackage 上传并处理微应用包
 func (s *MicroAppPackageService) UploadMicroAppPackage(fileData []byte, fileName string) (MicroAppPackageResult, error) {
 	// 获取保存路径
-	configUpload := global.Config.GetValueString("base", "micro_app_source_path")
-	if configUpload == "" {
-		configUpload = "./micro_app_upload"
-	}
+	configUpload := s.getSavePath()
 
 	// 创建日期目录
 	dateDir := fmt.Sprintf("%s/%d/%02d/%02d/", configUpload, time.Now().Year(), time.Now().Month(), time.Now().Day())
@@ -91,48 +98,50 @@ func (s *MicroAppPackageService) UploadMicroAppPackage(fileData []byte, fileName
 		os.MkdirAll(dateDir, os.ModePerm)
 	}
 
-	// 生成唯一文件名
-	originalName := strings.TrimSuffix(fileName, path.Ext(fileName))
-	hashStr := cmn.Md5(fmt.Sprintf("%s%s", fileName, time.Now().String()))
-	fileExt := strings.ToLower(path.Ext(fileName))
-	newFileName := fmt.Sprintf("%s-%s%s", originalName, hashStr[:12], fileExt)
-	filePath := dateDir + newFileName
+	// 先计算文件 MD5 校验值（用于生成文件名）
+	md5Hash := md5.Sum(fileData)
+	fileHash := hex.EncodeToString(md5Hash[:])
 
-	// 保存文件
-	if err := os.WriteFile(filePath, fileData, 0644); err != nil {
-		return MicroAppPackageResult{}, fmt.Errorf("文件保存失败: %w", err)
-	}
-
-	// 计算文件 MD5 校验值
-	fileHash, err := s.calculateFileMD5(filePath)
-	if err != nil {
-		return MicroAppPackageResult{}, fmt.Errorf("计算文件校验值失败: %w", err)
-	}
-
+	// 先解压文件获取配置
 	// 创建临时解压目录
-	tempDir := filepath.Join(os.TempDir(), "micro_app_extract", hashStr[:16])
+	tempDir := filepath.Join(os.TempDir(), "micro_app_extract", fileHash[:16])
 	if err := os.MkdirAll(tempDir, os.ModePerm); err != nil {
 		return MicroAppPackageResult{}, fmt.Errorf("创建临时目录失败: %w", err)
 	}
 	defer os.RemoveAll(tempDir) // 清理临时目录
 
-	// 解压文件
-	if err := s.unzipFile(filePath, tempDir); err != nil {
+	// 先保存临时文件用于解压
+	tempFilePath := filepath.Join(tempDir, "temp"+strings.ToLower(path.Ext(fileName)))
+	if err := os.WriteFile(tempFilePath, fileData, 0644); err != nil {
+		return MicroAppPackageResult{}, fmt.Errorf("临时文件保存失败: %w", err)
+	}
+
+	// 解压文件获取配置
+	if err := s.unzipFile(tempFilePath, tempDir); err != nil {
 		return MicroAppPackageResult{}, fmt.Errorf("解压文件失败: %w", err)
 	}
 
 	// 查找并解析配置文件
 	config := s.parseAppConfig(tempDir)
 
+	// 使用配置信息生成最终文件名：[microappid]_[version]_[hash前16位]
+	fileExt := strings.ToLower(path.Ext(fileName))
+	newFileName := fmt.Sprintf("%s_%s_%s%s", config.MicroAppId, config.Version, fileHash[:16], fileExt)
+	filePath := dateDir + newFileName
+
+	// 保存文件（如果存在则覆盖）
+	if err := os.WriteFile(filePath, fileData, 0644); err != nil {
+		return MicroAppPackageResult{}, fmt.Errorf("文件保存失败: %w", err)
+	}
+
 	// 提取图标并保存到静态资源目录
 	iconURL := s.extractAndSaveIcon(tempDir, config, newFileName)
 
-	// 返回结果
-	relativePath := filePath[len(configUpload)-1:]
+	downloadUrl := s.GenerateDownloadURL(filePath)
 
 	return MicroAppPackageResult{
 		Src:        filePath,
-		URL:        relativePath,
+		URL:        downloadUrl,
 		Hash:       fileHash,
 		Config:     config,
 		FileName:   newFileName,
@@ -208,7 +217,7 @@ func (s *MicroAppPackageService) extractFile(file *zip.File, destPath string) er
 }
 
 // parseAppConfig 解析应用配置文件
-func (s *MicroAppPackageService) parseAppConfig(tempDir string) map[string]interface{} {
+func (s *MicroAppPackageService) parseAppConfig(tempDir string) models.MicroAppVersionConfig {
 	// 尝试查找 app.config.js 或 app.config.json
 	configFiles := []string{
 		"app.config.js",
@@ -221,20 +230,20 @@ func (s *MicroAppPackageService) parseAppConfig(tempDir string) map[string]inter
 		configPath := filepath.Join(tempDir, configFile)
 		if _, err := os.Stat(configPath); err == nil {
 			if config := s.parseConfigFile(configPath); config != nil {
-				return config
+				return *config
 			}
 		}
 	}
 
 	// 尝试在子目录中查找
-	var foundConfig map[string]interface{}
+	var foundConfig models.MicroAppVersionConfig
 	filepath.Walk(tempDir, func(walkPath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if !info.IsDir() && (strings.HasSuffix(info.Name(), "app.config.js") || strings.HasSuffix(info.Name(), "app.config.json") || strings.HasSuffix(info.Name(), ".config.js")) {
 			if config := s.parseConfigFile(walkPath); config != nil {
-				foundConfig = config
+				foundConfig = *config
 				return filepath.SkipDir
 			}
 		}
@@ -245,7 +254,7 @@ func (s *MicroAppPackageService) parseAppConfig(tempDir string) map[string]inter
 }
 
 // parseConfigFile 解析配置文件
-func (s *MicroAppPackageService) parseConfigFile(configPath string) map[string]interface{} {
+func (s *MicroAppPackageService) parseConfigFile(configPath string) *models.MicroAppVersionConfig {
 	content, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil
@@ -266,20 +275,23 @@ func (s *MicroAppPackageService) parseConfigFile(configPath string) map[string]i
 	// 移除 JavaScript 注释
 	strContent = s.removeJSComments(strContent)
 
-	var config map[string]interface{}
+	var config models.MicroAppVersionConfig
 	if err := json.Unmarshal([]byte(strContent), &config); err != nil {
 		return nil
 	}
 
 	// 检查必要字段
-	if microAppId, ok := config["microAppId"].(string); !ok || microAppId == "" {
+	if config.MicroAppId == "" {
 		return nil
 	}
-	if version, ok := config["version"].(string); !ok || version == "" {
+	if config.Version == "" {
 		return nil
 	}
+	// if config.APIVersion == "" {
+	// 	return nil
+	// }
 
-	return config
+	return &config
 }
 
 // removeJSComments 移除 JavaScript 注释
@@ -345,15 +357,9 @@ func (s *MicroAppPackageService) removeJSComments(content string) string {
 }
 
 // extractAndSaveIcon 从解压目录中提取图标并保存到静态资源目录
-func (s *MicroAppPackageService) extractAndSaveIcon(tempDir string, config map[string]interface{}, versionFileName string) string {
-	if config == nil {
-		return ""
-	}
+func (s *MicroAppPackageService) extractAndSaveIcon(tempDir string, config models.MicroAppVersionConfig, versionFileName string) string {
 
-	iconFileName, ok := config["icon"].(string)
-	if !ok || iconFileName == "" {
-		return ""
-	}
+	iconFileName := config.Icon
 
 	// 尝试在多个可能的位置查找图标
 	possiblePaths := []string{
@@ -413,11 +419,22 @@ func (s *MicroAppPackageService) extractAndSaveIcon(tempDir string, config map[s
 }
 
 // GenerateDownloadURL 生成完整的下载 URL
-// 参数示例: "d/2026/03/15/YM-music-player-free-2.1.0-375993e6dcdd.zip"
+// 参数示例: "./micro_app_upload/2026/03/30/ce3b0a0b94ca-yTJJM77I.zip"
 // 返回完整的浏览器可访问下载地址
 func (s *MicroAppPackageService) GenerateDownloadURL(relativePath string) string {
-	if relativePath == "" {
-		return ""
+	return strings.TrimPrefix(relativePath, ".")
+	// savePath := s.getSavePath()
+	// if relativePath == "" {
+	// 	return ""
+	// }
+	// return savePath + "/" + strings.Trim(relativePath, "/")
+}
+
+func (s *MicroAppPackageService) getSavePath() string {
+	// 获取保存路径
+	configUpload := global.Config.GetValueString("base", "micro_app_source_path")
+	if configUpload == "" {
+		configUpload = "./micro_app_upload"
 	}
-	return "/uploads" + strings.Trim(relativePath, "/")
+	return configUpload
 }

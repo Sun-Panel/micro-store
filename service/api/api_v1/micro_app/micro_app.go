@@ -54,13 +54,14 @@ func (a *MicroAppApi) GetList(c *gin.Context) {
 
 	m := models.MicroAppVersion{}
 	status := 1
-	list, total, err := m.GetList(global.Db, req.Page, req.Limit, &req.AppRecordId, &status)
+	list, total, err := m.GetList(global.Db.Debug(), req.Page, req.Limit, &req.AppRecordId, &status)
 	if err != nil {
 		apiReturn.ErrorDatabase(c, err.Error())
 		return
 	}
 
 	for k, v := range list {
+		list[k].PackageSrc = "" // 置空
 		list[k].PackageUrl = biz.MicroAppPackage.GenerateDownloadURL(v.PackageSrc)
 	}
 

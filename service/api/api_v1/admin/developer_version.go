@@ -59,21 +59,32 @@ func (a *DeveloperVersionApi) GetInfo(c *gin.Context) {
 
 // Create 创建版本
 func (a *DeveloperVersionApi) Create(c *gin.Context) {
-	param := MicroAppVersionCreateReq{}
-	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
+	req := MicroAppVersionCreateReq{}
+	if err := c.ShouldBindBodyWith(&req, binding.JSON); err != nil {
 		apiReturn.ErrorParamFomat(c, err.Error())
 		return
 	}
 
+	cache, exsit := biz.MicroAppPackage.GetUploadCache(req.UploadCacheId)
+	if !exsit {
+		apiReturn.ErrorDataNotFound(c)
+		return
+	}
+
+	defer func() {
+		// 删除缓存
+		biz.MicroAppPackage.DelUploadCache(req.UploadCacheId)
+	}()
+
 	version := &models.MicroAppVersion{
-		AppRecordId: param.AppRecordId,
-		Version:     param.Version,
-		VersionCode: param.VersionCode,
-		PackageUrl:  param.PackageUrl,
-		PackageSrc:  param.PackageUrl, // 设置 PackageSrc 为与 PackageUrl 相同的值
-		PackageHash: param.PackageHash,
-		VersionDesc: param.VersionDesc,
-		Config:      param.Config,
+		AppRecordId: cache.AppRecordId,
+		Version:     cache.PackageResult.Config.Version,
+		VersionCode: 0,
+		PackageUrl:  cache.PackageResult.URL,
+		PackageSrc:  cache.PackageResult.Src, // 设置 PackageSrc 为与 PackageUrl 相同的值
+		PackageHash: cache.PackageResult.Hash,
+		VersionDesc: req.VersionDesc,
+		Config:      &cache.PackageResult.Config,
 	}
 
 	if err := biz.MicroAppVersion.CreateWithCheck(global.Db, version); err != nil {

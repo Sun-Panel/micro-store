@@ -184,13 +184,14 @@ declare namespace MicroApp {
 
   // 创建版本请求
   interface CreateVersionRequest {
-    appRecordId: number
-    version: string
-    versionCode: number
-    packageUrl: string
-    packageHash?: string
+    // appRecordId: number
+    // version: string
+    // versionCode: number
+    // packageUrl: string
+    // packageHash?: string
     versionDesc?: string
-    config?: MicroAppVersionConfig
+    // config?: MicroAppVersionConfig
+    uploadCacheId?: string
   }
 
   // 更新版本请求
@@ -324,5 +325,17 @@ declare namespace MicroApp {
   interface GetPendingReviewListRequest {
     page?: number
     limit?: number
+  }
+
+  // 微应用版本上传响应
+  interface MicroAppVersionUploadResp {
+    url: string // 文件访问 URL
+    hash: string // 文件 MD5 校验值
+    config: VersionConfig // 解析出的配置文件
+    fileName: string // 文件名
+    fileSize: number // 文件大小
+    folderName: string // 缓存文件夹名（不含路径）
+    iconURL: string // 图标访问 URL
+    uploadCacheId: string // 上传缓存ID
   }
 }

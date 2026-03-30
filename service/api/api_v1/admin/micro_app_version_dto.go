@@ -1,6 +1,9 @@
 package admin
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"sun-panel/models"
+)
 
 // ==================== 微应用配置 JSON 类型定义 ====================
 
@@ -66,14 +69,14 @@ type AppInfo struct {
 
 // MicroAppVersionUploadResp 版本上传响应
 type MicroAppVersionUploadResp struct {
-	URL           string                 `json:"url"`           // 文件访问 URL
-	Hash          string                 `json:"hash"`          // 文件 MD5 校验值
-	Config        map[string]interface{} `json:"config"`        // 解析出的配置文件
-	FileName      string                 `json:"fileName"`      // 文件名
-	FileSize      int64                  `json:"fileSize"`      // 文件大小
-	FolderName    string                 `json:"folderName"`    // 缓存文件夹名（不含路径）
-	IconURL       string                 `json:"iconURL"`       // 图标访问 URL
-	UploadCacheId string                 `json:"uploadCacheId"` // 上传缓存ID
+	URL           string                       `json:"url"`           // 文件访问 URL
+	Hash          string                       `json:"hash"`          // 文件 MD5 校验值
+	Config        models.MicroAppVersionConfig `json:"config"`        // 解析出的配置文件
+	FileName      string                       `json:"fileName"`      // 文件名
+	FileSize      int64                        `json:"fileSize"`      // 文件大小
+	FolderName    string                       `json:"folderName"`    // 缓存文件夹名（不含路径）
+	IconURL       string                       `json:"iconURL"`       // 图标访问 URL
+	UploadCacheId string                       `json:"uploadCacheId"` // 上传缓存ID
 }
 
 // MarshalJSON 自定义 JSON 序列化
