@@ -9,7 +9,7 @@ const props = defineProps<{
   microAppInfo?: MicroApp.BaseInfo
   createTime?: string
   shelvesStatus?: number
-  categoryOptions?: { label: string, value: number }[]
+  categoryOptions?: Category.Info[]
   langs?: string[]
   showEditButton?: boolean
 }>()
@@ -18,8 +18,8 @@ const props = defineProps<{
 const categoryName = computed(() => {
   if (!props.microAppInfo)
     return ''
-  const category = props.categoryOptions?.find(c => c.value === props.microAppInfo?.categoryId)
-  return category?.label || `ID: ${props.microAppInfo.categoryId}`
+  const category = props.categoryOptions?.find(c => c.id === props.microAppInfo?.categoryId)
+  return category?.name || `ID: ${props.microAppInfo.categoryId}`
 })
 
 // ==================== 多语言处理 ====================

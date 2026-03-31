@@ -14,12 +14,6 @@ import MicroAppBasicInfo from '../components/MicroAppBasicInfo.vue'
 import MicroAppVersionInfo from '../components/MicroAppVersionInfo.vue'
 import EditMicroApp from '../EditMicroApp/index.vue'
 
-// 分类选项类型
-interface CategoryOption {
-  label: string
-  value: number
-}
-
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
@@ -35,7 +29,7 @@ const versionLoading = ref(false)
 
 // 编辑弹窗
 const editDialogShow = ref(false)
-const categoryOptions = ref<CategoryOption[]>([])
+const categoryOptions = ref<Category.Info[]>([])
 
 // 审核历史
 const reviewHistoryShow = ref(false)
@@ -55,8 +49,8 @@ const offlineReason = ref('')
 // 获取分类选项
 async function fetchCategoryOptions() {
   try {
-    const res = await getCategoryList<{ list: CategoryOption[] }>()
-    categoryOptions.value = res.data?.list || []
+    const { data } = await getCategoryList<Category.Info[]>()
+    categoryOptions.value = data
   }
   catch (error) {
     apiRespErrMsg(error)

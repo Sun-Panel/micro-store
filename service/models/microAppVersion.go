@@ -82,7 +82,7 @@ func (m *MicroAppVersion) GetList(db *gorm.DB, page, limit int, appRecordId *uin
 
 	// 分页查询
 	offset, limitSize := calcPage(page, limit)
-	err = query.Order("version_code DESC, id DESC").Offset(offset).Limit(limitSize).Find(&list).Error
+	err = query.Order("created_at DESC, id DESC").Offset(offset).Limit(limitSize).Find(&list).Error
 
 	return list, total, err
 }
