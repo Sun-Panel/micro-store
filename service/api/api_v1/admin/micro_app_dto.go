@@ -11,6 +11,8 @@ type MicroAppGetListReq struct {
 	CategoryId *int   `json:"categoryId"`
 	Status     *int   `json:"status"`
 	KeyWord    string `json:"keyWord"`
+	SortBy     string `json:"sortBy"`     // 排序字段：id, download_count, install_count, create_time
+	SortOrder  string `json:"sortOrder"`  // 排序方式：asc, desc
 }
 
 // GetInfoRequest 获取微应用详情请求

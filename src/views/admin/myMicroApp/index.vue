@@ -17,6 +17,8 @@ const currentAppId = ref<number>(0) // 当前查看审核历史的应用ID
 const keyWord = ref<string>()
 const statusFilter = ref<number | null>(null)
 const categoryFilter = ref<number | null>(null)
+const sortBy = ref<string>('id') // 排序字段
+const sortOrder = ref<string>('desc') // 排序方式
 const editInfo = ref<MicroApp.Info>()
 const dialog = useDialog()
 const categoryOptions = ref<{ label: string, value: number }[]>([])
@@ -27,6 +29,13 @@ const statusOptions = [
   { label: microAppStatusMap[0], value: 0 },
   { label: microAppStatusMap[1], value: 1 },
   { label: microAppStatusMap[2], value: 2 },
+]
+
+// 排序选项
+const sortOptions = [
+  { label: '默认排序', value: 'id' },
+  { label: '下载量', value: 'download_count' },
+  { label: '安装量', value: 'install_count' },
 ]
 
 // 卡片列表数据
@@ -57,6 +66,10 @@ async function fetchList() {
     req.status = statusFilter.value
   if (categoryFilter.value !== null)
     req.categoryId = categoryFilter.value
+  if (sortBy.value)
+    req.sortBy = sortBy.value
+  if (sortOrder.value)
+    req.sortOrder = sortOrder.value
 
   try {
     const { data } = await getList<Common.ListResponse<MicroApp.Info[]>>(req)
@@ -209,10 +222,11 @@ onMounted(async () => {
     <!-- 搜索栏 -->
     <NCard class="mb-[20px]">
       <div class="flex">
-        <NInputGroup style="max-width: 700px;">
+        <NInputGroup style="max-width: 850px;">
           <NInput v-model:value="keyWord" :style="{ width: '30%' }" placeholder="请输入应用名称搜索" />
           <NSelect v-model:value="statusFilter" :options="statusOptions" :style="{ width: '100px' }" placeholder="状态" />
           <NSelect v-model:value="categoryFilter" :options="categoryOptions" :style="{ width: '120px' }" placeholder="分类" />
+          <NSelect v-model:value="sortBy" :options="sortOptions" :style="{ width: '100px' }" placeholder="排序" />
           <NButton type="primary" @click="handleSelect">
             查询
           </NButton>
@@ -261,6 +275,12 @@ onMounted(async () => {
               >{{ microAppStatusMap[item.status] || '未知' }}</span>
               <span class="text-gray-400">{{ microAppChargeTypeMap[item.chargeType] || '免费' }}</span>
             </NSpace>
+          </div>
+
+          <!-- 统计数据 -->
+          <div class="flex items-center justify-between text-xs text-gray-500">
+            <span>下载: {{ item.downloadCount || 0 }}</span>
+            <span>安装: {{ item.installCount || 0 }}</span>
           </div>
 
           <!-- 显示审核状态和操作按钮 -->

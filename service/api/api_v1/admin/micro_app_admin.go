@@ -30,6 +30,8 @@ func (a *MicroAppAdminApi) GetList(c *gin.Context) {
 		CategoryId:       param.CategoryId,
 		KeyWord:          param.KeyWord,
 		IncludeDeveloper: true,
+		SortBy:           param.SortBy,
+		SortOrder:        param.SortOrder,
 	}
 	list, total, err := m.GetListWithAllLangs(global.Db, opts)
 	if err != nil {

@@ -30,6 +30,9 @@ type MicroApp struct {
 	OfflineType   int    `gorm:"type:tinyint(1);not null;default:0" json:"offlineType"` // 下架类型：0-正常 1-作者下架 2-平台下架 3-首次创建
 	OfflineReason string `gorm:"type:varchar(500)" json:"offlineReason"`                // 下架原因
 
+	DownloadCount int `gorm:"type:int(11);not null;default:0" json:"downloadCount"`
+	InstallCount  int `gorm:"type:int(11);not null;default:0" json:"installCount"`
+
 	// 关联多语言信息
 	LangList        []MicroAppLang `gorm:"foreignKey:MicroAppId;references:MicroAppId" json:"langList,omitempty"`
 	DefaultLangInfo MicroAppLang   `gorm:"foreignKey:MicroAppId;references:MicroAppId" json:"defaultLangInfo"`
@@ -51,6 +54,8 @@ type MicroAppQueryOptions struct {
 	KeyWord          string
 	Lang             string // 可选,用于多语言查询
 	IncludeDeveloper bool   // 是否查询开发者信息
+	SortBy           string // 排序字段：id, download_count, install_count
+	SortOrder        string // 排序方式：asc, desc
 }
 
 // 获取微应用列表（支持分页和筛选）
@@ -95,7 +100,21 @@ func (m *MicroApp) GetList(db *gorm.DB, opts MicroAppQueryOptions) ([]MicroApp, 
 
 	// 分页查询
 	offset, limitSize := calcPage(opts.Page, opts.Limit)
-	query = query.Order("id DESC").Offset(offset).Limit(limitSize)
+
+	// 处理排序
+	if opts.SortBy != "" {
+		order := opts.SortBy
+		if opts.SortOrder != "" {
+			order = opts.SortBy + " " + opts.SortOrder
+		} else {
+			order = opts.SortBy + " DESC" // 默认降序
+		}
+		query = query.Order(order)
+	} else {
+		query = query.Order("id DESC") // 默认按ID降序
+	}
+
+	query = query.Offset(offset).Limit(limitSize)
 
 	// 预加载开发者信息
 	if opts.IncludeDeveloper {

@@ -78,6 +78,9 @@ declare namespace MicroApp {
     createdAt?: string // 创建时间
     updatedAt?: string // 更新时间
     deletedAt?: string // 软删除时间
+    // 统计字段
+    downloadCount?: number // 下载次数
+    installCount?: number // 安装次数
     // 审核相关字段（从审核表关联）
     reviewStatus?: number // 审核状态：0-无审核 1-审核中 2-已通过 3-已拒绝
     reviewId?: number // 当前审核记录ID
@@ -232,6 +235,8 @@ declare namespace MicroApp {
     authorId?: number // 开发者ID筛选
     lang?: string // 可选，用于多语言查询
     includeDeveloper?: boolean // 是否包含开发者信息
+    sortBy?: string // 排序字段：id, download_count, install_count
+    sortOrder?: string // 排序方式：asc, desc
   }
 
   // 获取列表响应

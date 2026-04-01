@@ -11,7 +11,7 @@ import { apiRespErrMsgAndCustomCodeNeg1Msg } from '@/utils/cmn/apiMessage'
 interface Props {
   visible: boolean
   microAppInfo?: MicroApp.MicroAppReviewInfo
-  categoryOptions: { label: string, value: number }[]
+  categoryOptions: Category.Info[]
 }
 
 const props = defineProps<Props>()
