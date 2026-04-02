@@ -12,20 +12,29 @@ import (
 	"gorm.io/gorm"
 )
 
-// MicroAppStatistics 微应用统计
-type MicroAppStatistics struct {
+// microAppStatistics 微应用统计
+type microAppStatistics struct {
 	// RedisCache *cache.RedisCacheStruct[int]
 	redisClient  *redis.Client
 	redisContext context.Context
+	redisPrefix  string
 }
 
-func (b *MicroAppStatistics) Init(rc *redis.Client) {
+func (b *microAppStatistics) Init(rc *redis.Client) {
 	b.redisClient = rc
 	b.redisContext = context.Background()
+	b.redisPrefix = global.Config.GetValueString("redis", "prefix")
+}
+
+func (b *microAppStatistics) getInstallRedisKey() string {
+	return b.redisPrefix + "micro_app_statistics:install"
+}
+func (b *microAppStatistics) getDownloadRedisKey() string {
+	return b.redisPrefix + "micro_app_statistics:download"
 }
 
 // IncrementDownload 增加下载计数（使用 Redis Hash 缓存）
-func (b *MicroAppStatistics) IncrementDownload(appId uint, userId uint, clientId string, downloadIp string) error {
+func (b *microAppStatistics) IncrementDownload(appId uint, userId uint, clientId string, downloadIp string) error {
 	// 1. 记录下载明细到数据库
 	download := models.MicroAppDownload{
 		AppRecordId:    appId,
@@ -42,8 +51,7 @@ func (b *MicroAppStatistics) IncrementDownload(appId uint, userId uint, clientId
 
 	// 2. 使用 Redis Hash 计数器（高性能）
 	if b.redisClient != nil {
-		// Redis Hash: Key = micro_app:download, Field = app_id
-		key := "micro_app:download"
+		key := b.getDownloadRedisKey()
 		field := fmt.Sprintf("%d", appId)
 		if err := b.redisClient.HIncrBy(b.redisContext, key, field, 1).Err(); err != nil {
 			// Redis 失败时降级到直接更新数据库
@@ -58,14 +66,14 @@ func (b *MicroAppStatistics) IncrementDownload(appId uint, userId uint, clientId
 }
 
 // incrementDownloadInDB 在数据库中增加下载计数（降级方案）
-func (b *MicroAppStatistics) incrementDownloadInDB(appId uint) error {
+func (b *microAppStatistics) incrementDownloadInDB(appId uint) error {
 	return global.Db.Model(&models.MicroApp{}).
 		Where("id = ?", appId).
 		UpdateColumn("download_count", gorm.Expr("download_count + 1")).Error
 }
 
 // IncrementInstall 增加安装计数（使用 Redis Hash 缓存）
-func (b *MicroAppStatistics) IncrementInstall(appId uint, versionId uint, userId uint, clientId string, publicIp string) error {
+func (b *microAppStatistics) IncrementInstall(appId uint, versionId uint, userId uint, clientId string, publicIp string) error {
 	// 1. 记录安装明细到数据库
 	install := models.MicroAppInstall{
 		AppRecordId: appId,
@@ -84,8 +92,7 @@ func (b *MicroAppStatistics) IncrementInstall(appId uint, versionId uint, userId
 
 	// 2. 使用 Redis Hash 计数器（高性能）
 	if b.redisClient != nil {
-		// Redis Hash: Key = micro_app:install, Field = app_id
-		key := "micro_app:install"
+		key := b.getInstallRedisKey()
 		field := fmt.Sprintf("%d", appId)
 		if err := b.redisClient.HIncrBy(b.redisContext, key, field, 1).Err(); err != nil {
 			// Redis 失败时降级到直接更新数据库
@@ -100,14 +107,15 @@ func (b *MicroAppStatistics) IncrementInstall(appId uint, versionId uint, userId
 }
 
 // incrementInstallInDB 在数据库中增加安装计数（降级方案）
-func (b *MicroAppStatistics) incrementInstallInDB(appId uint) error {
+func (b *microAppStatistics) incrementInstallInDB(appId uint) error {
 	return global.Db.Model(&models.MicroApp{}).
 		Where("id = ?", appId).
 		UpdateColumn("install_count", gorm.Expr("install_count + 1")).Error
 }
 
 // SyncRedisCountersToDB 同步 Redis Hash 计数器到数据库（定时任务调用）
-func (b *MicroAppStatistics) SyncRedisCountersToDB() error {
+// 使用 Lua 脚本保证原子性，避免并发问题
+func (b *microAppStatistics) SyncRedisCountersToDB() error {
 	if b.redisClient == nil {
 		return errors.New("Redis not configured")
 	}
@@ -115,49 +123,68 @@ func (b *MicroAppStatistics) SyncRedisCountersToDB() error {
 	ctx := b.redisContext
 
 	// 同步下载计数（从 Hash 中获取所有字段）
-	downloadHashKey := "micro_app:download"
+	downloadHashKey := b.getDownloadRedisKey()
 	downloadFields, err := b.redisClient.HKeys(ctx, downloadHashKey).Result()
 	if err != nil {
 		return err
 	}
 
-	// 批量获取下载计数
-	downloadCounts, err := b.redisClient.HMGet(ctx, downloadHashKey, downloadFields...).Result()
-	if err != nil {
-		return err
-	}
-
-	// 同步到数据库
-	for i, field := range downloadFields {
-		appId, err := strconv.ParseUint(field, 10, 32)
+	// 如果没有数据需要同步，跳过
+	if len(downloadFields) == 0 {
+		// 继续处理安装计数
+	} else {
+		// 批量获取下载计数
+		downloadCounts, err := b.redisClient.HMGet(ctx, downloadHashKey, downloadFields...).Result()
 		if err != nil {
-			continue
+			return err
 		}
 
-		countStr, ok := downloadCounts[i].(string)
-		if !ok || countStr == "" {
-			continue
-		}
+		// 同步到数据库（使用 Lua 脚本保证原子性）
+		for i, field := range downloadFields {
+			appId, err := strconv.ParseUint(field, 10, 32)
+			if err != nil {
+				continue
+			}
 
-		count, err := strconv.Atoi(countStr)
-		if err != nil || count == 0 {
-			continue
-		}
+			countStr, ok := downloadCounts[i].(string)
+			if !ok || countStr == "" {
+				continue
+			}
 
-		// 更新数据库
-		if err := global.Db.Model(&models.MicroApp{}).
-			Where("id = ?", appId).
-			UpdateColumn("download_count", gorm.Expr("download_count + ?", count)).Error; err == nil {
-			// 清除 Redis Hash 字段
-			b.redisClient.HDel(ctx, downloadHashKey, field)
+			count, err := strconv.Atoi(countStr)
+			if err != nil || count == 0 {
+				continue
+			}
+
+			// 更新数据库
+			if err := global.Db.Model(&models.MicroApp{}).
+				Where("id = ?", appId).
+				UpdateColumn("download_count", gorm.Expr("download_count + ?", count)).Error; err == nil {
+				// 使用 Lua 脚本原子性地获取并删除 Redis 计数
+				// 这样即使同时有新的增量，也不会丢失
+				luaScript := `
+					local count = redis.call('HGET', KEYS[1], ARGV[1])
+					if count then
+						redis.call('HDEL', KEYS[1], ARGV[1])
+						return count
+					end
+					return 0
+				`
+				b.redisClient.Eval(ctx, luaScript, []string{downloadHashKey}, field)
+			}
 		}
 	}
 
 	// 同步安装计数（从 Hash 中获取所有字段）
-	installHashKey := "micro_app:install"
+	installHashKey := b.getInstallRedisKey()
 	installFields, err := b.redisClient.HKeys(ctx, installHashKey).Result()
 	if err != nil {
 		return err
+	}
+
+	// 如果没有数据需要同步，返回
+	if len(installFields) == 0 {
+		return nil
 	}
 
 	// 批量获取安装计数
@@ -166,7 +193,7 @@ func (b *MicroAppStatistics) SyncRedisCountersToDB() error {
 		return err
 	}
 
-	// 同步到数据库
+	// 同步到数据库（使用 Lua 脚本保证原子性）
 	for i, field := range installFields {
 		appId, err := strconv.ParseUint(field, 10, 32)
 		if err != nil {
@@ -187,8 +214,16 @@ func (b *MicroAppStatistics) SyncRedisCountersToDB() error {
 		if err := global.Db.Model(&models.MicroApp{}).
 			Where("id = ?", appId).
 			UpdateColumn("install_count", gorm.Expr("install_count + ?", count)).Error; err == nil {
-			// 清除 Redis Hash 字段
-			b.redisClient.HDel(ctx, installHashKey, field)
+			// 使用 Lua 脚本原子性地获取并删除 Redis 计数
+			luaScript := `
+				local count = redis.call('HGET', KEYS[1], ARGV[1])
+				if count then
+					redis.call('HDEL', KEYS[1], ARGV[1])
+					return count
+				end
+				return 0
+			`
+			b.redisClient.Eval(ctx, luaScript, []string{installHashKey}, field)
 		}
 	}
 
@@ -196,13 +231,13 @@ func (b *MicroAppStatistics) SyncRedisCountersToDB() error {
 }
 
 // GetRealtimeStatistics 获取实时统计（Redis Hash + 数据库）
-func (b *MicroAppStatistics) GetRealtimeStatistics(appId uint) (downloadCount, installCount int, err error) {
+func (b *microAppStatistics) GetRealtimeStatistics(appId uint) (downloadCount, installCount int, err error) {
 	// 先从 Redis Hash 获取增量
 	var redisDownloadCount, redisInstallCount int64
 
 	if b.redisClient != nil {
-		downloadHashKey := "micro_app:download"
-		installHashKey := "micro_app:install"
+		downloadHashKey := b.getDownloadRedisKey()
+		installHashKey := b.getInstallRedisKey()
 		field := fmt.Sprintf("%d", appId)
 
 		redisDownloadCount, _ = b.redisClient.HGet(b.redisContext, downloadHashKey, field).Int64()
@@ -223,7 +258,7 @@ func (b *MicroAppStatistics) GetRealtimeStatistics(appId uint) (downloadCount, i
 }
 
 // GetBatchRealtimeStatistics 批量获取实时统计（使用 Hash 结构，性能更好）
-func (b *MicroAppStatistics) GetBatchRealtimeStatistics(appIds []uint) (map[uint][2]int, error) {
+func (b *microAppStatistics) GetBatchRealtimeStatistics(appIds []uint) (map[uint][2]int, error) {
 	result := make(map[uint][2]int)
 
 	if b.redisClient == nil {
@@ -250,14 +285,14 @@ func (b *MicroAppStatistics) GetBatchRealtimeStatistics(appIds []uint) (map[uint
 	}
 
 	// 批量从 Redis Hash 获取下载计数
-	downloadHashKey := "micro_app:download"
+	downloadHashKey := b.getDownloadRedisKey()
 	downloadValues, err := b.redisClient.HMGet(b.redisContext, downloadHashKey, fields...).Result()
 	if err != nil {
 		return nil, err
 	}
 
 	// 批量从 Redis Hash 获取安装计数
-	installHashKey := "micro_app:install"
+	installHashKey := b.getInstallRedisKey()
 	installValues, err := b.redisClient.HMGet(b.redisContext, installHashKey, fields...).Result()
 	if err != nil {
 		return nil, err

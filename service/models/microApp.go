@@ -163,6 +163,13 @@ func (m *MicroApp) GetById(db *gorm.DB, id uint) (MicroApp, error) {
 	return app, err
 }
 
+// 根据MicroAppId获取应用详情
+func (m *MicroApp) GetByMicroAppId(db *gorm.DB, microAppId string) (MicroApp, error) {
+	var app MicroApp
+	err := db.Order("id DESC").Where("micro_app_id = ?", microAppId).First(&app).Error
+	return app, err
+}
+
 // 创建应用
 func (m *MicroApp) Create(db *gorm.DB) error {
 	return db.Create(m).Error

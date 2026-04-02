@@ -210,3 +210,9 @@ func (s *MicroAppVersionService) GetLatestOnlineByAppModelId(db *gorm.DB, appMod
 	m := models.MicroAppVersion{}
 	return m.GetLatestOnlineByAppId(db, appModelId)
 }
+
+// 获取指定版本信息
+func (s *MicroAppVersionService) GetInfoByVersion(db *gorm.DB, version string) (models.MicroAppVersion, error) {
+	m := models.MicroAppVersion{}
+	return m.GetByVersion(db, version)
+}

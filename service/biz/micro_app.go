@@ -96,3 +96,12 @@ func (s *microApp) selectBestLang(langList []models.MicroAppLang, preferredLang 
 	// 3. 保底：返回第一个语言
 	return &langList[0]
 }
+
+func (s *microApp) GetInfo(db *gorm.DB, microAppId string) (models.MicroApp, error) {
+	var m models.MicroApp
+	info, err := m.GetByMicroAppId(db, microAppId)
+	if err != nil {
+		return models.MicroApp{}, NewBizError(ErrCodeAppNotFound)
+	}
+	return info, nil
+}

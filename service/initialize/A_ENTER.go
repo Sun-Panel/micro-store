@@ -85,7 +85,7 @@ func InitAuthServiceApp() error {
 	global.ClientAccountOnlineCache = authService.InitClientAccountOnlineCache()
 	global.ClientLoginAttemptsCacheCache = authService.InitClientLoginAttemptsCache()
 
-	biz.InitBIZ()
+	biz.InitBIZ(global.RedisDb)
 	global.SystemSetting = systemSettingCache.InItSystemSettingCache()
 
 	// 开启调度中心(根据配置是否开启)

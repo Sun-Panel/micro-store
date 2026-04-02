@@ -94,6 +94,13 @@ func (m *MicroAppVersion) GetById(db *gorm.DB, id uint) (MicroAppVersion, error)
 	return version, err
 }
 
+// 根据版本号获取版本详情
+func (m *MicroAppVersion) GetByVersion(db *gorm.DB, version string) (MicroAppVersion, error) {
+	var versionInfo MicroAppVersion
+	err := db.Order("id DESC").Where("version = ?", version).First(&versionInfo).Error
+	return versionInfo, err
+}
+
 // 获取应用的最新版本
 func (m *MicroAppVersion) GetLatestOnlineByAppId(db *gorm.DB, appId uint) (MicroAppVersion, error) {
 	var version MicroAppVersion

@@ -12,7 +12,7 @@ import (
 )
 
 type ApiGroup struct {
-	ApiSystem       system.ApiSystem // 系统功能api
+	ApiSystem       system.ApiSystem
 	ApiOpen         openness.ApiPpenness
 	ApiAdmin        admin.ApiAdmin
 	ApiPanel        panel.ApiPanel
@@ -20,6 +20,7 @@ type ApiGroup struct {
 	ApiOAuth2       oAuth2.OAuth2
 	ApiSunStore     sunStore.ApiSunStore
 	MicroAppApi     microApp.MicroAppApi
+	DownloadApi     microApp.DownloadApi
 }
 
 var ApiGroupApp = new(ApiGroup)

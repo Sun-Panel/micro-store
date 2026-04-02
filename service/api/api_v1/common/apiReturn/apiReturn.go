@@ -110,8 +110,8 @@ func ErrorDatabase(ctx *gin.Context, errMsg string) {
 
 // 返回错误 数据记录未找到
 func ErrorDataNotFound(ctx *gin.Context) {
-	// ErrorCode(ctx, ERROR_CODE_DATA_RECORD_NOT_FOUND, "未找到数据记录", nil)
-	ErrorByCode(ctx, -1)
+	ErrorCode(ctx, ERROR_CODE_DATA_RECORD_NOT_FOUND, "not found data record", nil)
+	// ErrorByCode(ctx, -1)
 }
 
 func ErrorByCode(ctx *gin.Context, code int) {
@@ -129,7 +129,7 @@ func ErrorByCodeAndMsg(ctx *gin.Context, code int, msg string) {
 		msg = v
 	} else {
 		// 记录日志错误
-		global.Logger.Error(fmt.Printf("%s - %s", defalurMsg, msg))
+		global.Logger.Error(fmt.Sprintf("%s - %s", defalurMsg, msg))
 	}
 	ErrorCode(ctx, code, defalurMsg+"["+msg+"]", nil)
 }

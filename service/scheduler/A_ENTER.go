@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"sun-panel/global"
-	"sun-panel/scheduler/clientHistoryData"
 
 	"github.com/robfig/cron/v3"
 )
@@ -10,11 +9,12 @@ import (
 // 定义定时任务
 func defineCorn(c *cron.Cron) {
 
-	// 优先执行一次24小时统计,每小时执行一次历史客户端数据统计
-	go func() {
-		clientHistoryData.StartStatisticsHourAgo(24)
-		create(c, "0 */1 * * *", clientHistoryData.Start)
-	}()
+	// // 优先执行一次24小时统计,每小时执行一次历史客户端数据统计
+	// clientHistoryData.StartStatisticsHourAgo(24)
+	// createAndRun(c, "0 */1 * * *", clientHistoryData.Start)
+
+	// 同步微应用统计数据到数据库，每 5 分钟执行一次
+	createAndRun(c, "*/5 * * * *", SyncMicroAppStatisticsToDB)
 
 	// // 每天执行一次不活跃的客户端数据清理
 	// create(c, "22 5 * * *", func() {
