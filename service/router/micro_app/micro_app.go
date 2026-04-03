@@ -14,8 +14,9 @@ func InitMicroAppRouter(router *gin.RouterGroup) {
 	router.POST("microApp/getInfo", microAppApi.GetInfo)
 	router.POST("microApp/version/getList", microAppApi.GetList)
 
+	router.POST("microApp/download/getUrl", downloadApi.GetUrl) // 获取下载链接
+
 	// ==================== 下载接口（自动统计） ====================
-	router.GET("microApp/download", downloadApi.Download)
 	router.GET("microApp/download/:microAppId", downloadApi.DownloadByVersionOrLatest)          // 下载最新版本
 	router.GET("microApp/download/:microAppId/:version", downloadApi.DownloadByVersionOrLatest) // 下载指定版本
 }

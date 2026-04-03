@@ -10,6 +10,7 @@ import (
 
 func InitMicroAppRouter(router *gin.RouterGroup) {
 	apiGroup := api_v1.ApiGroupApp.ApiAdmin
+
 	loginRouter := router.Group("", middleware.LoginInterceptor)
 
 	// ==================== 管理员专用接口（微应用） ====================
@@ -83,4 +84,13 @@ func InitMicroAppRouter(router *gin.RouterGroup) {
 	loginRouter.POST("developer/user/update", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.DeveloperApi.Update)
 	loginRouter.POST("developer/user/deletes", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.DeveloperApi.Deletes)
 	loginRouter.POST("developer/user/updateStatus", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.DeveloperApi.UpdateStatus)
+
+	// 微应用版本下载:http://192.168.3.101:1004/api/admin/microApp/download/15
+	loginRouter.POST("microApp/download/getUrl/:versionId",
+		middleware.MultiRolesInterceptor(models.ROLE_ADMIN|models.ROLE_DEVELOPER|models.ROLE_AUDITOR),
+		apiGroup.MicroAppDownloadApi.GetUrl)
+
+	// 下载文件
+	router.Any("microApp/download/tk/:downloadToken",
+		apiGroup.MicroAppDownloadApi.DownloadByVersionId)
 }

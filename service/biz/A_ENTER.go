@@ -19,6 +19,7 @@ var (
 	MicroAppVersion    = new(MicroAppVersionService)
 	MicroAppPackage    = new(MicroAppPackageService)
 	MicroAppStatistics = new(microAppStatistics)
+	MicroAppDownload   = new(microAppDownload)
 	// AES          = new(AESType)
 )
 
@@ -26,4 +27,5 @@ func InitBIZ(redisClient *redis.Client) {
 	ClientCache.Init()
 	MicroAppPackage.Init()
 	MicroAppStatistics.Init(redisClient)
+	MicroAppDownload.Init()
 }

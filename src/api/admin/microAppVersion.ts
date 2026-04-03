@@ -84,3 +84,9 @@ export function getLatestOnlineByAppModelId<T>(id: number) {
     data: { id },
   })
 }
+
+export function getDownloadUrl<T>(versionId: number) {
+  return post<T>({
+    url: `/admin/microApp/download/getUrl/${versionId}`,
+  })
+}

@@ -21,7 +21,6 @@ import (
 // MicroAppPackageResult 微应用包处理结果
 type MicroAppPackageResult struct {
 	Src        string                       `json:"src"`        // 文件源路径
-	URL        string                       `json:"url"`        // 文件相对路径
 	Hash       string                       `json:"hash"`       // 文件 MD5
 	Config     models.MicroAppVersionConfig `json:"config"`     // 解析的配置
 	FileName   string                       `json:"fileName"`   // 文件名
@@ -139,11 +138,10 @@ func (s *MicroAppPackageService) UploadMicroAppPackage(fileData []byte, fileName
 	// 提取图标并保存到静态资源目录
 	iconURL := s.extractAndSaveIcon(tempDir, config, newFileName)
 
-	downloadUrl := s.GenerateDownloadURL(filePath)
+	// downloadUrl := s.GenerateDownloadURL(filePath)
 
 	return MicroAppPackageResult{
 		Src:        filePath,
-		URL:        downloadUrl,
 		Hash:       fileHash,
 		Config:     config,
 		FileName:   newFileName,
@@ -425,13 +423,22 @@ func (s *MicroAppPackageService) extractAndSaveIcon(tempDir string, config model
 // 完整真实路径: "./micro_app_upload/2026/03/30/ce3b0a0b94ca-yTJJM77I.zip"，
 // 固定的下载地址路径："/micro_app_uploads/2026/03/30/ce3b0a0b94ca-yTJJM77I.zip"
 // 返回完整的浏览器可访问下载地址
-func (s *MicroAppPackageService) GenerateDownloadURL(relativeSrcPath string) string {
-	// return strings.TrimPrefix(relativePath, ".")
-	// savePath := s.getSavePath()
-	// if relativePath == "" {
-	// 	return ""
-	// }
-	return "/micro_app_uploads/" + strings.Trim(relativeSrcPath, "/")
+// func (s *MicroAppPackageService) GenerateDownloadURL(relativeSrcPath string) string {
+// 	// return strings.TrimPrefix(relativePath, ".")
+// 	// savePath := s.getSavePath()
+// 	// if relativePath == "" {
+// 	// 	return ""
+// 	// }
+// 	return "/micro_app_uploads/" + strings.Trim(relativeSrcPath, "/")
+// }
+
+func (s *MicroAppPackageService) BuildDownloadUrl(microAppId, version string) string {
+	if len(version) == 0 || version == "" {
+		// 下载最新版本
+		return fmt.Sprintf("/api/microApp/download/%s", microAppId)
+	}
+	// 下载指定版本
+	return fmt.Sprintf("/api/microApp/download/%s/%s", microAppId, version)
 }
 
 func (s *MicroAppPackageService) getSavePath() string {

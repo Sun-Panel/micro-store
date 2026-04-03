@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { NButton, NDescriptions, NDescriptionsItem, NDivider, NInput, NModal, NSpace, useMessage } from 'naive-ui'
 import { ref, watch } from 'vue'
-import { getLatestOnlineByAppModelId } from '@/api/admin/microAppVersion'
+import { getDownloadUrl, getLatestOnlineByAppModelId } from '@/api/admin/microAppVersion'
 import { getVersionList, review } from '@/api/admin/microAppVersionReview'
 import { apiRespErrMsg } from '@/utils/cmn/apiMessage'
 
@@ -82,8 +82,17 @@ async function handleReview() {
 }
 
 // 下载版本包
-function handleDownload(url: string) {
-  window.open(url, '_blank')
+// function handleDownload(url: string) {
+//   window.open(url, '_blank')
+// }
+
+// 下载版本包
+async function handleDownloadByVersionId(versionId: number) {
+  await getDownloadUrl<string>(versionId).then(({ data }) => {
+    window.open(data, '_blank')
+  }).catch((res) => {
+    console.error(`get url error${res.msg}`)
+  })
 }
 
 // 打开应用公开页面
@@ -169,7 +178,7 @@ function handleOpenMicroAppPublic() {
                 size="tiny"
                 type="primary"
                 class="ml-2"
-                @click="handleDownload(versionInfo.packageUrl)"
+                @click="handleDownloadByVersionId(versionInfo.id)"
               >
                 下载
               </NButton>

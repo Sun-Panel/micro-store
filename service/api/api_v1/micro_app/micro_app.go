@@ -60,9 +60,9 @@ func (a *MicroAppApi) GetList(c *gin.Context) {
 		return
 	}
 
-	for k, v := range list {
+	for k, _ := range list {
 		list[k].PackageSrc = "" // 置空
-		list[k].PackageUrl = biz.MicroAppPackage.GenerateDownloadURL(v.PackageSrc)
+		// list[k].PackageUrl = biz.MicroAppPackage.GenerateDownloadURL(v.PackageSrc)
 	}
 
 	apiReturn.SuccessListData(c, list, total)

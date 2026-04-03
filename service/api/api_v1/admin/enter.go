@@ -14,11 +14,12 @@ type ApiAdmin struct {
 	MicroAppCategoryApi        MicroAppCategoryApi
 	DeveloperApi               DeveloperApi
 	// 微应用 API（按角色划分）
-	MicroAppAdminApi          MicroAppAdminApi
-	MicroAppAuditorApi        MicroAppAuditorApi
-	MicroAppDeveloperApi      MicroAppDeveloperApi
+	MicroAppAdminApi     MicroAppAdminApi
+	MicroAppAuditorApi   MicroAppAuditorApi
+	MicroAppDeveloperApi MicroAppDeveloperApi
 	// 版本 API（按角色划分）
-	DeveloperVersionApi       DeveloperVersionApi
-	MicroAppVersionAdminApi   MicroAppVersionAdminApi
-	MicroAppVersionUploadApi  MicroAppVersionUploadApi
+	DeveloperVersionApi      DeveloperVersionApi
+	MicroAppVersionAdminApi  MicroAppVersionAdminApi
+	MicroAppVersionUploadApi MicroAppVersionUploadApi
+	MicroAppDownloadApi      MicroAppDownloadApi
 }

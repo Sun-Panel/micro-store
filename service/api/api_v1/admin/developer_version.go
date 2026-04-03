@@ -80,7 +80,7 @@ func (a *DeveloperVersionApi) Create(c *gin.Context) {
 		AppRecordId: cache.AppRecordId,
 		Version:     cache.PackageResult.Config.Version,
 		VersionCode: 0,
-		PackageUrl:  cache.PackageResult.URL,
+		// PackageUrl:  cache.PackageResult.URL,
 		PackageSrc:  cache.PackageResult.Src, // 设置 PackageSrc 为与 PackageUrl 相同的值
 		PackageHash: cache.PackageResult.Hash,
 		VersionDesc: req.VersionDesc,

@@ -28,14 +28,14 @@ func (s *MicroAppVersionService) CreateWithCheck(db *gorm.DB, version *models.Mi
 		return NewBizError(ErrCodeVersionExists)
 	}
 
-	// 3. 检查版本号数字是否存在
-	exists, err = m.CheckVersionCodeExist(db, version.AppRecordId, version.VersionCode, 0)
-	if err != nil {
-		return err // 数据库错误，直接返回
-	}
-	if exists {
-		return NewBizError(ErrCodeVersionCodeExists)
-	}
+	// // 3. 检查版本号数字是否存在
+	// exists, err = m.CheckVersionCodeExist(db, version.AppRecordId, version.VersionCode, 0)
+	// if err != nil {
+	// 	return err // 数据库错误，直接返回
+	// }
+	// if exists {
+	// 	return NewBizError(ErrCodeVersionCodeExists)
+	// }
 
 	// 4. 设置 AppId
 	version.AppRecordId = app.ID
@@ -212,7 +212,16 @@ func (s *MicroAppVersionService) GetLatestOnlineByAppModelId(db *gorm.DB, appMod
 }
 
 // 获取指定版本信息
-func (s *MicroAppVersionService) GetInfoByVersion(db *gorm.DB, version string) (models.MicroAppVersion, error) {
+func (s *MicroAppVersionService) GetInfoOnLineByVersion(db *gorm.DB, version string) (models.MicroAppVersion, error) {
 	m := models.MicroAppVersion{}
-	return m.GetByVersion(db, version)
+	info, err := m.GetByVersion(db, version)
+	if err != nil {
+		return models.MicroAppVersion{}, err
+	}
+
+	if info.Status != 1 || info.OfflineType != 0 {
+		return models.MicroAppVersion{}, NewBizError(ErrCodeVersionNotFound)
+	}
+
+	return info, nil
 }

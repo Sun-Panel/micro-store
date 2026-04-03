@@ -1,6 +1,7 @@
 package biz
 
 import (
+	"fmt"
 	"sun-panel/models"
 
 	"gorm.io/gorm"
@@ -104,4 +105,20 @@ func (s *microApp) GetInfo(db *gorm.DB, microAppId string) (models.MicroApp, err
 		return models.MicroApp{}, NewBizError(ErrCodeAppNotFound)
 	}
 	return info, nil
+}
+
+// BuildDownloadUrl 构建下载 URL
+// 参数：
+//   - appId: 微应用 ID
+//   - version: 版本号（可选，为空时使用最新版本）
+//
+// 返回：
+//   - 下载 URL
+func (s *microApp) BuildDownloadUrl(microAppId string, version ...string) string {
+	if len(version) == 0 || version[0] == "" {
+		// 下载最新版本
+		return fmt.Sprintf("/api/microApp/download/%s", microAppId)
+	}
+	// 下载指定版本
+	return fmt.Sprintf("/api/microApp/download/%s/%s", microAppId, version)
 }

@@ -16,25 +16,65 @@ import (
 
 type DownloadApi struct{}
 
-// Download 下载接口（GET方式，流式传输，自动统计）
-func (a *DownloadApi) Download(c *gin.Context) {
-	versionId := c.Query("versionId")
-	if versionId == "" {
-		apiReturn.ErrorParamFomat(c, "versionId is required")
+func (a *DownloadApi) GetUrl(c *gin.Context) {
+	microAppId := c.Param("microAppId")
+	version := c.Param("version")
+	if microAppId == "" {
+		apiReturn.ErrorParamFomat(c, "microAppId is required")
 		return
 	}
 
-	// 查询版本信息
-	var version models.MicroAppVersion
-	if err := global.Db.Where("id = ?", versionId).First(&version).Error; err != nil {
+	url := biz.MicroAppPackage.BuildDownloadUrl(microAppId, version)
+	apiReturn.SuccessData(c, url)
+}
+
+// DownloadByVersionLatest 通过版本号下载/最新版本
+func (a *DownloadApi) DownloadByVersionOrLatest(c *gin.Context) {
+	microAppId := c.Param("microAppId")
+	versionStr := c.Param("version")
+	if microAppId == "" {
+		apiReturn.ErrorParamFomat(c, "microAppId is required")
+		return
+	}
+
+	// 查询应用信息
+	microApp, err := biz.MicroApp.GetInfo(global.Db, microAppId)
+	if err != nil {
 		apiReturn.ErrorDataNotFound(c)
 		return
+	}
+
+	// 检查应用状态（只有上架的应用才能下载）
+	if microApp.Status != 1 {
+		apiReturn.ErrorDataNotFound(c)
+		return
+	}
+
+	var versionInfo models.MicroAppVersion
+
+	if versionStr == "" {
+		// 获取最新在线版本
+		versionModel := models.MicroAppVersion{}
+		latestVersion, err := versionModel.GetLatestOnlineByAppId(global.Db, microApp.ID)
+		if err != nil {
+			apiReturn.ErrorDataNotFound(c)
+			return
+		}
+		versionInfo = latestVersion
+	} else {
+		// 获取指定版本信息
+		v, err := biz.MicroAppVersion.GetInfoOnLineByVersion(global.Db, versionStr)
+		if err != nil {
+			apiReturn.ErrorDataNotFound(c)
+			return
+		}
+		versionInfo = v
 	}
 
 	// 记录下载统计（异步）
 	go func() {
 		biz.MicroAppStatistics.IncrementDownload(
-			version.AppRecordId,
+			versionInfo.AppRecordId,
 			0,
 			c.Query("clientId"),
 			c.ClientIP(),
@@ -42,52 +82,21 @@ func (a *DownloadApi) Download(c *gin.Context) {
 	}()
 
 	// 获取文件路径
-	filePath := a.getFilePath(version.PackageSrc)
+	filePath := a.getFilePath(versionInfo.PackageSrc)
 	if filePath == "" {
 		apiReturn.ErrorDataNotFound(c)
 		return
 	}
 
 	// 流式传输文件
-	a.serveFile(c, filePath, version.Version)
+	// a.serveFile(c, filePath, versionInfo.Version)
+	// 非流式传输文件
+	a.serveFileNonStreaming(c, filePath, versionInfo.Version)
 }
 
-// DownloadByVersionId 下载接口（POST方式，返回下载链接）
-func (a *DownloadApi) DownloadByVersionId(c *gin.Context) {
-	type Req struct {
-		VersionId uint `json:"versionId" binding:"required"`
-	}
-
-	req := Req{}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		apiReturn.ErrorParamFomat(c, err.Error())
-		return
-	}
-
-	// 查询版本信息
-	var version models.MicroAppVersion
-	if err := global.Db.Where("id = ?", req.VersionId).First(&version).Error; err != nil {
-		apiReturn.ErrorDataNotFound(c)
-		return
-	}
-
-	// 记录下载统计（异步）
-	go func() {
-		biz.MicroAppStatistics.IncrementDownload(
-			version.AppRecordId,
-			0,
-			c.GetHeader("X-Client-Id"),
-			c.ClientIP(),
-		)
-	}()
-
-	// 返回下载链接
-	apiReturn.SuccessData(c, gin.H{
-		"downloadUrl": fmt.Sprintf("/api/microApp/download?versionId=%d", req.VersionId),
-		"version":     version.Version,
-		"packageHash": version.PackageHash,
-	})
-}
+// ===================================================================================================
+// 辅助方法
+// ===================================================================================================
 
 // getFilePath 获取文件的完整路径
 func (a *DownloadApi) getFilePath(packageSrc string) string {
@@ -140,66 +149,26 @@ func (a *DownloadApi) serveFile(c *gin.Context, filePath, version string) {
 	http.ServeContent(c.Writer, c.Request, fileName, fileInfo.ModTime(), file)
 }
 
-// DownloadByVersionLatest 通过版本号下载/最新版本
-func (a *DownloadApi) DownloadByVersionOrLatest(c *gin.Context) {
-	microAppId := c.Param("microAppId")
-	versionStr := c.Param("version")
-	if microAppId == "" {
-		apiReturn.ErrorParamFomat(c, "microAppId is required")
-		return
-	}
-
-	// 查询应用信息
-	microApp, err := biz.MicroApp.GetInfo(global.Db, microAppId)
+// serveFileNonStreaming 非流式传输文件（一次性读取，可检测完整传输）
+func (a *DownloadApi) serveFileNonStreaming(c *gin.Context, filePath, version string) {
+	// 读取整个文件到内存
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		apiReturn.ErrorDataNotFound(c)
 		return
 	}
 
-	// 检查应用状态（只有上架的应用才能下载）
-	if microApp.Status != 1 {
-		apiReturn.ErrorDataNotFound(c)
-		return
-	}
+	// 设置响应头
+	fileName := fmt.Sprintf("micro_app_v%s.zip", version)
+	c.Header("Content-Description", "File Transfer")
+	c.Header("Content-Type", "application/octet-stream")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
+	c.Header("Content-Transfer-Encoding", "binary")
+	c.Header("Expires", "0")
+	c.Header("Cache-Control", "must-revalidate")
+	c.Header("Pragma", "public")
+	c.Header("Content-Length", strconv.Itoa(len(data)))
 
-	var versionInfo models.MicroAppVersion
-
-	if versionStr == "" {
-		// 获取最新在线版本
-		versionModel := models.MicroAppVersion{}
-		latestVersion, err := versionModel.GetLatestOnlineByAppId(global.Db, microApp.ID)
-		if err != nil {
-			apiReturn.ErrorDataNotFound(c)
-			return
-		}
-		versionInfo = latestVersion
-	} else {
-		// 获取指定版本信息
-		v, err := biz.MicroAppVersion.GetInfoByVersion(global.Db, versionStr)
-		if err != nil {
-			apiReturn.ErrorDataNotFound(c)
-			return
-		}
-		versionInfo = v
-	}
-
-	// 记录下载统计（异步）
-	go func() {
-		biz.MicroAppStatistics.IncrementDownload(
-			versionInfo.AppRecordId,
-			0,
-			c.Query("clientId"),
-			c.ClientIP(),
-		)
-	}()
-
-	// 获取文件路径
-	filePath := a.getFilePath(versionInfo.PackageSrc)
-	if filePath == "" {
-		apiReturn.ErrorDataNotFound(c)
-		return
-	}
-
-	// 流式传输文件
-	a.serveFile(c, filePath, versionInfo.Version)
+	// 写入响应（完成后可以执行token过期等操作）
+	c.Data(http.StatusOK, "application/octet-stream", data)
 }
