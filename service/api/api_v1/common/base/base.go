@@ -5,9 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"sun-panel/api/api_v1/common/apiReturn"
 	"sun-panel/biz"
@@ -356,4 +359,60 @@ func BizCodeToInt(code string) int {
 		return intCode
 	}
 	return -1
+}
+
+// serveFile 流式传输文件（支持断点续传）
+func ServeFile(c *gin.Context, filePath string) {
+	// 打开文件
+	file, err := os.Open(filePath)
+	if err != nil {
+		apiReturn.ErrorDataNotFound(c)
+		return
+	}
+	defer file.Close()
+
+	// 获取文件信息
+	fileInfo, err := file.Stat()
+	if err != nil {
+		apiReturn.ErrorDataNotFound(c)
+		return
+	}
+
+	// 设置响应头
+	fileName := fileInfo.Name()
+	c.Header("Content-Description", "File Transfer")
+	c.Header("Content-Type", "application/octet-stream")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
+	c.Header("Content-Transfer-Encoding", "binary")
+	c.Header("Expires", "0")
+	c.Header("Cache-Control", "must-revalidate")
+	c.Header("Pragma", "public")
+	c.Header("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
+
+	// 支持 Range 请求（断点续传）
+	http.ServeContent(c.Writer, c.Request, fileName, fileInfo.ModTime(), file)
+}
+
+// serveFileNonStreaming 非流式传输文件（一次性读取，可检测完整传输）
+func ServeFileNonStreaming(c *gin.Context, filePath string) {
+	// 读取整个文件到内存
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		apiReturn.ErrorDataNotFound(c)
+		return
+	}
+
+	// 设置响应头
+	fileName := filepath.Base(filePath)
+	c.Header("Content-Description", "File Transfer")
+	c.Header("Content-Type", "application/octet-stream")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
+	c.Header("Content-Transfer-Encoding", "binary")
+	c.Header("Expires", "0")
+	c.Header("Cache-Control", "must-revalidate")
+	c.Header("Pragma", "public")
+	c.Header("Content-Length", strconv.Itoa(len(data)))
+
+	// 写入响应（完成后可以执行token过期等操作）
+	c.Data(http.StatusOK, "application/octet-stream", data)
 }

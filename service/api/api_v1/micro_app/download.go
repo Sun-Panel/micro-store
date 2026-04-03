@@ -1,30 +1,28 @@
 package microapp
 
 import (
-	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"sun-panel/api/api_v1/common/apiReturn"
+	"sun-panel/api/api_v1/common/base"
 	"sun-panel/biz"
 	"sun-panel/global"
 	"sun-panel/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 )
 
 type DownloadApi struct{}
 
 func (a *DownloadApi) GetUrl(c *gin.Context) {
-	microAppId := c.Param("microAppId")
-	version := c.Param("version")
-	if microAppId == "" {
-		apiReturn.ErrorParamFomat(c, "microAppId is required")
+	req := DownloadGetUrlReq{}
+	if err := c.ShouldBindBodyWith(&req, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
 		return
 	}
 
-	url := biz.MicroAppPackage.BuildDownloadUrl(microAppId, version)
+	url := biz.MicroAppPackage.BuildDownloadUrl(req.MicroAppId, req.Version)
 	apiReturn.SuccessData(c, url)
 }
 
@@ -91,7 +89,7 @@ func (a *DownloadApi) DownloadByVersionOrLatest(c *gin.Context) {
 	// 流式传输文件
 	// a.serveFile(c, filePath, versionInfo.Version)
 	// 非流式传输文件
-	a.serveFileNonStreaming(c, filePath, versionInfo.Version)
+	base.ServeFileNonStreaming(c, filePath)
 }
 
 // ===================================================================================================
@@ -115,60 +113,4 @@ func (a *DownloadApi) getFilePath(packageSrc string) string {
 	}
 
 	return filePath
-}
-
-// serveFile 流式传输文件（支持断点续传）
-func (a *DownloadApi) serveFile(c *gin.Context, filePath, version string) {
-	// 打开文件
-	file, err := os.Open(filePath)
-	if err != nil {
-		apiReturn.ErrorDataNotFound(c)
-		return
-	}
-	defer file.Close()
-
-	// 获取文件信息
-	fileInfo, err := file.Stat()
-	if err != nil {
-		apiReturn.ErrorDataNotFound(c)
-		return
-	}
-
-	// 设置响应头
-	fileName := fmt.Sprintf("micro_app_v%s.zip", version)
-	c.Header("Content-Description", "File Transfer")
-	c.Header("Content-Type", "application/octet-stream")
-	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
-	c.Header("Content-Transfer-Encoding", "binary")
-	c.Header("Expires", "0")
-	c.Header("Cache-Control", "must-revalidate")
-	c.Header("Pragma", "public")
-	c.Header("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
-
-	// 支持 Range 请求（断点续传）
-	http.ServeContent(c.Writer, c.Request, fileName, fileInfo.ModTime(), file)
-}
-
-// serveFileNonStreaming 非流式传输文件（一次性读取，可检测完整传输）
-func (a *DownloadApi) serveFileNonStreaming(c *gin.Context, filePath, version string) {
-	// 读取整个文件到内存
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		apiReturn.ErrorDataNotFound(c)
-		return
-	}
-
-	// 设置响应头
-	fileName := fmt.Sprintf("micro_app_v%s.zip", version)
-	c.Header("Content-Description", "File Transfer")
-	c.Header("Content-Type", "application/octet-stream")
-	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
-	c.Header("Content-Transfer-Encoding", "binary")
-	c.Header("Expires", "0")
-	c.Header("Cache-Control", "must-revalidate")
-	c.Header("Pragma", "public")
-	c.Header("Content-Length", strconv.Itoa(len(data)))
-
-	// 写入响应（完成后可以执行token过期等操作）
-	c.Data(http.StatusOK, "application/octet-stream", data)
 }

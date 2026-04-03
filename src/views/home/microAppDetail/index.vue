@@ -3,7 +3,7 @@ import { NButton, NCard, NImage, NImageGroup, NTag, useMessage } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
-import { getInfo, getVersionList } from '@/api/microApp'
+import { getDownloadUrl, getInfo, getVersionList } from '@/api/microApp'
 import { microAppChargeTypeMap, MicroAppVersionStatus } from '@/enums/panel'
 import { timeFormat } from '@/utils/cmn'
 
@@ -12,7 +12,7 @@ const router = useRouter()
 const message = useMessage()
 
 // 微应用ID
-const microAppId = computed(() => Number(route.params.id))
+const appRecordId = computed(() => Number(route.params.id))
 
 // 数据
 const microAppInfo = ref<MicroApp.Info>()
@@ -113,7 +113,7 @@ const latestApprovedVersion = computed(() => {
 async function fetchMicroAppInfo() {
   loading.value = true
   try {
-    const { data } = await getInfo<MicroApp.Info>(microAppId.value)
+    const { data } = await getInfo<MicroApp.Info>(appRecordId.value)
     microAppInfo.value = data
   }
   catch (error) {
@@ -143,7 +143,7 @@ async function fetchCategoryOptions() {
 async function fetchVersionList() {
   try {
     const { data } = await getVersionList<Common.ListResponse<MicroApp.VersionInfo[]>>({
-      appRecordId: microAppId.value,
+      appRecordId: appRecordId.value,
       page: 1,
       limit: 100,
     })
@@ -159,10 +159,21 @@ function handleBack() {
   router.push('/')
 }
 
-// 下载版本
-function handleDownload() {
-  if (latestApprovedVersion.value?.packageUrl) {
-    window.location.href = latestApprovedVersion.value.packageUrl
+// // 下载版本
+// function handleDownload() {
+//   if (latestApprovedVersion.value?.packageUrl) {
+//     window.location.href = latestApprovedVersion.value.packageUrl
+//   }
+// }
+
+// 下载版本包
+async function handleDownloadByVersionId(version?: string) {
+  if (microAppInfo.value?.microAppId) {
+    await getDownloadUrl<string>(microAppInfo.value?.microAppId).then(({ data }) => {
+      window.open(data, '_blank')
+    }).catch((res) => {
+      console.error(`get url error${res.msg}`)
+    })
   }
 }
 
@@ -287,7 +298,7 @@ onMounted(async () => {
             <div class="text-sm text-gray-400 mr-2">
               发布时间: {{ timeFormat(String(latestApprovedVersion.createTime)) }}
             </div>
-            <NButton type="primary" @click="handleDownload">
+            <NButton type="primary" @click="handleDownloadByVersionId">
               下载
             </NButton>
             <NButton @click="handleInstall">

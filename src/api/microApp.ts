@@ -25,3 +25,10 @@ export function getVersionList<T>(data: MicroApp.GetVersionListRequest) {
     data,
   })
 }
+
+export function getDownloadUrl<T>(microAppId: string, version?: string) {
+  return post<T>({
+    url: '/microApp/download/getUrl/',
+    data: { microAppId, version },
+  })
+}
