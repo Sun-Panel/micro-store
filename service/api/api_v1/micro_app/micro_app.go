@@ -37,9 +37,44 @@ func (a *MicroAppApi) GetInfo(c *gin.Context) {
 	apiReturn.SuccessData(c, info)
 }
 
-// GetList 获取版本列表
+// 获取微应用列表
 func (a *MicroAppApi) GetList(c *gin.Context) {
 	req := MicroAppVersionGetListReq{}
+	if err := c.ShouldBindBodyWith(&req, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	// 参数校验和默认值设置
+	if req.Page < 1 {
+		req.Page = 1
+	}
+	if req.Limit < 1 {
+		req.Limit = 10 // 默认每页10条
+	}
+	if req.Limit > 100 {
+		req.Limit = 100 // 最大每页100条
+	}
+
+	// 调用业务层获取列表
+	list, total, err := biz.MicroApp.GetList(global.Db, biz.GetListOptions{
+		Page:       req.Page,
+		Limit:      req.Limit,
+		Order:      req.Order,
+		CategoryId: req.CategoryId,
+		Keyword:    req.Keyword,
+	})
+	if err != nil {
+		apiReturn.ErrorDatabase(c, err.Error())
+		return
+	}
+
+	apiReturn.SuccessListData(c, list, total)
+}
+
+// GetVersionList 获取微应用版本列表
+func (a *MicroAppApi) GetVersionList(c *gin.Context) {
+	req := MicroAppVersionGetVersionListReq{}
 	if err := c.ShouldBindBodyWith(&req, binding.JSON); err != nil {
 		apiReturn.ErrorParamFomat(c, err.Error())
 		return

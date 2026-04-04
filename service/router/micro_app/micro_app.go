@@ -11,8 +11,9 @@ func InitMicroAppRouter(router *gin.RouterGroup) {
 	downloadApi := api_v1.ApiGroupApp.DownloadApi
 
 	// ==================== 公开接口（微应用） ====================
+	router.POST("microApp/getList", microAppApi.GetList)
 	router.POST("microApp/getInfo", microAppApi.GetInfo)
-	router.POST("microApp/version/getList", microAppApi.GetList)
+	router.POST("microApp/version/getList", microAppApi.GetVersionList)
 
 	router.POST("microApp/download/getUrl", downloadApi.GetUrl) // 获取下载链接
 

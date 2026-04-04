@@ -2,13 +2,13 @@ import { post } from '@/utils/request'
 
 // ==================== 前台/公开 API ====================
 
-// 获取微应用详情（公开接口）
-// export function getInfo<T>(id: number) {
-//   return post<T>({
-//     url: '/admin/microApp/getInfo',
-//     data: { id },
-//   })
-// }
+// 获取微应用列表（公开接口）
+export function getList<T>(data: MicroApp.GetListRequest) {
+  return post<T>({
+    url: '/microApp/getList',
+    data,
+  })
+}
 
 // 获取微应用详情（公开接口 - 新增）
 export function getInfo<T>(id: number) {

@@ -306,7 +306,7 @@ func (m *MicroApp) GetListWithLang(db *gorm.DB, opts MicroAppQueryOptions) ([]Mi
 				COALESCE(lang.app_desc, micro_app.app_desc) as app_desc,
 				user.id as developer_id,
 				user.name as developer_name,
-				user.avatar as developer_avatar
+				user.head_image as developer_avatar
 			`).
 			Joins("LEFT JOIN user ON micro_app.developer_id = user.id")
 	}

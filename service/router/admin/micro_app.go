@@ -68,6 +68,7 @@ func InitMicroAppRouter(router *gin.RouterGroup) {
 		myMicroAppRouter.POST("developer/version/cancelReview", apiGroup.DeveloperVersionApi.CancelReview)
 		myMicroAppRouter.POST("developer/version/delete", apiGroup.DeveloperVersionApi.Delete)
 		myMicroAppRouter.POST("developer/version/upload", apiGroup.MicroAppVersionUploadApi.Upload)
+		myMicroAppRouter.POST("developer/version/offline", apiGroup.MicroAppVersionAdminApi.Offline)
 	}
 
 	// // ==================== 管理员/审核员专用接口（版本审核） ====================
