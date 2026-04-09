@@ -20,13 +20,13 @@ import (
 
 // MicroAppPackageResult 微应用包处理结果
 type MicroAppPackageResult struct {
-	Src        string                       `json:"src"`        // 文件源路径
-	Hash       string                       `json:"hash"`       // 文件 MD5
-	Config     models.MicroAppVersionConfig `json:"config"`     // 解析的配置
-	FileName   string                       `json:"fileName"`   // 文件名
-	FileSize   int64                        `json:"fileSize"`   // 文件大小
-	FolderName string                       `json:"folderName"` // 文件夹名
-	IconURL    string                       `json:"iconURL"`    // 图标 URL
+	Src          string                       `json:"src"`          // 文件源路径
+	Hash         string                       `json:"hash"`         // 文件 MD5
+	Config       models.MicroAppVersionConfig `json:"config"`       // 解析的配置
+	FileName     string                       `json:"fileName"`     // 文件名
+	FileSize     int64                        `json:"fileSize"`     // 文件大小
+	FullFilePath string                       `json:"fullFilePath"` // 完整的文件路径
+	IconURL      string                       `json:"iconURL"`      // 图标 URL
 }
 
 type MicroAppPackageUploadCache struct {
@@ -117,7 +117,7 @@ func (s *MicroAppPackageService) UploadMicroAppPackage(fileData []byte, fileName
 	}
 
 	// 解压文件获取配置
-	if err := s.unzipFile(tempFilePath, tempDir); err != nil {
+	if err := s.UnzipFile(tempFilePath, tempDir); err != nil {
 		return MicroAppPackageResult{}, fmt.Errorf("解压文件失败: %w", err)
 	}
 
@@ -130,6 +130,9 @@ func (s *MicroAppPackageService) UploadMicroAppPackage(fileData []byte, fileName
 	filePath := dateDir + newFileName
 	fullFilePath := fmt.Sprintf("%s/%s", configUpload, filePath) // 完整的保存路径
 
+	// global.Logger.Info("fullFilePath", zap.String("fullFilePath", fullFilePath), zap.String("newFileName", newFileName), zap.String("filePath", filePath))
+	// global.Logger.Info("appConfig", zap.Any("config", config))
+
 	// 保存文件（如果存在则覆盖）
 	if err := os.WriteFile(fullFilePath, fileData, 0644); err != nil {
 		return MicroAppPackageResult{}, fmt.Errorf("文件保存失败: %w", err)
@@ -141,13 +144,13 @@ func (s *MicroAppPackageService) UploadMicroAppPackage(fileData []byte, fileName
 	// downloadUrl := s.GenerateDownloadURL(filePath)
 
 	return MicroAppPackageResult{
-		Src:        filePath,
-		Hash:       fileHash,
-		Config:     config,
-		FileName:   newFileName,
-		FileSize:   int64(len(fileData)),
-		FolderName: newFileName,
-		IconURL:    iconURL,
+		Src:          filePath,
+		Hash:         fileHash,
+		Config:       config,
+		FileName:     newFileName,
+		FileSize:     int64(len(fileData)),
+		FullFilePath: fullFilePath,
+		IconURL:      iconURL,
 	}, nil
 }
 
@@ -168,7 +171,7 @@ func (s *MicroAppPackageService) calculateFileMD5(filePath string) (string, erro
 }
 
 // unzipFile 解压 zip 文件
-func (s *MicroAppPackageService) unzipFile(zipPath, destDir string) error {
+func (s *MicroAppPackageService) UnzipFile(zipPath, destDir string) error {
 	zipReader, err := zip.OpenReader(zipPath)
 	if err != nil {
 		return err

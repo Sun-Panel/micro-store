@@ -9,6 +9,7 @@ toolchain go1.22.10
 // replace cnb.cool/hslr-s/go-pkg/oauth2-go => ../../../go-pkg/oauth2
 
 require (
+	cnb.cool/hslr-s/go-pkg/oauth2-go v0.0.0-20260313022743-a89f5c3ed020
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/fatih/color v1.15.0
 	github.com/gin-gonic/gin v1.9.1
@@ -36,7 +37,6 @@ require (
 )
 
 require (
-	cnb.cool/hslr-s/go-pkg/oauth2-go v0.0.0-20260313022743-a89f5c3ed020 // indirect
 	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/bytedance/sonic v1.9.1 // indirect

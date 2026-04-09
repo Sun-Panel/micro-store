@@ -87,7 +87,7 @@ func (a *DeveloperVersionApi) Create(c *gin.Context) {
 		Config:      &cache.PackageResult.Config,
 	}
 
-	if err := biz.MicroAppVersion.CreateWithCheck(global.Db, version); err != nil {
+	if err := biz.MicroAppVersion.CreateOrUpdateWithCheck(global.Db, version, cache.PackageResult.FullFilePath); err != nil {
 		handleBizError(c, err)
 		return
 	}

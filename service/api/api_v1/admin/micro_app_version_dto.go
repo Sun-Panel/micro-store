@@ -74,7 +74,7 @@ type MicroAppVersionUploadResp struct {
 	Config        models.MicroAppVersionConfig `json:"config"`        // 解析出的配置文件
 	FileName      string                       `json:"fileName"`      // 文件名
 	FileSize      int64                        `json:"fileSize"`      // 文件大小
-	FolderName    string                       `json:"folderName"`    // 缓存文件夹名（不含路径）
+	FullFilePath  string                       `json:"fullFilePath"`  // 完整的文件路径
 	IconURL       string                       `json:"iconURL"`       // 图标访问 URL
 	UploadCacheId string                       `json:"uploadCacheId"` // 上传缓存ID
 }

@@ -73,7 +73,7 @@ func (a *MicroAppVersionUploadApi) Upload(c *gin.Context) {
 		Config:        result.Config,
 		FileName:      result.FileName,
 		FileSize:      result.FileSize,
-		FolderName:    result.FolderName,
+		FullFilePath:  result.FullFilePath,
 		IconURL:       result.IconURL,
 		UploadCacheId: cacheKey,
 	})
