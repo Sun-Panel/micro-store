@@ -1,10 +1,10 @@
 <script lang="ts" setup>
-import { NButton, NCard, NModal, NPopconfirm, NSpace, NTag, NInput, useMessage } from 'naive-ui'
+import { NButton, NCard, NInput, NModal, NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { deletes, getInfo as getMicroAppInfo, offline, updateStatus } from '@/api/admin/microApp'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
-import { cancelReview, getVersionList, offline as adminOfflineVersion } from '@/api/admin/microAppVersion'
+import { offlineVersion as adminOfflineVersion, cancelReview, getVersionList } from '@/api/admin/microAppVersion'
 import VersionDetailModal from '@/components/common/VersionManagement/VersionDetailModal.vue'
 import { microAppStatusMap, MicroAppVersionStatus } from '@/enums/panel'
 import { apiRespErrMsg } from '@/utils/cmn'

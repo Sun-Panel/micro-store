@@ -32,9 +32,9 @@ function createColumns({
   handleStatus,
   handleView,
 }: {
-  handleStatus: (row: MicroApp.MicroAppInfo, status: number) => void
-  handleView: (row: MicroApp.MicroAppInfo) => void
-}): DataTableColumns<MicroApp.MicroAppInfo> {
+  handleStatus: (row: MicroApp.Info, status: number) => void
+  handleView: (row: MicroApp.Info) => void
+}): DataTableColumns<MicroApp.Info> {
   return [
     {
       title: 'ID',
@@ -106,10 +106,10 @@ function createColumns({
               case 'view':
                 handleView(row)
                 break
-              case 'pass':
+              case 'online':
                 handleStatus(row, 1)
                 break
-              case 'reject':
+              case 'offline':
                 handleStatus(row, 0)
                 break
               case 'delete':
@@ -125,8 +125,7 @@ function createColumns({
           },
           options: [
             { label: '查看详情', key: 'view' },
-            { label: '审核通过', key: 'pass' },
-            { label: '审核拒绝', key: 'reject' },
+            { label: '上架', key: 'online' },
             { label: '下架', key: 'offline' },
             { label: '删除', key: 'delete' },
           ],
@@ -136,14 +135,15 @@ function createColumns({
   ]
 }
 
-const dataList = ref<MicroApp.MicroAppInfo[]>([])
+const dataList = ref<MicroApp.Info[]>([])
 
 const columns = createColumns({
-  handleStatus(row: MicroApp.MicroAppInfo, status: number) {
+  handleStatus(row: MicroApp.Info, status: number) {
     handleChangeStatus(row, status)
   },
-  handleView(row: MicroApp.MicroAppInfo) {
-    router.push(`/admin/microAppManage/detail/${row.id}`)
+  handleView(row: MicroApp.Info) {
+    router.push(`/admin/microAppManage/detail/${row.id}`) // 后台详情页
+    // router.push(`/admin/microAppManage/detail/${row.id}`) // 公开详情页
   },
 })
 
@@ -224,7 +224,7 @@ async function handleDelete(ids: number[]) {
 }
 
 // 修改状态
-async function handleChangeStatus(row: MicroApp.MicroAppInfo, status: number) {
+async function handleChangeStatus(row: MicroApp.Info, status: number) {
   try {
     const { code } = await updateStatus({ id: row.id, status })
     if (code === 0) {

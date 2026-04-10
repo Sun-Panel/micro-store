@@ -236,14 +236,14 @@ func (s *MicroAppVersionService) CancelReview(db *gorm.DB, versionId uint) error
 // DeleteVersion 删除版本
 func (s *MicroAppVersionService) DeleteVersion(db *gorm.DB, ids []uint) error {
 	m := models.MicroAppVersion{}
-	version, err := m.GetById(db, ids[0])
-	if err != nil {
-		return NewBizError(ErrCodeVersionNotFound)
-	}
+	// version, err := m.GetById(db, ids[0])
+	// if err != nil {
+	// 	return NewBizError(ErrCodeVersionNotFound)
+	// }
 
-	if version.Status == 1 {
-		return NewBizError(ErrCodeApprovedCannotDelete)
-	}
+	// if version.Status == 1 {
+	// 	return NewBizError(ErrCodeApprovedCannotDelete)
+	// }
 
 	if err := m.Delete(db, ids); err != nil {
 		return err // 数据库错误，直接返回

@@ -15,12 +15,12 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'add-version': []
-  'view-detail': [version: MicroApp.VersionInfo]
-  'submit-review': [versionId: number]
-  'cancel-review': [versionId: number]
-  'delete-version': [ids: number[]]
-  'offline-version': [version: MicroApp.VersionInfo]
+  (e: 'addVersion'): void
+  (e: 'viewDetail', version: MicroApp.VersionInfo): void
+  (e: 'submitReview', versionId: number): void
+  (e: 'cancelReview', versionId: number): void
+  (e: 'deleteVersion', ids: number[]): void
+  (e: 'offlineVersion', version: MicroApp.VersionInfo): void
 }>()
 
 // 版本状态颜色
@@ -85,34 +85,37 @@ const columns = computed<DataTableColumns<MicroApp.VersionInfo>>(() => [
       return h(NSpace, { size: 'small' }, {
         default: () => [
           // 查看详情
-          h(NButton, { size: 'small', onClick: () => emit('view-detail', row) }, {
+          h(NButton, { size: 'small', onClick: () => emit('viewDetail', row) }, {
             default: () => '查看',
           }),
           // 草稿/拒绝/下架状态，可以提交审核
           props.canSubmitReview && (row.status === MicroAppVersionStatus.DRAFT || row.status === MicroAppVersionStatus.REJECTED || row.status === MicroAppVersionStatus.OFFLINE)
-            ? h(NButton, { size: 'small', type: 'primary', onClick: () => emit('submit-review', row.id) }, {
+            ? h(NButton, { size: 'small', type: 'primary', onClick: () => emit('submitReview', row.id) }, {
                 default: () => '提交审核',
               })
             : null,
           // 待审核状态，可以撤销
           props.canSubmitReview && row.status === MicroAppVersionStatus.PENDING
-            ? h(NButton, { size: 'small', type: 'warning', onClick: () => emit('cancel-review', row.id) }, {
+            ? h(NButton, { size: 'small', type: 'warning', onClick: () => emit('cancelReview', row.id) }, {
                 default: () => '撤销',
               })
             : null,
+
+          // 已通过状态，可以下架
+          props.canOfflineVersion && row.status === MicroAppVersionStatus.APPROVED
+            ? h(NButton, { size: 'small', type: 'warning', onClick: () => emit('offlineVersion', row) }, {
+                default: () => '下架',
+              })
+            : null,
+
           // 非通过且非下架状态，可以删除
-          props.canDeleteVersion && row.status !== MicroAppVersionStatus.APPROVED && row.status !== MicroAppVersionStatus.OFFLINE
-            ? h(NPopconfirm, { onPositiveClick: () => emit('delete-version', [row.id]) }, {
+          props.canDeleteVersion
+            ? h(NPopconfirm, { onPositiveClick: () => emit('deleteVersion', [row.id]) }, {
                 trigger: () => h(NButton, { size: 'small', type: 'error' }, { default: () => '删除' }),
                 default: () => `确定删除版本 ${row.version} 吗？`,
               })
             : null,
-          // 已通过状态，可以下架
-          props.canOfflineVersion && row.status === MicroAppVersionStatus.APPROVED
-            ? h(NButton, { size: 'small', type: 'warning', onClick: () => emit('offline-version', row) }, {
-                default: () => '下架',
-              })
-            : null,
+
         ],
       })
     },
@@ -123,7 +126,7 @@ const columns = computed<DataTableColumns<MicroApp.VersionInfo>>(() => [
 <template>
   <NCard title="版本管理">
     <template #header-extra>
-      <NButton v-if="canAddVersion" type="primary" @click="emit('add-version')">
+      <NButton v-if="canAddVersion" type="primary" @click="emit('addVersion')">
         添加版本
       </NButton>
     </template>
