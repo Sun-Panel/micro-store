@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { NButton, NDescriptions, NDescriptionsItem, NDivider, NInput, NModal, NSpace, useMessage } from 'naive-ui'
+import { NButton, NCard, NCollapse, NCollapseItem, NDescriptions, NDescriptionsItem, NDivider, NInput, NModal, NProgress, NSpace, NTag, useMessage } from 'naive-ui'
 import { ref, watch } from 'vue'
 import { getDownloadUrl, getLatestOnlineByAppModelId } from '@/api/admin/microAppVersion'
-import { getVersionList, review } from '@/api/admin/microAppVersionReview'
+import { review } from '@/api/admin/microAppVersionReview'
 import { apiRespErrMsg } from '@/utils/cmn/apiMessage'
 
 const props = defineProps<{
@@ -26,6 +26,15 @@ const reviewForm = ref({
   reviewNote: '',
 })
 const iframeModalVisible = ref(false)
+const securityAuditModalVisible = ref(false)
+
+// 严重程度映射
+const severityMap: Record<string, { label: string, color: 'error' | 'warning' | 'default' | 'success', value: number }> = {
+  CRITICAL: { label: '高危', color: 'error', value: 4 },
+  HIGH: { label: '高', color: 'warning', value: 3 },
+  MEDIUM: { label: '中', color: 'default', value: 2 },
+  LOW: { label: '低', color: 'success', value: 1 },
+}
 
 // 监听弹窗打开，获取已发布版本信息
 watch(() => props.visible, async (visible) => {
@@ -73,8 +82,8 @@ async function handleReview() {
       emit('done')
     }
   }
-  catch (error) {
-    message.error('操作失败')
+  catch (error: any) {
+    apiRespErrMsg(error)
   }
   finally {
     reviewLoading.value = false
@@ -90,14 +99,24 @@ async function handleReview() {
 async function handleDownloadByVersionId(versionId: number) {
   await getDownloadUrl<string>(versionId).then(({ data }) => {
     window.open(data, '_blank')
-  }).catch((res) => {
-    console.error(`get url error${res.msg}`)
+  }).catch(() => {
+    message.error('下载失败，请重试')
   })
 }
 
 // 打开应用公开页面
 function handleOpenMicroAppPublic() {
   iframeModalVisible.value = true
+}
+
+// 打开安全审核报告弹窗
+function handleOpenSecurityAudit() {
+  securityAuditModalVisible.value = true
+}
+
+// 打开外部链接
+function openExternalUrl(url: string) {
+  window.open(url, '_blank')
 }
 </script>
 
@@ -106,7 +125,7 @@ function handleOpenMicroAppPublic() {
     <template #header>
       <div class="flex gap-2 items-center">
         <div class="flex justify-between">
-          审核版本
+          {{ versionInfo?.microApp?.appName }} - 版本审核
         </div>
         <div>
           <NButton size="small" @click="handleOpenMicroAppPublic">
@@ -125,9 +144,6 @@ function handleOpenMicroAppPublic() {
             <span v-if="!currentApprovedVersion" class="text-sm font-normal text-gray-400">（暂无）</span>
           </div>
           <NDescriptions v-if="currentApprovedVersion" bordered :column="1">
-            <NDescriptionsItem label="应用名称">
-              {{ microApp?.appName }}
-            </NDescriptionsItem>
             <NDescriptionsItem label="版本号">
               {{ currentApprovedVersion.version }}
             </NDescriptionsItem>
@@ -148,6 +164,11 @@ function handleOpenMicroAppPublic() {
             <NDescriptionsItem v-if="currentApprovedVersion.config?.author" label="作者">
               {{ currentApprovedVersion.config.author }}
             </NDescriptionsItem>
+            <NDescriptionsItem label="安全审核">
+              <NButton size="small" @click="handleOpenSecurityAudit">
+                {{ currentApprovedVersion.codeSecurityAudit ? '查看报告' : '无报告' }}
+              </NButton>
+            </NDescriptionsItem>
           </NDescriptions>
           <div v-else class="text-center py-8 text-gray-400">
             暂无已发布的版本
@@ -160,9 +181,6 @@ function handleOpenMicroAppPublic() {
             待审核版本
           </div>
           <NDescriptions bordered :column="1">
-            <NDescriptionsItem label="应用名称">
-              {{ versionInfo.appName }}
-            </NDescriptionsItem>
             <NDescriptionsItem label="版本号" :class="{ 'font-bold text-red-600': !currentApprovedVersion || versionInfo.version !== currentApprovedVersion.version }">
               {{ versionInfo.version }}
               <span v-if="!currentApprovedVersion || versionInfo.version !== currentApprovedVersion.version" class="ml-2 text-xs bg-red-100 text-red-600 px-2 py-1 rounded">新版本</span>
@@ -191,6 +209,11 @@ function handleOpenMicroAppPublic() {
             </NDescriptionsItem>
             <NDescriptionsItem v-if="versionInfo.config?.author" label="作者">
               {{ versionInfo.config.author }}
+            </NDescriptionsItem>
+            <NDescriptionsItem label="安全审核">
+              <NButton size="small" @click="handleOpenSecurityAudit">
+                {{ versionInfo.codeSecurityAudit ? '查看报告' : '无报告' }}
+              </NButton>
             </NDescriptionsItem>
           </NDescriptions>
         </div>
@@ -312,6 +335,189 @@ function handleOpenMicroAppPublic() {
         frameborder="0"
         style="width: 100%; height: 700px; border: none;"
       />
+    </div>
+  </NModal>
+
+  <!-- 安全审核报告对比弹窗 -->
+  <NModal
+    :show="securityAuditModalVisible"
+    preset="card"
+    style="width: 1400px;"
+    title="安全审核报告对比"
+    @update:show="securityAuditModalVisible = $event"
+  >
+    <div class="flex gap-6">
+      <!-- 当前版本安全审核 -->
+      <div class="flex-1">
+        <div class="text-lg font-semibold mb-4 pb-2 border-b">
+          当前已发布版本
+        </div>
+        <template v-if="currentApprovedVersion?.codeSecurityAudit">
+          <!-- 概览卡片 -->
+          <NCard class="mb-4">
+            <div class="space-y-3">
+              <div class="flex justify-between items-center">
+                <span>审核状态：</span>
+                <NTag :type="currentApprovedVersion.codeSecurityAudit.isPassed ? 'success' : 'error'">
+                  {{ currentApprovedVersion.codeSecurityAudit.isPassed ? '通过' : '未通过' }}
+                </NTag>
+              </div>
+              <div>
+                <div class="mb-2">
+                  安全评分：
+                </div>
+                <NProgress
+                  type="line"
+                  :percentage="currentApprovedVersion.codeSecurityAudit.score"
+                  :color="currentApprovedVersion.codeSecurityAudit.score >= 80 ? '#18a058' : currentApprovedVersion.codeSecurityAudit.score >= 60 ? '#f0a020' : '#d03050'"
+                />
+              </div>
+              <div class="flex gap-4">
+                <div class="flex items-center gap-2">
+                  <NTag type="error">
+                    高危: {{ currentApprovedVersion.codeSecurityAudit.highRiskCount }}
+                  </NTag>
+                </div>
+                <div class="flex items-center gap-2">
+                  <NTag type="warning">
+                    中危: {{ currentApprovedVersion.codeSecurityAudit.mediumRiskCount }}
+                  </NTag>
+                </div>
+                <div class="flex items-center gap-2">
+                  <NTag type="default">
+                    低危: {{ currentApprovedVersion.codeSecurityAudit.lowRiskCount }}
+                  </NTag>
+                </div>
+              </div>
+              <div class="text-sm text-gray-500">
+                扫描时间：{{ new Date(currentApprovedVersion.codeSecurityAudit.scanTime).toLocaleString() }}
+              </div>
+              <div v-if="currentApprovedVersion.codeSecurityAudit.reportUrl" class="mt-2">
+                <NButton size="small" type="primary" @click="openExternalUrl(currentApprovedVersion.codeSecurityAudit.reportUrl!)">
+                  查看完整报告
+                </NButton>
+              </div>
+            </div>
+          </NCard>
+
+          <!-- 漏洞列表 -->
+          <NCard v-if="currentApprovedVersion.codeSecurityAudit.vulnerabilities.length > 0">
+            <div class="mb-3 font-semibold">
+              漏洞列表（{{ currentApprovedVersion.codeSecurityAudit.vulnerabilities.length }}）
+            </div>
+            <NCollapse>
+              <NCollapseItem
+                v-for="(vuln, index) in currentApprovedVersion.codeSecurityAudit.vulnerabilities"
+                :key="index"
+                :name="index"
+              >
+                <template #header>
+                  <div class="flex items-center gap-2">
+                    <NTag :type="severityMap[vuln.severity].color as any">
+                      {{ severityMap[vuln.severity].label }}
+                    </NTag>
+                    <span>{{ vuln.title }}</span>
+                  </div>
+                </template>
+                <div class="space-y-2 text-sm">
+                  <div><strong>描述：</strong>{{ vuln.description }}</div>
+                  <div><strong>位置：</strong>{{ vuln.location }}:{{ vuln.lineNumber }}</div>
+                  <div><strong>修复建议：</strong>{{ vuln.remediation }}</div>
+                </div>
+              </NCollapseItem>
+            </NCollapse>
+          </NCard>
+        </template>
+        <div v-else class="text-center py-8 text-gray-400">
+          暂无安全审核报告
+        </div>
+      </div>
+
+      <!-- 待审核版本安全审核 -->
+      <div class="flex-1 bg-blue-50 -mx-4 -mt-4 p-4 border-2 border-blue-200 rounded">
+        <div class="text-lg font-semibold mb-4 pb-2 border-b text-blue-600">
+          待审核版本
+        </div>
+        <template v-if="versionInfo?.codeSecurityAudit">
+          <!-- 概览卡片 -->
+          <NCard class="mb-4">
+            <div class="space-y-3">
+              <div class="flex justify-between items-center">
+                <span>审核状态：</span>
+                <NTag :type="versionInfo.codeSecurityAudit.isPassed ? 'success' : 'error'">
+                  {{ versionInfo.codeSecurityAudit.isPassed ? '通过' : '未通过' }}
+                </NTag>
+              </div>
+              <div>
+                <div class="mb-2">
+                  安全评分：
+                </div>
+                <NProgress
+                  type="line"
+                  :percentage="versionInfo.codeSecurityAudit.score"
+                  :color="versionInfo.codeSecurityAudit.score >= 80 ? '#18a058' : versionInfo.codeSecurityAudit.score >= 60 ? '#f0a020' : '#d03050'"
+                />
+              </div>
+              <div class="flex gap-4">
+                <div class="flex items-center gap-2">
+                  <NTag type="error">
+                    高危: {{ versionInfo.codeSecurityAudit.highRiskCount }}
+                  </NTag>
+                </div>
+                <div class="flex items-center gap-2">
+                  <NTag type="warning">
+                    中危: {{ versionInfo.codeSecurityAudit.mediumRiskCount }}
+                  </NTag>
+                </div>
+                <div class="flex items-center gap-2">
+                  <NTag type="default">
+                    低危: {{ versionInfo.codeSecurityAudit.lowRiskCount }}
+                  </NTag>
+                </div>
+              </div>
+              <div class="text-sm text-gray-500">
+                扫描时间：{{ new Date(versionInfo.codeSecurityAudit.scanTime).toLocaleString() }}
+              </div>
+              <div v-if="versionInfo.codeSecurityAudit.reportUrl" class="mt-2">
+                <NButton size="small" type="primary" @click="openExternalUrl(versionInfo.codeSecurityAudit.reportUrl!)">
+                  查看完整报告
+                </NButton>
+              </div>
+            </div>
+          </NCard>
+
+          <!-- 漏洞列表 -->
+          <NCard v-if="versionInfo.codeSecurityAudit.vulnerabilities.length > 0">
+            <div class="mb-3 font-semibold">
+              漏洞列表（{{ versionInfo.codeSecurityAudit.vulnerabilities.length }}）
+            </div>
+            <NCollapse>
+              <NCollapseItem
+                v-for="(vuln, index) in versionInfo.codeSecurityAudit.vulnerabilities"
+                :key="index"
+                :name="index"
+              >
+                <template #header>
+                  <div class="flex items-center gap-2">
+                    <NTag :type="severityMap[vuln.severity].color as any">
+                      {{ severityMap[vuln.severity].label }}
+                    </NTag>
+                    <span>{{ vuln.title }}</span>
+                  </div>
+                </template>
+                <div class="space-y-2 text-sm">
+                  <div><strong>描述：</strong>{{ vuln.description }}</div>
+                  <div><strong>位置：</strong>{{ vuln.location }}:{{ vuln.lineNumber }}</div>
+                  <div><strong>修复建议：</strong>{{ vuln.remediation }}</div>
+                </div>
+              </NCollapseItem>
+            </NCollapse>
+          </NCard>
+        </template>
+        <div v-else class="text-center py-8 text-gray-400">
+          暂无安全审核报告
+        </div>
+      </div>
     </div>
   </NModal>
 </template>

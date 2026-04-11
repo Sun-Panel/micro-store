@@ -41,6 +41,7 @@ declare namespace MicroApp {
     microApp?: MicroApp.Info
     createTime?: string
     updateTime?: string
+    codeSecurityAudit?: CodeSecurityAudit // 安全审核报告
   }
 
   // 版本配置信息
@@ -342,5 +343,30 @@ declare namespace MicroApp {
     folderName: string // 缓存文件夹名（不含路径）
     iconURL: string // 图标访问 URL
     uploadCacheId: string // 上传缓存ID
+  }
+
+  // 漏洞信息
+  interface Vulnerability {
+    id: string // 漏洞ID
+    title: string // 漏洞标题
+    description: string // 漏洞描述
+    severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' // 严重程度
+    location: string // 位置（文件名）
+    lineNumber: number // 行号
+    remediation: string // 修复建议
+  }
+
+  // 安全审核报告
+  interface CodeSecurityAudit {
+    isPassed: boolean // 是否通过审核
+    scanId: string // 扫描ID
+    score: number // 安全评分 0-100
+    highRiskCount: number // 高风险数量
+    mediumRiskCount: number // 中风险数量
+    lowRiskCount: number // 低风险数量
+    reportUrl?: string // 完整报告URL
+    vulnerabilities: Vulnerability[] // 漏洞列表
+    scanTime: string // 扫描时间
+    error: string // 错误信息
   }
 }
