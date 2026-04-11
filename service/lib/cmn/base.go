@@ -2,14 +2,17 @@ package cmn
 
 import (
 	// "calendar-note-gin/assets"
+	"archive/zip"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"math/rand"
 	"os"
 	"path"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -226,4 +229,52 @@ func AnyToJsonStr(anyData any) string {
 		log.Panicln("to json error", anyData, "err:", err)
 	}
 	return string(bjson)
+}
+
+func UnzipFile(zipPath, destDir string) error {
+	zipReader, err := zip.OpenReader(zipPath)
+	if err != nil {
+		return err
+	}
+	defer zipReader.Close()
+
+	for _, file := range zipReader.File {
+		filePath := filepath.Join(destDir, file.Name)
+
+		// 检查是否是目录
+		if file.FileInfo().IsDir() {
+			os.MkdirAll(filePath, os.ModePerm)
+			continue
+		}
+
+		// 确保父目录存在
+		if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+			return err
+		}
+
+		// 解压文件
+		if err := extractFileByZipFile(file, filePath); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// extractFile 解压单个文件
+func extractFileByZipFile(file *zip.File, destPath string) error {
+	targetFile, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	defer targetFile.Close()
+
+	reader, err := file.Open()
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+
+	_, err = io.Copy(targetFile, reader)
+	return err
 }

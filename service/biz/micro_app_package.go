@@ -1,7 +1,6 @@
 package biz
 
 import (
-	"archive/zip"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
@@ -117,7 +116,7 @@ func (s *MicroAppPackageService) UploadMicroAppPackage(fileData []byte, fileName
 	}
 
 	// 解压文件获取配置
-	if err := s.UnzipFile(tempFilePath, tempDir); err != nil {
+	if err := cmn.UnzipFile(tempFilePath, tempDir); err != nil {
 		return MicroAppPackageResult{}, fmt.Errorf("解压文件失败: %w", err)
 	}
 
@@ -168,55 +167,6 @@ func (s *MicroAppPackageService) calculateFileMD5(filePath string) (string, erro
 	}
 
 	return hex.EncodeToString(hash.Sum(nil)), nil
-}
-
-// unzipFile 解压 zip 文件
-func (s *MicroAppPackageService) UnzipFile(zipPath, destDir string) error {
-	zipReader, err := zip.OpenReader(zipPath)
-	if err != nil {
-		return err
-	}
-	defer zipReader.Close()
-
-	for _, file := range zipReader.File {
-		filePath := filepath.Join(destDir, file.Name)
-
-		// 检查是否是目录
-		if file.FileInfo().IsDir() {
-			os.MkdirAll(filePath, os.ModePerm)
-			continue
-		}
-
-		// 确保父目录存在
-		if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
-			return err
-		}
-
-		// 解压文件
-		if err := s.extractFile(file, filePath); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// extractFile 解压单个文件
-func (s *MicroAppPackageService) extractFile(file *zip.File, destPath string) error {
-	targetFile, err := os.Create(destPath)
-	if err != nil {
-		return err
-	}
-	defer targetFile.Close()
-
-	reader, err := file.Open()
-	if err != nil {
-		return err
-	}
-	defer reader.Close()
-
-	_, err = io.Copy(targetFile, reader)
-	return err
 }
 
 // parseAppConfig 解析应用配置文件

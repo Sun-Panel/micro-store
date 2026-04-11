@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"time"
 
 	"sun-panel/global"
+	"sun-panel/models"
 	"sun-panel/models/datatype"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -49,7 +51,15 @@ func (m *microAppAudit) getDefaultConfig() SecurityAuditConfig {
 }
 
 // 基本检查，包含微应用名称和作者Id是否匹配
-func (m *microAppAudit) BasicCheck(microAppDir string) error {
+//   - 检查包配置文件的microAppId是否与微应用的MicroAppId匹配
+//   - 检查包配置文件microAppId是否包含作者id信息
+func (m *microAppAudit) BasicCheck(microApp models.MicroApp, config models.MicroAppVersionConfig) error {
+	if microApp.MicroAppId != config.MicroAppId {
+		return errors.New("MicroAppId mismatch")
+	}
+	if !strings.HasPrefix(config.MicroAppId, microApp.Developer.DeveloperName) {
+		return errors.New("MicroAppId does not contain developerName")
+	}
 	return nil
 }
 

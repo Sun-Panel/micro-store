@@ -80,7 +80,12 @@ async function handleUploadChange(options: { file: any }) {
       apiRespErrMsg(res)
     }
   }
-  catch (error) {
+  catch (error: any) {
+    if (error.code === -2) {
+      message.error('上传失败，请检查微应用名称等信息是否匹配', { duration: 50000, closable: true })
+      return
+    }
+
     apiRespErrMsg(error)
   }
   finally {
@@ -186,12 +191,12 @@ async function handleAddVersion() {
           支持 .zip 格式的微应用包
         </div>
       </div>
-      <div>
+      <!-- <div>
         <div class="mb-2">
           版本号 <span class="text-red-500">*</span>
         </div>
         <NInput v-model:value="versionForm.version" placeholder="如：1.0.0" @update:value="handleVersionInput" />
-      </div>
+      </div> -->
       <div>
         <div class="mb-2">
           版本说明

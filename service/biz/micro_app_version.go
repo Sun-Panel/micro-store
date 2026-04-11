@@ -2,10 +2,7 @@ package biz
 
 import (
 	"os"
-	"path/filepath"
-	"strings"
 	"sun-panel/global"
-	"sun-panel/lib/cmn"
 	"sun-panel/models"
 	"sun-panel/models/datatype"
 	"sync"
@@ -53,7 +50,7 @@ func (s *MicroAppVersionService) CreateOrUpdateWithCheck(db *gorm.DB, version *m
 	}
 
 	// 6. 解压 zip 文件到临时目录
-	extractPath, err := s.extractZipToTemp(packageFolderName)
+	extractPath, err := ExtractMicroAppPackageZipToTemp(packageFolderName)
 	if err != nil {
 		global.Logger.Errorln("解压文件失败:", err)
 		return err
@@ -81,7 +78,7 @@ func (s *MicroAppVersionService) CreateOrUpdateWithCheck(db *gorm.DB, version *m
 	// 10. 启动清理协程，等待所有操作完成后清理临时目录
 	go func() {
 		wg.Wait()
-		// os.RemoveAll(extractPath) // 删除临时目录
+		os.RemoveAll(extractPath) // 删除临时目录
 		global.Logger.Infoln("临时目录已清理:", extractPath)
 	}()
 
@@ -110,37 +107,6 @@ func (s *MicroAppVersionService) rebootAudit(db *gorm.DB, version *models.MicroA
 		global.Logger.Errorln("更新安全审核结果失败:", err)
 		return
 	}
-}
-
-// extractZipToTemp 解压 zip 文件到临时目录
-func (s *MicroAppVersionService) extractZipToTemp(zipPath string) (string, error) {
-	// 计算文件的哈希值，用于创建唯一的临时目录名
-	// 去掉文件后缀作为目录名
-	uniqueName := strings.TrimSuffix(filepath.Base(zipPath), filepath.Ext(zipPath))
-
-	tempPath := Config.GetTempPath()
-
-	// 创建临时解压目录
-	tempDir := filepath.Join(tempPath, "micro_app_extract", uniqueName+"_"+cmn.BuildRandCode(10, cmn.RAND_CODE_MODE1))
-	if err := os.MkdirAll(tempDir, 0755); err != nil {
-		return "", err
-	}
-
-	// 解压文件
-	err := s.unzipFile(zipPath, tempDir)
-	if err != nil {
-		os.RemoveAll(tempDir) // 解压失败，清理临时目录
-		return "", err
-	}
-
-	return tempDir, nil
-}
-
-// unzipFile 解压 zip 文件到指定目录
-func (s *MicroAppVersionService) unzipFile(zipPath, destDir string) error {
-	// 使用 MicroAppPackageService 的公开方法
-	packageService := &MicroAppPackageService{}
-	return packageService.UnzipFile(zipPath, destDir)
 }
 
 // GetPendingListWithAppInfo 获取待审核版本列表（包含应用信息）

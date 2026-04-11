@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"sun-panel/api/api_v1/common/apiReturn"
 	"sun-panel/biz"
+	"sun-panel/global"
 
 	"github.com/gin-gonic/gin"
 )
@@ -57,6 +58,17 @@ func (a *MicroAppVersionUploadApi) Upload(c *gin.Context) {
 	appRecordId, err := strconv.Atoi(appRecordIdStr)
 	if err != nil {
 		apiReturn.Error(c, "not appRecordId")
+		return
+	}
+
+	microApp, err := biz.MicroApp.GetById(global.Db, uint(appRecordId), "Developer")
+	if err != nil {
+		apiReturn.Error(c, "not appRecordId")
+		return
+	}
+
+	if err := biz.MicroAppAudit.BasicCheck(microApp, result.Config); err != nil {
+		apiReturn.ErrorByCodeAndMsg(c, -2, err.Error())
 		return
 	}
 
