@@ -51,6 +51,7 @@ async function fetchCategoryOptions() {
   try {
     const { data } = await getCategoryList<Category.Info[]>()
     categoryOptions.value = data
+    console.log('API 获取的分类数据:', data)
   }
   catch (error) {
     apiRespErrMsg(error)
@@ -292,17 +293,17 @@ async function handleSubmitReview() {
   if (!microAppInfo.value?.microApp?.id)
     return
   try {
-    const { code, msg } = await submitReview<Common.Response<null>>({ reviewId: microAppInfo.value.microAppReview?.id || 0 })
-    if (code === 0) {
-      message.success('已提交审核')
-      fetchMicroAppInfo()
-    }
-    else {
-      message.error(msg || '提交审核失败')
-    }
+    await submitReview<Common.Response<null>>({ reviewId: microAppInfo.value.microAppReview?.id || 0 })
+
+    message.success('已提交审核')
+    fetchMicroAppInfo()
   }
-  catch {
-    message.error('提交审核失败')
+  catch (error: any) {
+    if (error.code === 3004) {
+      message.error('信息不完整，请点击「编辑信息」补全信息后再提交审核', { duration: 50000, closable: true })
+      return
+    }
+    apiRespErrMsg(error)
   }
 }
 
@@ -345,7 +346,7 @@ onMounted(async () => {
           <NButton @click="handleBack">
             返回列表
           </NButton>
-          <span class="text-lg font-bold">{{ microAppInfo?.microAppReview?.appName || '微应用详情' }}</span>
+          <span class="text-lg font-bold">{{ microAppInfo?.microAppReview?.adminName || '微应用详情' }}</span>
           <!-- 应用状态和审核状态 -->
           <div class="flex items-center gap-2">
             <!-- 应用状态 -->

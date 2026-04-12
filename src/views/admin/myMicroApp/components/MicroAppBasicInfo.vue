@@ -19,7 +19,7 @@ const categoryName = computed(() => {
   if (!props.microAppInfo)
     return ''
   const category = props.categoryOptions?.find(c => c.id === props.microAppInfo?.categoryId)
-  return category?.name || `ID: ${props.microAppInfo.categoryId}`
+  return category?.name || `-`
 })
 
 // ==================== 多语言处理 ====================

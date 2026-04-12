@@ -148,7 +148,6 @@ type DeveloperAppOptions struct {
 
 // 同时在主表创建下架记录和审核表创建草稿记录
 func (s *MicroAppDeveloperService) CreateAppAndReview(db *gorm.DB, opts DeveloperAppOptions) (map[string]interface{}, error) {
-
 	// 检查 MicroAppId 是否已在主表中存在
 	var existing models.MicroApp
 	if err := db.Where("micro_app_id = ?", opts.MicroAppId).First(&existing).Error; err == nil {
@@ -363,7 +362,7 @@ func (s *MicroAppDeveloperService) UpdateDraftApp(db *gorm.DB, opts DeveloperApp
 
 	// 更新草稿记录
 	err = db.Transaction(func(tx *gorm.DB) error {
-		// 更新应用基本信息
+		// 更新应用基本信息到审核表
 		if err := tx.Model(&models.MicroAppReview{}).Where("id = ?", draft.ID).Updates(map[string]interface{}{
 			"app_name":    opts.MicroAppBaseInfo.AppName,
 			"app_icon":    opts.MicroAppBaseInfo.AppIcon,
@@ -374,6 +373,15 @@ func (s *MicroAppDeveloperService) UpdateDraftApp(db *gorm.DB, opts DeveloperApp
 			"points":      opts.MicroAppBaseInfo.Points,
 			"screenshots": opts.MicroAppBaseInfo.Screenshots,
 			"lang_map":    opts.LangMap,
+			"admin_name":  opts.MicroAppBaseInfo.AdminName,
+		}).Error; err != nil {
+			return err
+		}
+
+		// 同时将 admin_name 和 remark 直接更新到 micro_app 表
+		if err := tx.Model(&models.MicroApp{}).Where("micro_app_id = ?", draft.MicroAppId).Updates(map[string]interface{}{
+			"admin_name": opts.MicroAppBaseInfo.AdminName,
+			"remark":     opts.MicroAppBaseInfo.Remark,
 		}).Error; err != nil {
 			return err
 		}

@@ -7,24 +7,27 @@ import (
 // MicroAppBaseInfo 微应用基础信息（公共字段）
 type MicroAppBaseInfo struct {
 	// MicroAppId  string  `gorm:"type:varchar(120);not null;index" json:"microAppId"`   // 关联微应用ID（唯一标识）
-	AppName     string `gorm:"type:varchar(100);not null" json:"appName"`            // 应用名称（默认语言）
-	AppIcon     string `gorm:"type:varchar(200);not null" json:"appIcon"`            // 应用图标URL
-	AppDesc     string `gorm:"type:varchar(500)" json:"appDesc"`                     // 应用简介（默认语言）
-	Remark      string `gorm:"type:varchar(500)" json:"remark"`                      // 应用备注
-	CategoryId  int    `gorm:"type:int(11);not null;index" json:"categoryId"`        // 应用分类ID
-	ChargeType  int    `gorm:"type:tinyint(1);not null;default:0" json:"chargeType"` // 收费方式：0-免费 1-积分 2-订阅PRO免费
-	Points      int    `gorm:"type:int(11)" json:"Points"`                           // 价格（积分数值）
-	Screenshots string `gorm:"type:varchar(2000)" json:"screenshots"`                // 图集（多个图片URL用逗号分隔）
+	AdminName   string `gorm:"type:varchar(100);not null" json:"adminName"`           // 应用名称(开发者相关页面可见)
+	AppName     string `gorm:"type:varchar(100);not null" json:"appName"`             // 应用名称（默认语言）
+	AppIcon     string `gorm:"type:varchar(200);not null" json:"appIcon"`             // 应用图标URL
+	AppDesc     string `gorm:"type:varchar(500)" json:"appDesc"`                      // 应用简介（默认语言）
+	Remark      string `gorm:"type:varchar(500)" json:"remark"`                       // 应用备注
+	CategoryId  int    `gorm:"type:int(11);not null;index" json:"categoryId"`         // 应用分类ID
+	ChargeType  int    `gorm:"type:tinyint(1);not null;default:0" json:"chargeType"`  // 收费方式：0-免费 1-积分 2-订阅PRO免费
+	Points      int    `gorm:"type:int(11)" json:"points"`                            // 价格（积分数值）
+	Screenshots string `gorm:"type:varchar(2000)" json:"screenshots"`                 // 图集（多个图片URL用逗号分隔）
+	ThirdCharge int    `gorm:"type:tinyint(1);not null;default:0" json:"thirdCharge"` // 第三方收费方式：0-不含 1-付费才可用 2-基础功能免费
 }
 
 // 微应用表（只存储生效版本）
 type MicroApp struct {
 	BaseModel
 	MicroAppBaseInfo `gorm:"embedded"` // 嵌入公共字段
-	MicroAppId       string            `gorm:"column:micro_app_id;type:varchar(120);not null;uniqueIndex:idx_micro_app_id_deleted_at" json:"microAppId"` // 覆盖嵌入字段，添加复合唯一约束（支持软删除）
-	DeletedAt        gorm.DeletedAt    `gorm:"uniqueIndex:idx_micro_app_id_deleted_at"`                                                                  // 覆盖基类字段，加入复合唯一索引
-	DeveloperId      uint              `gorm:"type:int(11);not null;index" json:"developerId"`                                                           // 开发者ID                                                              // 应用权限等级
-	Status           int               `gorm:"type:tinyint(1);not null;default:0" json:"status"`                                                         // 状态：0-下架 1-上架
+
+	MicroAppId  string         `gorm:"column:micro_app_id;type:varchar(120);not null;uniqueIndex:idx_micro_app_id_deleted_at" json:"microAppId"` // 覆盖嵌入字段，添加复合唯一约束（支持软删除）
+	DeletedAt   gorm.DeletedAt `gorm:"uniqueIndex:idx_micro_app_id_deleted_at"`                                                                  // 覆盖基类字段，加入复合唯一索引
+	DeveloperId uint           `gorm:"type:int(11);not null;index" json:"developerId"`                                                           // 开发者ID                                                              // 应用权限等级
+	Status      int            `gorm:"type:tinyint(1);not null;default:0" json:"status"`                                                         // 状态：0-下架 1-上架
 
 	// 下架相关字段
 	OfflineType   int    `gorm:"type:tinyint(1);not null;default:0" json:"offlineType"` // 下架类型：0-正常 1-作者下架 2-平台下架 3-首次创建

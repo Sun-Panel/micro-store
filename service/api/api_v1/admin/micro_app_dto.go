@@ -11,8 +11,8 @@ type MicroAppGetListReq struct {
 	CategoryId *int   `json:"categoryId"`
 	Status     *int   `json:"status"`
 	KeyWord    string `json:"keyWord"`
-	SortBy     string `json:"sortBy"`     // 排序字段：id, download_count, install_count, create_time
-	SortOrder  string `json:"sortOrder"`  // 排序方式：asc, desc
+	SortBy     string `json:"sortBy"`    // 排序字段：id, download_count, install_count, create_time
+	SortOrder  string `json:"sortOrder"` // 排序方式：asc, desc
 }
 
 // GetInfoRequest 获取微应用详情请求
@@ -28,16 +28,18 @@ type MicroAppLangInfo struct {
 
 // CreateRequest 创建微应用请求
 type MicroAppCreateReq struct {
-	MicroAppId  string                      `json:"microAppId" binding:"required"`
-	AppName     string                      `json:"appName" binding:"required"`
-	AppIcon     string                      `json:"appIcon"`
-	AppDesc     string                      `json:"appDesc"`
-	Remark      string                      `json:"remark"`
-	CategoryId  int                         `json:"categoryId" binding:"required"`
-	ChargeType  int                         `json:"chargeType"`
-	Points      int                         `json:"points"`
-	Screenshots string                      `json:"screenshots"`
-	LangMap     map[string]MicroAppLangInfo `json:"langMap"`
+	MicroAppId string `json:"microAppId" binding:"required"`
+	AdminName  string `json:"adminName"`
+	// AppName     string                      `json:"appName" binding:"required"`
+	// AppIcon     string                      `json:"appIcon"`
+	// AppDesc     string                      `json:"appDesc"`
+	// Remark      string                      `json:"remark"`
+	// CategoryId  int                         `json:"categoryId"`
+	// ChargeType  int                         `json:"chargeType"`
+	// Points      int                         `json:"points"`
+	// Screenshots string                      `json:"screenshots"`
+	// LangMap     map[string]MicroAppLangInfo `json:"langMap"`
+
 }
 
 // UpdateRequest 更新微应用请求

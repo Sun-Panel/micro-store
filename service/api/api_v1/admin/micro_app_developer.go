@@ -1,6 +1,8 @@
 package admin
 
 import (
+	"fmt"
+
 	"sun-panel/api/api_v1/common/apiReturn"
 	"sun-panel/api/api_v1/common/base"
 	"sun-panel/biz"
@@ -33,7 +35,7 @@ func (a *MicroAppDeveloperApi) GetMyList(c *gin.Context) {
 		KeyWord:     param.KeyWord,
 	}
 
-	list, total, err := biz.MicroAppDeveloper.GetDeveloperAppList(global.Db.Debug(), opts)
+	list, total, err := biz.MicroAppDeveloper.GetDeveloperAppList(global.Db, opts)
 	if err != nil {
 		apiReturn.ErrorDatabase(c, err.Error())
 		return
@@ -153,23 +155,20 @@ func (a *MicroAppDeveloperApi) Create(c *gin.Context) {
 
 	developer := base.GetCurrentDeveloper(c)
 
-	// 转换 langMap
-	langMap := convertToBizLangMap(param.LangMap)
+	// 验证微应用ID格式
+	if errMsg := a.validateMicroAppIdFormat(param.MicroAppId, developer.DeveloperName); errMsg != "" {
+		apiReturn.ErrorParamFomat(c, errMsg)
+		return
+	}
+
+	// // 转换 langMap
+	// langMap := convertToBizLangMap(param.LangMap)
 
 	opts := biz.DeveloperAppOptions{
 		MicroAppId: param.MicroAppId,
 		MicroAppBaseInfo: models.MicroAppBaseInfo{
-			AppName:     param.AppName,
-			AppIcon:     param.AppIcon,
-			AppDesc:     param.AppDesc,
-			Remark:      param.Remark,
-			CategoryId:  param.CategoryId,
-			ChargeType:  param.ChargeType,
-			Points:      param.Points,
-			Screenshots: param.Screenshots,
+			AdminName: param.AdminName,
 		},
-		LangMap:     langMap,
-		DeveloperId: developer.ID,
 	}
 
 	result, err := biz.MicroAppDeveloper.CreateAppAndReview(global.Db, opts)
@@ -207,6 +206,7 @@ func (a *MicroAppDeveloperApi) Update(c *gin.Context) {
 			ChargeType:  param.ChargeType,
 			Points:      param.Points,
 			Screenshots: param.Screenshots,
+			AdminName:   param.AdminName,
 		},
 		LangMap:     param.LangMap,
 		DeveloperId: developer.ID,
@@ -305,4 +305,40 @@ func convertToBizLangMap(m map[string]MicroAppLangInfo) map[string]interface{} {
 		result[k] = map[string]interface{}{"appName": v.AppName, "appDesc": v.AppDesc}
 	}
 	return result
+}
+
+// validateMicroAppIdFormat 验证微应用ID格式
+// 规则：
+// 1. 必须以开发者标识开头
+// 2. 不能仅包含开发者标识（即不能是 "developerName-"）
+// 3. 不能以 "-" 结尾
+// 返回空字符串表示验证通过，否则返回错误信息
+func (a *MicroAppDeveloperApi) validateMicroAppIdFormat(microAppId, developerName string) string {
+	// 规则1: 必须以开发者标识开头
+	prefix := developerName + "-"
+	if !a.startsWith(microAppId, prefix) {
+		return fmt.Sprintf("微应用ID必须以\"%s\"开头", developerName)
+	}
+
+	// 规则2: 不能仅包含开发者标识
+	if microAppId == prefix {
+		return "微应用ID不能仅包含开发者标识，请添加应用名称"
+	}
+
+	// 规则3: 不能以 "-" 结尾
+	if a.endsWith(microAppId, "-") {
+		return "微应用ID不能以\"-\"结尾"
+	}
+
+	return ""
+}
+
+// startsWith 检查字符串是否以指定前缀开头
+func (a *MicroAppDeveloperApi) startsWith(s, prefix string) bool {
+	return len(s) >= len(prefix) && s[:len(prefix)] == prefix
+}
+
+// endsWith 检查字符串是否以指定后缀结尾
+func (a *MicroAppDeveloperApi) endsWith(s, suffix string) bool {
+	return len(s) >= len(suffix) && s[len(s)-len(suffix):] == suffix
 }

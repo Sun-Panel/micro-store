@@ -2,6 +2,7 @@ declare namespace MicroApp {
   // 微应用基础信息（公共字段）
   interface BaseInfo {
     microAppId: string
+    adminName: string // 应用名称(开发者可见)
     appName: string // 应用名称（默认语言）
     appIcon: string // 应用图标URL
     appDesc: string // 应用简介（默认语言）
@@ -65,6 +66,7 @@ declare namespace MicroApp {
   interface DeveloperInfo {
     id: number
     name: string
+    developerName: string
     avatar?: string
   }
 
