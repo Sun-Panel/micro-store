@@ -310,6 +310,9 @@
     "upgradePRO": "Upgrade PRO",
     "userInfo": "Personal information"
   },
+  "microApp": {
+    "thirdCharge": "Third-party in-app purchase"
+  },
   "oAuth2": {
     "logoutAgainLogin": "The account is abnormal, please log out first and then log in again.",
     "reLogin": "Please try logging in again"

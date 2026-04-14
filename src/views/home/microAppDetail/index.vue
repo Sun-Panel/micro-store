@@ -4,7 +4,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { getDownloadUrl, getInfo, getVersionList } from '@/api/microApp'
-import { microAppChargeTypeMap, MicroAppVersionStatus } from '@/enums/panel'
+import { microAppChargeTypeMap, microAppThirdChargeTypeMap, MicroAppVersionStatus } from '@/enums/panel'
 import { timeFormat } from '@/utils/cmn'
 
 const route = useRoute()
@@ -240,6 +240,8 @@ onMounted(async () => {
               <span>作者: {{ microAppInfo.developer?.name || '未知' }}</span>
               <span>分类: {{ categoryName }}</span>
               <span>收费: {{ microAppChargeTypeMap[microAppInfo.chargeType] || '免费' }}</span>
+              <span>第三方收费: {{ microAppThirdChargeTypeMap[microAppInfo.thirdCharge || 0] || '不含' }}</span>
+              <span>包含iframe: {{ microAppInfo.haveIframe ? '是' : '否' }}</span>
               <!-- <span>创建时间: {{ timeFormat(microAppInfo) }}</span> -->
             </div>
 

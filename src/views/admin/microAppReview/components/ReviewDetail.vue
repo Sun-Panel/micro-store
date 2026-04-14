@@ -2,7 +2,7 @@
 import { NButton, NDescriptions, NDescriptionsItem, NDivider, NImage, NImageGroup, NInput, NModal, NSpace, NTag, useMessage } from 'naive-ui'
 import { computed, ref, watch } from 'vue'
 import { approve, getMicroAppInfo } from '@/api/admin/microAppReview'
-import { microAppChargeTypeMap } from '@/enums/panel'
+import { microAppChargeTypeMap, microAppThirdChargeTypeMap } from '@/enums/panel'
 
 const props = defineProps<{
   visible: boolean
@@ -60,9 +60,9 @@ const reviewLangList = computed(() => {
   }
 
   // 处理可能是数组的情况
-  if (Array.isArray(parsed)) {
+  if (Array.isArray(parsed))
     return parsed.map((l: any) => l.lang).filter(Boolean)
-  }
+
   return Object.keys(parsed)
 })
 
@@ -71,9 +71,9 @@ const currentLangList = computed(() => {
   if (!currentAppInfo.value)
     return ['zh-CN']
   const langList = (currentAppInfo.value as any).langList || []
-  if (langList.length > 0) {
+  if (langList.length > 0)
     return langList.map((l: any) => l.lang)
-  }
+
   return ['zh-CN']
 })
 
@@ -106,9 +106,8 @@ const reviewLangMap = computed(() => {
   if (Array.isArray(parsed)) {
     const result: Record<string, any> = {}
     parsed.forEach((l: any) => {
-      if (l.lang) {
+      if (l.lang)
         result[l.lang] = l
-      }
     })
     return result
   }
@@ -269,6 +268,12 @@ async function handleReview() {
             <NDescriptionsItem v-if="currentAppInfo.chargeType === 1" label="价格">
               {{ currentAppInfo.points }} 积分
             </NDescriptionsItem>
+            <NDescriptionsItem :label="$t('microApp.thirdCharge')">
+              {{ microAppThirdChargeTypeMap[currentAppInfo.thirdCharge || 0] || '不含' }}
+            </NDescriptionsItem>
+            <NDescriptionsItem label="包含iframe">
+              {{ currentAppInfo.haveIframe ? '是' : '否' }}
+            </NDescriptionsItem>
             <NDescriptionsItem label="备注">
               {{ currentAppInfo.remark || '暂无备注' }}
             </NDescriptionsItem>
@@ -305,6 +310,12 @@ async function handleReview() {
             </NDescriptionsItem>
             <NDescriptionsItem v-if="reviewInfo.chargeType === 1" label="价格">
               {{ reviewInfo.points }} 积分
+            </NDescriptionsItem>
+            <NDescriptionsItem :label="$t('microApp.thirdCharge')">
+              {{ microAppThirdChargeTypeMap[reviewInfo.thirdCharge || 0] || '不含' }}
+            </NDescriptionsItem>
+            <NDescriptionsItem label="包含iframe">
+              {{ reviewInfo.haveIframe ? '是' : '否' }}
             </NDescriptionsItem>
             <NDescriptionsItem label="备注">
               {{ reviewInfo.remark || '暂无备注' }}

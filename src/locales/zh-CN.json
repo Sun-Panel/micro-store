@@ -311,6 +311,9 @@
     "upgradePRO": "升级PRO",
     "userInfo": "个人信息"
   },
+  "microApp": {
+    "thirdCharge": "三方内购"
+  },
   "oAuth2": {
     "logoutAgainLogin": "账号异常，请先退出，然后再次登录",
     "reLogin": "请尝试重新登录"

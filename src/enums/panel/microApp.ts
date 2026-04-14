@@ -52,6 +52,23 @@ export const microAppChargeTypeMap: Record<number, string> = {
   [MicroAppChargeType.PRO_FREE]: 'PRO免费',
 }
 
+/** 微应用第三方收费方式枚举 */
+export enum MicroAppThirdChargeType {
+  /** 不含 */
+  NONE = 0,
+  /** 付费才可用 */
+  PAID_ONLY = 1,
+  /** 基础功能免费 */
+  BASIC_FREE = 2,
+}
+
+/** 微应用第三方收费方式映射 */
+export const microAppThirdChargeTypeMap: Record<number, string> = {
+  [MicroAppThirdChargeType.NONE]: '不含',
+  [MicroAppThirdChargeType.PAID_ONLY]: '需付费使用',
+  [MicroAppThirdChargeType.BASIC_FREE]: '基础功能免费',
+}
+
 /** 微应用版本状态枚举 */
 export enum MicroAppVersionStatus {
   /** 草稿 */

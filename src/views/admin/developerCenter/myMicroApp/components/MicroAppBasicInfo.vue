@@ -1,9 +1,10 @@
 <script lang="ts" setup>
 import { NCard, NImage, NImageGroup, NSelect, NTag } from 'naive-ui'
 import { computed, ref } from 'vue'
-import { microAppChargeTypeMap, microAppStatusMap } from '@/enums/panel'
+import { microAppChargeTypeMap, microAppStatusMap, microAppThirdChargeTypeMap } from '@/enums/panel'
 import { timeFormat } from '@/utils/cmn'
 import { getAppDescByLang, getAppNameByLang, getCurrentLang, getLangListFromAppInfo, getLangMapFromAppInfo } from '@/utils/functions'
+import { t } from '@/locales'
 
 const props = defineProps<{
   microAppInfo?: MicroApp.BaseInfo
@@ -99,6 +100,14 @@ const baseInfoAppDesc = computed(() => getAppDescByLang(baseInfoLangMap.value, b
         <div>
           <span class="text-gray-500">创建时间：</span>
           <span>{{ timeFormat(String(createTime)) }}</span>
+        </div>
+        <div>
+          <span class="text-gray-500">{{ $t('microApp.thirdCharge') }}：</span>
+          <span>{{ microAppThirdChargeTypeMap[microAppInfo.thirdCharge || 0] || '不含' }}</span>
+        </div>
+        <div>
+          <span class="text-gray-500">包含iframe：</span>
+          <span>{{ microAppInfo.haveIframe ? '是' : '否' }}</span>
         </div>
       </div>
       <div class="col-span-2">

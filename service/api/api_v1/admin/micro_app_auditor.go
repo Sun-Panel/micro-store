@@ -132,6 +132,8 @@ func (a *MicroAppAuditorApi) ReviewApp(c *gin.Context) {
 				"screenshots": review.Screenshots,
 				"remark":      review.Remark,
 				"status":      1, // 上架
+				"third_charge": review.ThirdCharge,
+				"have_iframe": review.HaveIframe,
 			}).Error; err != nil {
 				return err
 			}

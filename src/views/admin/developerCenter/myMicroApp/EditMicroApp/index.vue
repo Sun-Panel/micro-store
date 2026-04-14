@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { FormInst, FormRules } from 'naive-ui'
-import { NButton, NCard, NDivider, NForm, NFormItem, NImage, NInput, NInputNumber, NModal, NSelect, NSpace, NUpload, useMessage } from 'naive-ui'
+import { NButton, NCard, NDivider, NForm, NFormItem, NImage, NInput, NInputNumber, NModal, NSelect, NSpace, NSwitch, NUpload, useMessage } from 'naive-ui'
 import { computed, defineEmits, defineProps, ref, watch } from 'vue'
 import { create, update } from '@/api/admin/microAppDeveloper'
-import { microAppChargeTypeMap } from '@/enums/panel'
+import { microAppChargeTypeMap, microAppThirdChargeTypeMap } from '@/enums/panel'
 import { t } from '@/locales'
 import { useAppStore, useAuthStore } from '@/store'
 import { apiRespErrMsgAndCustomCodeNeg1Msg } from '@/utils/cmn/apiMessage'
@@ -40,6 +40,8 @@ const formInitValue: MicroApp.Info = {
   chargeType: 0,
   points: 0,
   status: 0,
+  thirdCharge: 0,
+  haveIframe: false,
 }
 
 const model = ref({ ...formInitValue })
@@ -53,6 +55,13 @@ const chargeTypeOptions = [
   { label: microAppChargeTypeMap[0], value: 0 },
   { label: microAppChargeTypeMap[1], value: 1 },
   { label: microAppChargeTypeMap[2], value: 2 },
+]
+
+// 第三方收费方式选项
+const thirdChargeOptions = [
+  { label: microAppThirdChargeTypeMap[0], value: 0 },
+  { label: microAppThirdChargeTypeMap[1], value: 1 },
+  { label: microAppThirdChargeTypeMap[2], value: 2 },
 ]
 
 // 语言标签映射
@@ -114,9 +123,8 @@ const screenshotList = ref<any[]>([])
 
 // 监听收费方式变化，当切换到积分收费时设置默认值
 watch(() => model.value.chargeType, (newType) => {
-  if (newType === 1 && (!model.value.points || model.value.points === 0)) {
+  if (newType === 1 && (!model.value.points || model.value.points === 0))
     model.value.points = pointsDefaultValue.value
-  }
 })
 
 // 监听弹窗打开/关闭
@@ -136,6 +144,8 @@ watch(show, (newValue) => {
         chargeType: props.microAppInfo.chargeType,
         points: props.microAppInfo.points,
         adminName: props.microAppInfo.adminName,
+        thirdCharge: props.microAppInfo.thirdCharge || 0,
+        haveIframe: props.microAppInfo.haveIframe || false,
       }
       // 初始化已有图片列表
       const screenshots = props.microAppInfo.screenshots ? props.microAppInfo.screenshots.split(',').filter(Boolean) : []
@@ -183,9 +193,9 @@ function initLangData() {
     // 如果没有语言，根据当前系统语言自动添加
     let defaultLang = locale || 'zh-CN'
     // 如果系统语言不在支持的语言列表中，默认使用中文
-    if (!langOptions.find(l => l.value === defaultLang)) {
+    if (!langOptions.find(l => l.value === defaultLang))
       defaultLang = 'zh-CN'
-    }
+
     addedLangs.value = [defaultLang]
     localLangMap.value = { [defaultLang]: { appName: '', appDesc: '' } }
     // 创建模式：第一项都为空时展开，否则收起
@@ -232,9 +242,8 @@ const categorySelectOptions = computed(() => {
 
 // 监听分类选项，当创建时默认选中第一个分类
 watch(categorySelectOptions, (options) => {
-  if (options.length > 0 && (!model.value.id && (model.value.categoryId === 0 || !model.value.categoryId))) {
+  if (options.length > 0 && (!model.value.id && (model.value.categoryId === 0 || !model.value.categoryId)))
     model.value.categoryId = options[0].value!
-  }
 }, { immediate: true })
 
 // 提交表单
@@ -264,6 +273,8 @@ async function submit() {
         screenshots: screenshotsStr,
         langMap: localLangMap.value,
         adminName: model.value.adminName,
+        thirdCharge: model.value.thirdCharge,
+        haveIframe: model.value.haveIframe,
       })
     }
     else {
@@ -279,6 +290,8 @@ async function submit() {
         points: model.value.points,
         screenshots: screenshotsStr,
         langMap: localLangMap.value,
+        thirdCharge: model.value.thirdCharge,
+        haveIframe: model.value.haveIframe,
       })
     }
     emit('done')
@@ -311,9 +324,8 @@ function handleIconFinish(data: any) {
     const response = xhr.response
     if (response) {
       const res = JSON.parse(response)
-      if (res.code === 0 && res.data && res.data.imageUrl) {
+      if (res.code === 0 && res.data && res.data.imageUrl)
         model.value.appIcon = res.data.imageUrl
-      }
     }
   }
 }
@@ -341,9 +353,8 @@ function handleScreenshotFinish({ file, event }: { file: any, event?: any }) {
     }
     catch {}
   }
-  if (imageUrl) {
+  if (imageUrl)
     file.url = imageUrl
-  }
 }
 </script>
 
@@ -465,6 +476,16 @@ function handleScreenshotFinish({ file, event }: { file: any, event?: any }) {
       <!-- 积分数量：仅收费方式为积分时显示 -->
       <NFormItem v-if="model.chargeType === 1" path="price" label="积分数量">
         <NInputNumber v-model:value="model.points" :min="1" :precision="0" style="width: 100%;" placeholder="请输入积分数量" />
+      </NFormItem>
+
+      <!-- 第三方收费方式 -->
+      <NFormItem :label="t('microApp.thirdCharge')">
+        <NSelect v-model:value="model.thirdCharge" :options="thirdChargeOptions" placeholder="请选择第三方收费方式" />
+      </NFormItem>
+
+      <!-- 是否包含iframe -->
+      <NFormItem label="是否包含iframe">
+        <NSwitch v-model:value="model.haveIframe" />
       </NFormItem>
 
       <!-- 应用备注 -->

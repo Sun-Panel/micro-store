@@ -7,7 +7,7 @@ import (
 // MicroAppBaseInfo 微应用基础信息（公共字段）
 type MicroAppBaseInfo struct {
 	// MicroAppId  string  `gorm:"type:varchar(120);not null;index" json:"microAppId"`   // 关联微应用ID（唯一标识）
-	AdminName   string `gorm:"type:varchar(100);not null" json:"adminName"`           // 应用名称(开发者相关页面可见)
+	AdminName   string `gorm:"type:varchar(100);" json:"adminName"`                   // 应用名称(开发者相关页面可见)
 	AppName     string `gorm:"type:varchar(100);not null" json:"appName"`             // 应用名称（默认语言）
 	AppIcon     string `gorm:"type:varchar(200);not null" json:"appIcon"`             // 应用图标URL
 	AppDesc     string `gorm:"type:varchar(500)" json:"appDesc"`                      // 应用简介（默认语言）
@@ -17,6 +17,7 @@ type MicroAppBaseInfo struct {
 	Points      int    `gorm:"type:int(11)" json:"points"`                            // 价格（积分数值）
 	Screenshots string `gorm:"type:varchar(2000)" json:"screenshots"`                 // 图集（多个图片URL用逗号分隔）
 	ThirdCharge int    `gorm:"type:tinyint(1);not null;default:0" json:"thirdCharge"` // 第三方收费方式：0-不含 1-付费才可用 2-基础功能免费
+	HaveIframe  bool   `gorm:"type:tinyint(1);not null;default:0" json:"haveIframe"`  // 是否包含iframe
 }
 
 // 微应用表（只存储生效版本）

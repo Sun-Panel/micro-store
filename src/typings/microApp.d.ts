@@ -11,6 +11,8 @@ declare namespace MicroApp {
     chargeType: number // 收费方式：0-免费 1-积分 2-订阅PRO免费
     points: number // 价格（积分数值）
     screenshots?: string // 图集（多个图片URL用逗号分隔）
+    thirdCharge?: number // 第三方收费方式：0-不含 1-付费才可用 2-基础功能免费
+    haveIframe?: boolean // 是否包含iframe
   }
 
   // 单个语言的信息
