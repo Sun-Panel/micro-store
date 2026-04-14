@@ -47,7 +47,7 @@ func (a *DeveloperApi) Register(c *gin.Context) {
 	}
 
 	m := models.Developer{}
-	id, err := m.Register(global.Db, userId, param.DeveloperName, param.ContactMail, param.PaymentName, param.PaymentQrcode, param.PaymentMethod)
+	id, err := m.Register(global.Db, userId, param.DeveloperName, param.ContactMail, param.PaymentName, param.PaymentQrcode, param.PaymentMethod, param.Name)
 	if err != nil {
 		if err == gorm.ErrRegistered {
 			apiReturn.Error(c, "您已是开发者或开发者标识已存在")
@@ -106,7 +106,7 @@ func (a *DeveloperApi) Update(c *gin.Context) {
 	}
 
 	// 更新信息
-	err = m.UpdateInfo(global.Db, info.ID, param.DeveloperName, param.ContactMail, param.PaymentName, param.PaymentQrcode, param.PaymentMethod)
+	err = m.UpdateInfo(global.Db, info.ID, param.DeveloperName, param.ContactMail, param.PaymentName, param.PaymentQrcode, param.PaymentMethod, param.Name)
 	if err != nil {
 		if err == gorm.ErrRegistered {
 			apiReturn.Error(c, "开发者标识已存在")

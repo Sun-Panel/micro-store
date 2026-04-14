@@ -114,7 +114,7 @@ func (m *Developer) CheckUserIsDeveloper(db *gorm.DB, userId uint) (bool, error)
 // ========== 业务逻辑方法 ==========
 
 // Register 注册成为开发者（带校验）
-func (m *Developer) Register(db *gorm.DB, userId uint, developerName, contactMail, paymentName, paymentQrcode, paymentMethod string) (uint, error) {
+func (m *Developer) Register(db *gorm.DB, userId uint, developerName, contactMail, paymentName, paymentQrcode, paymentMethod, name string) (uint, error) {
 	// 检查用户是否已经是开发者
 	if isDeveloper, err := m.CheckUserIsDeveloper(db, userId); err != nil {
 		return 0, err
@@ -136,6 +136,7 @@ func (m *Developer) Register(db *gorm.DB, userId uint, developerName, contactMai
 	m.PaymentQrcode = paymentQrcode
 	m.PaymentMethod = paymentMethod
 	m.Status = 1 // 默认启用
+	m.Name = name
 
 	if err := m.Create(db); err != nil {
 		return 0, err
@@ -145,7 +146,7 @@ func (m *Developer) Register(db *gorm.DB, userId uint, developerName, contactMai
 }
 
 // UpdateInfo 更新开发者信息（带校验）
-func (m *Developer) UpdateInfo(db *gorm.DB, id uint, developerName, contactMail, paymentName, paymentQrcode, paymentMethod string) error {
+func (m *Developer) UpdateInfo(db *gorm.DB, id uint, developerName, contactMail, paymentName, paymentQrcode, paymentMethod, name string) error {
 	// 检查开发者名称是否存在（排除当前ID）
 	if exist, err := m.CheckNameExist(db, developerName, id); err != nil {
 		return err
@@ -159,6 +160,7 @@ func (m *Developer) UpdateInfo(db *gorm.DB, id uint, developerName, contactMail,
 		"payment_name":   paymentName,
 		"payment_qrcode": paymentQrcode,
 		"payment_method": paymentMethod,
+		"name":           name,
 	}
 
 	return m.Update(db, id, updateData)

@@ -24,7 +24,7 @@ async function checkDeveloperStatus() {
           paymentName: devRes.data.paymentName || '',
           paymentQrcode: devRes.data.paymentQrcode || '',
           paymentMethod: devRes.data.paymentMethod || '',
-          name: devRes.data.name,
+          name: devRes.data.name || '',
         }
         isEdit.value = true
       }

@@ -50,6 +50,7 @@ declare namespace Developer {
     paymentName?: string
     paymentQrcode?: string
     paymentMethod?: string
+    name: string
   }
 
   // 更新请求（前台）

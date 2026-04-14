@@ -9,13 +9,8 @@ type DeveloperRegisterReq struct {
 	PaymentName   string `json:"paymentName"`
 	PaymentQrcode string `json:"paymentQrcode"`
 	PaymentMethod string `json:"paymentMethod"`
+	Name          string `json:"name"`
 }
 
 // DeveloperUpdateReq 更新开发者信息请求
-type DeveloperUpdateReq struct {
-	DeveloperName string `json:"developerName" binding:"required"`
-	ContactMail   string `json:"contactMail"`
-	PaymentName   string `json:"paymentName"`
-	PaymentQrcode string `json:"paymentQrcode"`
-	PaymentMethod string `json:"paymentMethod"`
-}
+type DeveloperUpdateReq DeveloperRegisterReq

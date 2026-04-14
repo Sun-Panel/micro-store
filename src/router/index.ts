@@ -116,14 +116,19 @@ const adminRouter = {
       component: () => import('@/views/admin/developer/index.vue'),
     },
     {
-      path: '/admin/myMicroApp',
+      path: '/admin/developerCenter/myMicroApp',
       name: 'AdminMyMicroApp',
-      component: () => import('@/views/admin/myMicroApp/index.vue'),
+      component: () => import('@/views/admin/developerCenter/myMicroApp/index.vue'),
     },
     {
-      path: '/admin/myMicroApp/detail/:id',
+      path: '/admin/developerCenter/developerInfo',
+      name: 'AdminDeveloperInfo',
+      component: () => import('@/views/admin/developerCenter/developer_info.vue'),
+    },
+    {
+      path: '/admin/developerCenter/detail/:id',
       name: 'AdminMyMicroAppDetail',
-      component: () => import('@/views/admin/myMicroApp/detail/index.vue'),
+      component: () => import('@/views/admin/developerCenter/myMicroApp/detail/index.vue'),
     },
     {
       path: '/admin/microAppManage',

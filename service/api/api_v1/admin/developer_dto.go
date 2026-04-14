@@ -28,6 +28,7 @@ type DeveloperUpdateReq struct {
 	PaymentName   string `json:"paymentName"`
 	PaymentQrcode string `json:"paymentQrcode"`
 	PaymentMethod string `json:"paymentMethod"`
+	Name          string `json:"name"`
 	Status        int    `json:"status"`
 }
 
