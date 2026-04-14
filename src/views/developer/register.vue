@@ -2,7 +2,7 @@
 import { useMessage } from 'naive-ui'
 import { onMounted, ref } from 'vue'
 import { checkIsDeveloper, getInfo, register, updateMyInfo } from '@/api/developer'
-import DeveloperInfoForm from '@/components/common/DeveloperInfoForm.vue'
+import { DeveloperInfoForm } from '@/components/common'
 
 const message = useMessage()
 const formRef = ref<InstanceType<typeof DeveloperInfoForm> | null>(null)

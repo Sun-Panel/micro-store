@@ -4,197 +4,201 @@ import { onMounted, ref } from 'vue'
 import { getList as getListApi } from '@/api/microApp'
 import { router } from '@/router'
 
-const list = ref<MicroApp.Info[]>([])
+interface MicroAppListItem extends MicroApp.Info {
+  developerName: string
+}
+
+const list = ref<MicroAppListItem[]>([])
 const req = ref<MicroApp.GetListRequest>({
   page: 1,
   limit: 10,
 })
 
 // 模拟10条数据（当API调用失败时使用）
-const mockData: MicroApp.Info[] = [
-  {
-    id: 1,
-    microAppId: 'app-001',
-    appName: '智能日历',
-    appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    appDesc: '智能日历管理工具，支持日程提醒和智能排程',
-    developer: {
-      id: 1,
-      name: '张三',
-      avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    },
-    developerId: 1,
-    categoryId: 1,
-    chargeType: 0,
-    points: 0,
-    status: 1,
-  },
-  {
-    id: 2,
-    microAppId: 'app-002',
-    appName: '天气助手',
-    appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    appDesc: '实时天气查询，未来7天天气预报',
-    developer: {
-      id: 2,
-      name: '李四',
-      avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    },
-    developerId: 2,
-    categoryId: 1,
-    chargeType: 0,
-    points: 0,
-    status: 1,
-  },
-  {
-    id: 3,
-    microAppId: 'app-003',
-    appName: '记账本',
-    appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    appDesc: '简洁实用的个人记账应用，支持多种账本分类',
-    developer: {
-      id: 1,
-      name: '张三',
-      avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    },
-    developerId: 1,
-    categoryId: 2,
-    chargeType: 1,
-    points: 100,
-    status: 1,
-  },
-  {
-    id: 4,
-    microAppId: 'app-004',
-    appName: '待办事项',
-    appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    appDesc: '高效的待办事项管理工具，支持标签和优先级',
-    developer: {
-      id: 3,
-      name: '王五',
-      avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    },
-    developerId: 3,
-    categoryId: 2,
-    chargeType: 0,
-    points: 0,
-    status: 1,
-  },
-  {
-    id: 5,
-    microAppId: 'app-005',
-    appName: '备忘录',
-    appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    appDesc: '快速记录笔记和想法，支持富文本编辑',
-    developer: {
-      id: 2,
-      name: '李四',
-      avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    },
-    developerId: 2,
-    categoryId: 3,
-    chargeType: 2,
-    points: 0,
-    status: 1,
-  },
-  {
-    id: 6,
-    microAppId: 'app-006',
-    appName: '计算器',
-    appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    appDesc: '功能强大的科学计算器，支持历史记录',
-    developer: {
-      id: 4,
-      name: '赵六',
-      avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    },
-    developerId: 4,
-    categoryId: 1,
-    chargeType: 0,
-    points: 0,
-    status: 1,
-  },
-  {
-    id: 7,
-    microAppId: 'app-007',
-    appName: '番茄时钟',
-    appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    appDesc: '专注时间管理，番茄工作法工具',
-    developer: {
-      id: 3,
-      name: '王五',
-      avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    },
-    developerId: 3,
-    categoryId: 3,
-    chargeType: 0,
-    points: 0,
-    status: 1,
-  },
-  {
-    id: 8,
-    microAppId: 'app-008',
-    appName: '汇率换算',
-    appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    appDesc: '实时汇率查询，支持多种货币换算',
-    developer: {
-      id: 4,
-      name: '赵六',
-      avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    },
-    developerId: 4,
-    categoryId: 2,
-    chargeType: 0,
-    points: 0,
-    status: 1,
-  },
-  {
-    id: 9,
-    microAppId: 'app-009',
-    appName: '二维码生成',
-    appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    appDesc: '快速生成各类二维码，支持文本、链接等',
-    developer: {
-      id: 1,
-      name: '张三',
-      avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    },
-    developerId: 1,
-    categoryId: 1,
-    chargeType: 1,
-    points: 50,
-    status: 1,
-  },
-  {
-    id: 10,
-    microAppId: 'app-010',
-    appName: '密码管理',
-    appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    appDesc: '安全的密码管理工具，支持多平台同步',
-    developer: {
-      id: 2,
-      name: '李四',
-      avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-    },
-    developerId: 2,
-    categoryId: 3,
-    chargeType: 2,
-    points: 0,
-    status: 1,
-  },
-]
+// const mockData: MicroApp.Info[] = [
+//   {
+//     id: 1,
+//     microAppId: 'app-001',
+//     appName: '智能日历',
+//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     appDesc: '智能日历管理工具，支持日程提醒和智能排程',
+//     developer: {
+//       id: 1,
+//       name: '张三',
+//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     },
+//     developerId: 1,
+//     categoryId: 1,
+//     chargeType: 0,
+//     points: 0,
+//     status: 1,
+//   },
+//   {
+//     id: 2,
+//     microAppId: 'app-002',
+//     appName: '天气助手',
+//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     appDesc: '实时天气查询，未来7天天气预报',
+//     developer: {
+//       id: 2,
+//       name: '李四',
+//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     },
+//     developerId: 2,
+//     categoryId: 1,
+//     chargeType: 0,
+//     points: 0,
+//     status: 1,
+//   },
+//   {
+//     id: 3,
+//     microAppId: 'app-003',
+//     appName: '记账本',
+//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     appDesc: '简洁实用的个人记账应用，支持多种账本分类',
+//     developer: {
+//       id: 1,
+//       name: '张三',
+//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     },
+//     developerId: 1,
+//     categoryId: 2,
+//     chargeType: 1,
+//     points: 100,
+//     status: 1,
+//   },
+//   {
+//     id: 4,
+//     microAppId: 'app-004',
+//     appName: '待办事项',
+//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     appDesc: '高效的待办事项管理工具，支持标签和优先级',
+//     developer: {
+//       id: 3,
+//       name: '王五',
+//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     },
+//     developerId: 3,
+//     categoryId: 2,
+//     chargeType: 0,
+//     points: 0,
+//     status: 1,
+//   },
+//   {
+//     id: 5,
+//     microAppId: 'app-005',
+//     appName: '备忘录',
+//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     appDesc: '快速记录笔记和想法，支持富文本编辑',
+//     developer: {
+//       id: 2,
+//       name: '李四',
+//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     },
+//     developerId: 2,
+//     categoryId: 3,
+//     chargeType: 2,
+//     points: 0,
+//     status: 1,
+//   },
+//   {
+//     id: 6,
+//     microAppId: 'app-006',
+//     appName: '计算器',
+//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     appDesc: '功能强大的科学计算器，支持历史记录',
+//     developer: {
+//       id: 4,
+//       name: '赵六',
+//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     },
+//     developerId: 4,
+//     categoryId: 1,
+//     chargeType: 0,
+//     points: 0,
+//     status: 1,
+//   },
+//   {
+//     id: 7,
+//     microAppId: 'app-007',
+//     appName: '番茄时钟',
+//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     appDesc: '专注时间管理，番茄工作法工具',
+//     developer: {
+//       id: 3,
+//       name: '王五',
+//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     },
+//     developerId: 3,
+//     categoryId: 3,
+//     chargeType: 0,
+//     points: 0,
+//     status: 1,
+//   },
+//   {
+//     id: 8,
+//     microAppId: 'app-008',
+//     appName: '汇率换算',
+//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     appDesc: '实时汇率查询，支持多种货币换算',
+//     developer: {
+//       id: 4,
+//       name: '赵六',
+//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     },
+//     developerId: 4,
+//     categoryId: 2,
+//     chargeType: 0,
+//     points: 0,
+//     status: 1,
+//   },
+//   {
+//     id: 9,
+//     microAppId: 'app-009',
+//     appName: '二维码生成',
+//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     appDesc: '快速生成各类二维码，支持文本、链接等',
+//     developer: {
+//       id: 1,
+//       name: '张三',
+//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     },
+//     developerId: 1,
+//     categoryId: 1,
+//     chargeType: 1,
+//     points: 50,
+//     status: 1,
+//   },
+//   {
+//     id: 10,
+//     microAppId: 'app-010',
+//     appName: '密码管理',
+//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     appDesc: '安全的密码管理工具，支持多平台同步',
+//     developer: {
+//       id: 2,
+//       name: '李四',
+//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     },
+//     developerId: 2,
+//     categoryId: 3,
+//     chargeType: 2,
+//     points: 0,
+//     status: 1,
+//   },
+// ]
 
 function getList() {
-  getListApi<Common.ListResponse<MicroApp.Info[]>>(req.value).then(({ data }) => {
+  getListApi<Common.ListResponse<MicroAppListItem[]>>(req.value).then(({ data }) => {
     list.value = data.list
   }).catch(() => {
     // API调用失败时使用模拟数据
-    list.value = mockData
+    // list.value = mockData
   })
 }
 
-function handleCardClick(item: MicroApp.Info) {
-  console.log('item', item)
+function handleCardClick(item: MicroAppListItem) {
+  // console.log('item', item)
   // 可以在这里添加跳转逻辑
   router.push(`/microApp/${item.id}`)
 }
@@ -226,7 +230,7 @@ onMounted(() => {
               {{ item.appName || '微应用名字' }}
             </div>
             <div class="text-sm text-gray-500">
-              作者：{{ item.developer?.name || '56555' }}
+              作者：{{ item.developerName || '56555' }}
             </div>
           </div>
         </div>

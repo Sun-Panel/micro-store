@@ -307,11 +307,9 @@ func (m *MicroApp) GetListWithLang(db *gorm.DB, opts MicroAppQueryOptions) ([]Mi
 				COALESCE(lang.lang, 'default') as lang,
 				COALESCE(lang.app_name, micro_app.app_name) as app_name,
 				COALESCE(lang.app_desc, micro_app.app_desc) as app_desc,
-				user.id as developer_id,
-				user.name as developer_name,
-				user.head_image as developer_avatar
+				developer.name as developer_name
 			`).
-			Joins("LEFT JOIN user ON micro_app.developer_id = user.id")
+			Joins("LEFT JOIN developer ON micro_app.developer_id = developer.id")
 	}
 
 	// 状态筛选
