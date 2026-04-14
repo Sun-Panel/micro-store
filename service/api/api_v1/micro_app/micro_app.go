@@ -5,9 +5,7 @@ import (
 	"sun-panel/api/api_v1/common/base"
 	"sun-panel/biz"
 	"sun-panel/global"
-	"sun-panel/lib/cmn"
 	"sun-panel/models"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -106,23 +104,23 @@ func (a *MicroAppApi) GetVersionList(c *gin.Context) {
 }
 
 func (a *MicroAppApi) Test(c *gin.Context) {
-	packageFolderName := "/Users/sunjingliang/my_code/sun-panel_group/sun-panel-micro-store/service/micro_app_upload/2026/04/03/YM-music-player-free_2.1.0_b823b477ed6febf9"
-	// 异步审核
-	go func() {
-		securityAuditResult, err := biz.MicroAppAudit.CodeSecurityAudit(packageFolderName, biz.SecurityAuditConfig{
-			PlatformURL: "http://127.0.0.1:3025",
-			// APIKey:          "sunapi",
-			APISecret:       "hYWxxDCCcM5Ma8Mt3h2H0RemTn9bTG6Q",
-			Timeout:         60 * time.Second,                                       // 60秒
-			AllowedFileExts: []string{".js", ".ts", ".jsx", ".tsx", ".mjs", ".cjs"}, // 只发送支持的文件类型
-			MaxFileSize:     1024 * 1024 * 10,
-		})
-		if err != nil {
-			global.Logger.Errorln("安全审核失败:", err)
-			return
-		}
+	// packageFolderName := "/Users/sunjingliang/my_code/sun-panel_group/sun-panel-micro-store/service/micro_app_upload/2026/04/03/YM-music-player-free_2.1.0_b823b477ed6febf9"
+	// // 异步审核
+	// go func() {
+	// 	securityAuditResult, err := biz.MicroAppAudit.CodeSecurityAudit(packageFolderName, biz.SecurityAuditConfig{
+	// 		PlatformURL: "http://127.0.0.1:3025",
+	// 		// APIKey:          "sunapi",
+	// 		APISecret:       "hYWxxDCCcM5Ma8Mt3h2H0RemTn9bTG6Q",
+	// 		Timeout:         60 * time.Second,                                       // 60秒
+	// 		AllowedFileExts: []string{".js", ".ts", ".jsx", ".tsx", ".mjs", ".cjs"}, // 只发送支持的文件类型
+	// 		MaxFileSize:     1024 * 1024 * 10,
+	// 	})
+	// 	if err != nil {
+	// 		global.Logger.Errorln("安全审核失败:", err)
+	// 		return
+	// 	}
 
-		global.Logger.Infoln("安全审核结果:", cmn.AnyToJsonStr(securityAuditResult))
-	}()
+	// 	global.Logger.Infoln("安全审核结果:", cmn.AnyToJsonStr(securityAuditResult))
+	// }()
 
 }

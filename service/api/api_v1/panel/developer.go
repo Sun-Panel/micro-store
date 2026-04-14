@@ -1,6 +1,7 @@
 package panel
 
 import (
+	"os"
 	"sun-panel/api/api_v1/common/apiReturn"
 	"sun-panel/api/api_v1/common/base"
 	"sun-panel/global"
@@ -103,6 +104,16 @@ func (a *DeveloperApi) Update(c *gin.Context) {
 	if err != nil {
 		apiReturn.Error(c, "您还不是开发者")
 		return
+	}
+
+	if info.PaymentQrcode != param.PaymentQrcode {
+		// 删除旧的二维码
+		if info.PaymentQrcode != "" {
+			path := "." + info.PaymentQrcode
+			if err := os.Remove(path); err != nil {
+				global.Logger.Error("删除旧的支付二维码文件失败", "path", path, "error", err)
+			}
+		}
 	}
 
 	// 更新信息

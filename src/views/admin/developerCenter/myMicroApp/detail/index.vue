@@ -2,6 +2,9 @@
 import { NButton, NCard, NInput, NModal, NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import MicroAppBasicInfo from '../components/MicroAppBasicInfo.vue'
+import MicroAppVersionInfo from '../components/MicroAppVersionInfo.vue'
+import EditMicroApp from '../EditMicroApp/index.vue'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { cancelReview, deletes, getMicroInfoAndReviewInfoByMicroAppModelId, offline, submitReview } from '@/api/admin/microAppDeveloper'
 import { cancelReview as cancelVersionReview, deleteVersion, getVersionList, offlineVersion as offlineVersionApi, submitReview as submitVersionReview } from '@/api/admin/microAppVersion'
@@ -10,9 +13,6 @@ import AddVersionModal from '@/components/common/VersionManagement/AddVersionMod
 import VersionDetailModal from '@/components/common/VersionManagement/VersionDetailModal.vue'
 import { microAppStatusMap } from '@/enums/panel'
 import { apiRespErrMsg } from '@/utils/cmn'
-import MicroAppBasicInfo from '../components/MicroAppBasicInfo.vue'
-import MicroAppVersionInfo from '../components/MicroAppVersionInfo.vue'
-import EditMicroApp from '../EditMicroApp/index.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -314,14 +314,14 @@ function handleEditDone() {
   fetchMicroAppInfo()
 }
 
-// 查看审核历史
-function handleViewReviewHistory() {
-  reviewHistoryShow.value = true
-}
+// // 查看审核历史
+// function handleViewReviewHistory() {
+//   reviewHistoryShow.value = true
+// }
 
 // 返回列表
 function handleBack() {
-  router.push('/admin/myMicroApp')
+  router.push({ name: 'AdminMyMicroApp' })
 }
 
 // 预览应用（跳转到前台公开页面）

@@ -1,8 +1,9 @@
 <script lang="ts" setup>
 import type { FormInst, FormRules } from 'naive-ui'
-import { NButton, NCard, NDivider, NForm, NFormItem, NInput, NSpace, useMessage } from 'naive-ui'
+import { NButton, NCard, NDivider, NForm, NFormItem, NImage, NInput, NSelect, NSpace, NUpload, useMessage } from 'naive-ui'
 import { computed, ref, watch } from 'vue'
 import { SvgIcon } from '@/components/common'
+import { useAuthStore } from '@/store/modules/auth'
 
 interface Props {
   /** 是否为编辑模式 */
@@ -24,8 +25,14 @@ const emit = defineEmits<{
 }>()
 
 const message = useMessage()
+const authStore = useAuthStore()
 const formRef = ref<FormInst | null>(null)
 const loading = ref(false)
+
+// 待上传的二维码图片文件
+const pendingUploadFile = ref<File | null>(null)
+// 二维码图片的本地预览URL
+const qrcodePreviewUrl = ref('')
 
 const model = ref<Developer.RegisterRequest>({
   developerName: '',
@@ -52,6 +59,12 @@ const rules: FormRules = {
 const cardTitle = computed(() => props.editMode ? '开发者信息' : '成为开发者')
 const buttonText = computed(() => props.editMode ? '保存修改' : '立即注册')
 
+// 收款方式选项
+const paymentMethodOptions = [
+  { label: '微信', value: 'wechat_qr' },
+  { label: '支付宝', value: 'alipay_qr' },
+]
+
 // 监听 initialData 变化，更新 model
 watch(() => props.initialData, (newData) => {
   if (newData && Object.keys(newData).length > 0) {
@@ -63,14 +76,89 @@ watch(() => props.initialData, (newData) => {
       paymentMethod: newData.paymentMethod || '',
       name: newData.name || '',
     }
+    // 如果有已上传的二维码URL，设置为预览URL
+    if (newData.paymentQrcode)
+      qrcodePreviewUrl.value = newData.paymentQrcode
   }
 }, { immediate: true, deep: true })
+
+// ========== 图片上传处理 ==========
+
+// 上传单个文件到服务器
+async function uploadFile(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const formData = new FormData()
+    formData.append('imgfile', file)
+
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', '/api/file/uploadImg')
+    xhr.setRequestHeader('token', authStore.token || '')
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        try {
+          const res = JSON.parse(xhr.responseText)
+          if (res.code === 0 && res.data && res.data.imageUrl)
+            resolve(res.data.imageUrl)
+
+          else
+            reject(new Error(res.message || '上传失败'))
+        }
+        catch (error) {
+          reject(error)
+        }
+      }
+      else {
+        reject(new Error('上传失败'))
+      }
+    }
+    xhr.onerror = () => reject(new Error('上传失败'))
+    xhr.send(formData)
+  })
+}
+
+// 处理文件选择变化 - 只创建本地预览，不上传
+function handleQrcodeFileChange({ fileList }: { fileList: any[] }) {
+  if (fileList && fileList.length > 0) {
+    const file = fileList[0].file || fileList[0].originFileObj
+    if (file) {
+      pendingUploadFile.value = file as File
+      // 创建本地预览URL
+      qrcodePreviewUrl.value = URL.createObjectURL(file as File)
+    }
+  }
+}
+
+// 删除图片
+function handleQrcodeRemove() {
+  model.value.paymentQrcode = ''
+  pendingUploadFile.value = null
+  // 释放本地预览URL
+  if (qrcodePreviewUrl.value && qrcodePreviewUrl.value.startsWith('blob:'))
+    URL.revokeObjectURL(qrcodePreviewUrl.value)
+
+  qrcodePreviewUrl.value = ''
+}
 
 async function handleSubmit() {
   await formRef.value?.validate()
 
   loading.value = true
   try {
+    // 如果有待上传的文件，先上传
+    if (pendingUploadFile.value) {
+      try {
+        const imageUrl = await uploadFile(pendingUploadFile.value)
+        model.value.paymentQrcode = imageUrl
+        qrcodePreviewUrl.value = imageUrl
+        // 上传成功后清理待上传文件
+        pendingUploadFile.value = null
+      }
+      catch (error: any) {
+        message.error(error?.message || '图片上传失败')
+        return
+      }
+    }
+
     emit('submit', model.value, props.editMode)
   }
   catch (error: any) {
@@ -91,21 +179,39 @@ defineExpose({
 </script>
 
 <template>
-  <NCard :title="cardTitle" style="max-width: 600px;">
+  <NCard
+    :title="cardTitle"
+    style="max-width: 600px;"
+  >
     <template #header-extra>
       <NSpace align="center">
-        <span v-if="isDeveloper" class="text-green-500 text-sm">
-          <SvgIcon icon="mdi:check-circle" class="mr-1" />
+        <span
+          v-if="isDeveloper"
+          class="text-green-500 text-sm"
+        >
+          <SvgIcon
+            icon="mdi:check-circle"
+            class="mr-1"
+          />
           已认证为开发者
         </span>
       </NSpace>
     </template>
 
-    <NForm ref="formRef" :model="model" :rules="rules" label-placement="left" label-width="100">
+    <NForm
+      ref="formRef"
+      :model="model"
+      :rules="rules"
+      label-placement="left"
+      label-width="100"
+    >
       <NDivider title-placement="left">
         开发者基础信息
       </NDivider>
-      <NFormItem path="developerName" label="开发者标识">
+      <NFormItem
+        path="developerName"
+        label="开发者标识"
+      >
         <NInput
           v-model:value="model.developerName"
           :disabled="editMode"
@@ -113,34 +219,109 @@ defineExpose({
         />
       </NFormItem>
 
-      <NFormItem path="name" label="开发者名称">
-        <NInput v-model:value="model.name" placeholder="公开显示的开发者名称" />
+      <NFormItem
+        path="name"
+        label="开发者名称"
+      >
+        <NInput
+          v-model:value="model.name"
+          placeholder="公开显示的开发者名称"
+        />
       </NFormItem>
 
-      <NFormItem path="contactMail" label="联系邮箱">
-        <NInput v-model:value="model.contactMail" placeholder="用于接收重要通知" />
+      <NFormItem
+        path="contactMail"
+        label="联系邮箱"
+      >
+        <NInput
+          v-model:value="model.contactMail"
+          placeholder="用于接收重要通知"
+        />
       </NFormItem>
 
       <NDivider title-placement="left">
         收款信息
       </NDivider>
 
-      <NFormItem path="paymentName" label="收款人姓名">
-        <NInput v-model:value="model.paymentName" placeholder="请输入收款人真实姓名" />
+      <NFormItem
+        path="paymentName"
+        label="收款人姓名"
+      >
+        <NInput
+          v-model:value="model.paymentName"
+          placeholder="请输入收款人真实姓名"
+        />
       </NFormItem>
 
-      <NFormItem path="paymentQrcode" label="收款二维码">
-        <NInput v-model:value="model.paymentQrcode" placeholder="收款二维码图片URL" />
+      <NFormItem
+        path="paymentMethod"
+        label="收款方式"
+      >
+        <NSelect
+          v-model:value="model.paymentMethod"
+          :options="paymentMethodOptions"
+          placeholder="请选择收款方式"
+        />
       </NFormItem>
 
-      <NFormItem path="paymentMethod" label="收款方式">
-        <NInput v-model:value="model.paymentMethod" placeholder="如：支付宝、微信等" />
+      <NFormItem
+        path="paymentQrcode"
+        label="收款二维码"
+      >
+        <div class="w-full">
+          <!-- 图片预览 -->
+          <div
+            v-if="qrcodePreviewUrl"
+            class="mb-3"
+          >
+            <NImage
+              :src="qrcodePreviewUrl"
+              width="150"
+              height="150"
+              object-fit="contain"
+              :img-props="{ style: 'border: 1px solid #e5e7eb; border-radius: 4px; cursor: pointer;' }"
+            />
+          </div>
+          <div class="flex items-center gap-2">
+            <!-- 隐藏的输入框，用于保存URL -->
+            <NInput
+              v-show="false"
+              v-model:value="model.paymentQrcode"
+            />
+            <!-- 上传按钮 -->
+            <NUpload
+              :show-file-list="false"
+              accept="image/*"
+              :custom-request="() => { }"
+              @change="handleQrcodeFileChange"
+            >
+              <!-- 上传收款码 -->
+              <div class="flex gap-2">
+                <NButton>
+                  {{ qrcodePreviewUrl ? '更换二维码' : '上传二维码' }}
+                </NButton>
+                <!-- 删除按钮 -->
+                <NButton
+                  v-if="qrcodePreviewUrl"
+                  type="error"
+                  @click.stop="handleQrcodeRemove"
+                >
+                  删除
+                </NButton>
+              </div>
+            </NUpload>
+          </div>
+        </div>
       </NFormItem>
     </NForm>
 
     <template #footer>
       <NSpace justify="end">
-        <NButton type="primary" :loading="loading" @click="handleSubmit">
+        <NButton
+          type="primary"
+          :loading="loading"
+          @click="handleSubmit"
+        >
           {{ buttonText }}
         </NButton>
       </NSpace>

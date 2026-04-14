@@ -2,11 +2,11 @@
 import { NButton, NCard, NDropdown, NInput, NInputGroup, NSelect, NSpace, NTag, useDialog, useMessage } from 'naive-ui'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import SimpleCreateMicroApp from './SimpleCreateMicroApp/index.vue'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { cancelReview, deletes, getList, offline, submitReview } from '@/api/admin/microAppDeveloper'
 import ReviewHistoryModal from '@/components/common/ReviewHistoryModal/index.vue'
 import { microAppChargeTypeMap, microAppReviewStatusMap, microAppStatusMap } from '@/enums/panel'
-import SimpleCreateMicroApp from './SimpleCreateMicroApp/index.vue'
 
 const message = useMessage()
 const router = useRouter()
@@ -108,7 +108,7 @@ function handleAdd() {
 
 // 跳转到详情页
 function handleViewDetail(item: MicroApp.Info) {
-  router.push(`/admin/myMicroApp/detail/${item.id}`)
+  router.push(`/admin/developerCenter/myMicroApp/detail/${item.id}`)
 }
 
 // // 打开审核历史弹窗
