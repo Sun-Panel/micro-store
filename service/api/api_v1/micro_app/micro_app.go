@@ -194,3 +194,93 @@ func (a *MicroAppApi) UploadMicroAppIcon(c *gin.Context) {
 
 	apiReturn.SuccessData(c, responseData)
 }
+
+// UploadMicroAppScreenshot 上传微应用截图
+// 要求：
+// 1. 截图必须是横屏（宽度 > 高度）
+// 2. 截图比例必须为 4:3（误差 ±5%）
+// 3. 文件大小不超过 2MB
+// 4. 支持格式：.png, .jpg, .jpeg, .webp, .gif
+func (a *MicroAppApi) UploadMicroAppScreenshot(c *gin.Context) {
+	userInfo, _ := base.GetCurrentUserInfo(c)
+	configUpload := global.Config.GetValueString("base", "source_path")
+
+	// 创建按日期分类的子目录
+	fildDir := fmt.Sprintf("%s/%d/%d/%d/", configUpload, time.Now().Year(), time.Now().Month(), time.Now().Day())
+	isExist, _ := cmn.PathExists(fildDir)
+	if !isExist {
+		os.MkdirAll(fildDir, os.ModePerm)
+	}
+
+	// 使用 lib/file/upload 进行文件上传
+	uploadInfo, err := file.FormFileUpload(c, file.FormFileUploadOptions{
+		FormFileName: "screenshotfile",
+		AgreeExtNames: []string{
+			".png",
+			".jpg",
+			".jpeg",
+			".webp",
+			".gif",
+		},
+		MaxSize: 2 * 1024 * 1024, // 2MB
+		SaveDir: fildDir,
+	})
+
+	if err != nil {
+		switch err {
+		case file.ErrUploadExceedMaxSize:
+			apiReturn.Error(c, "截图文件不能大于2MB")
+			return
+		case file.ErrUploadExtensionNameNotAllowed:
+			apiReturn.ErrorByCode(c, 1301)
+			return
+		default:
+			apiReturn.ErrorByCode(c, 1300)
+			return
+		}
+	}
+	global.Logger.Debugln("文件上传成功:", cmn.AnyToJsonStr(uploadInfo))
+	// 检查图片尺寸是否获取成功
+	if uploadInfo.Width <= 0 || uploadInfo.Height <= 0 {
+		// 删除已上传的文件
+		os.Remove(uploadInfo.FileSavePath)
+		apiReturn.Error(c, "无法获取图片尺寸，请检查图片格式")
+		return
+	}
+	// 检查图片是否为横屏（宽度 > 高度）
+	if uploadInfo.Width <= uploadInfo.Height {
+		// 删除已上传的文件
+		os.Remove(uploadInfo.FileSavePath)
+		apiReturn.Error(c, "截图必须是横屏图片（宽度 > 高度）")
+		return
+	}
+
+	// // 检查图片比例是否为 4:3（允许 ±5% 的误差）
+	// ratio := float64(uploadInfo.Width) / float64(uploadInfo.Height)
+	// targetRatio := 4.0 / 3.0 // 4:3 的理论比例
+	// errorMargin := 0.05      // 5% 的误差范围
+
+	// if ratio < targetRatio*(1-errorMargin) || ratio > targetRatio*(1+errorMargin) {
+	// 	// 删除已上传的文件
+	// 	os.Remove(uploadInfo.FileSavePath)
+	// 	apiReturn.Error(c, "截图宽高比例必须为 4:3（误差 ±5%）")
+	// 	return
+	// }
+
+	pureFilePath := uploadInfo.FileSavePath[len(configUpload):]
+	// 向数据库添加记录
+	mFile := models.File{}
+	mFile.AddFile(userInfo.ID, uploadInfo.FileOriginalName, uploadInfo.Ext, pureFilePath)
+
+	responseData := gin.H{
+		"imageUrl": global.UPLOAD_ROUTE + pureFilePath,
+	}
+
+	// 添加尺寸信息
+	if uploadInfo.Width > 0 && uploadInfo.Height > 0 {
+		responseData["width"] = uploadInfo.Width
+		responseData["height"] = uploadInfo.Height
+	}
+
+	apiReturn.SuccessData(c, responseData)
+}

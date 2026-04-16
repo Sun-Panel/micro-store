@@ -345,18 +345,40 @@ function handleScreenshotRemove() {
   // v-model:file-list 会自动更新 screenshotList，提交时直接使用即可
 }
 
-// 上传完成后处理 - 设置文件 URL
+// 上传完成后处理 - 设置文件 URL 或处理错误
 function handleScreenshotFinish({ file, event }: { file: any, event?: any }) {
-  // 尝试从响应中获取上传后的 URL
-  let imageUrl = file.response?.data?.imageUrl || file.response?.data?.url
-  // 如果没有，尝试从 event 获取
-  if (!imageUrl && event?.target?.response) {
+  // 从 event.target.response 中解析响应（参考图标上传的处理方式）
+  let res: any = null
+  if (event?.target?.response) {
     try {
-      const res = JSON.parse(event.target.response)
-      imageUrl = res.data?.imageUrl || res.data?.url
+      res = JSON.parse(event.target.response)
     }
-    catch {}
+    catch {
+      // 如果解析失败，尝试从 file.response 获取
+      res = file.response
+    }
   }
+  else {
+    res = file.response
+  }
+
+  // 检查上传是否成功（后端成功响应为 code === 0）
+  const isSuccess = res?.code === 0
+
+  if (!isSuccess) {
+    // 上传失败，从列表中移除该文件
+    const index = screenshotList.value.findIndex(f => f.id === file.id)
+    if (index !== -1)
+      screenshotList.value.splice(index, 1)
+
+    // 显示错误提示
+    const errorMsg = res?.msg || res?.message || '上传失败'
+    window.$message?.error(errorMsg)
+    return
+  }
+
+  // 获取上传后的 URL
+  const imageUrl = res?.data?.imageUrl || res?.data?.url
   if (imageUrl)
     file.url = imageUrl
 }
@@ -364,7 +386,7 @@ function handleScreenshotFinish({ file, event }: { file: any, event?: any }) {
 
 <template>
   <NModal v-model:show="show" preset="card" style="width: 800px" title="编辑基本信息">
-    <NForm ref="formRef" :model="model" :rules="rules">
+    <NForm ref="formRef" :model="model" :rules="rules" require-mark-placement="left">
       <!-- 应用唯一标识：仅创建时显示 -->
       <!-- <NFormItem path="microAppId" label="应用ID (MicroAppID)">
         <NInput v-model:value="model.microAppId" placeholder="请输入应用标识（作者唯一标识-应用名称）" :disabled="microAppInfo?.id" />
@@ -445,25 +467,32 @@ function handleScreenshotFinish({ file, event }: { file: any, event?: any }) {
 
       <!-- 应用图标 -->
       <NFormItem path="appIcon" label="应用图标">
-        <div v-if="model.appIcon" style="margin-top: 10px;">
-          <NImage :src="model.appIcon" width="80" height="80" />
-        </div>
-        <div class="flex items-center" style="width: 100%;">
-          <NInput v-show="false" v-model:value="model.appIcon" placeholder="图标URL或上传" style="flex: 1;" />
-          <NUpload
-            action="/api/admin/developer/myMicroApp/uploadIcon"
-            :headers="{ token: authStore.token }"
-            name="iconfile"
-            :show-file-list="false"
-            accept=".png,.jpg,.jpeg,.svg,.ico"
-            style="margin-left: 10px;"
-            @finish="handleIconFinish"
-            @error="handleIconError"
-          >
-            <NButton size="small">
-              上传图片
-            </NButton>
-          </NUpload>
+        <div>
+          <div class="text-xs text-gray-400 flex items-center gap-3">
+            <span>尺寸要求：1:1 正方形，最大 512KB</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div v-if="model.appIcon" style="margin-top: 10px;width: 100%;">
+              <NImage :src="model.appIcon" width="80" height="80" />
+            </div>
+            <div class="flex items-center" style="width: 100%;">
+              <NInput v-show="false" v-model:value="model.appIcon" placeholder="图标URL或上传" style="flex: 1;" />
+              <NUpload
+                action="/api/admin/developer/myMicroApp/uploadIcon"
+                :headers="{ token: authStore.token }"
+                name="iconfile"
+                :show-file-list="false"
+                accept=".png,.jpg,.jpeg,.svg,.ico"
+                style="margin-left: 10px;"
+                @finish="handleIconFinish"
+                @error="handleIconError"
+              >
+                <NButton size="small">
+                  上传图片
+                </NButton>
+              </NUpload>
+            </div>
+          </div>
         </div>
       </NFormItem>
 
@@ -493,19 +522,31 @@ function handleScreenshotFinish({ file, event }: { file: any, event?: any }) {
       </NFormItem>
 
       <!-- 应用备注 -->
-      <NFormItem label="应用备注">
+      <!-- <NFormItem label="应用备注">
         <NInput v-model:value="model.remark" type="textarea" placeholder="请输入应用备注" :rows="2" />
-      </NFormItem>
+      </NFormItem> -->
 
       <!-- 应用图集 -->
       <NFormItem label="应用图集">
+        <template #label>
+          应用图集
+          <div class="text-xs text-gray-400 flex items-center gap-3">
+            <span>尺寸要求：4:3 比例，最大 2MB</span>
+            <span>推荐尺寸：</span>
+            <span class="bg-gray-100 px-2 rounded">1920×1440</span>
+            <span class="bg-gray-100 px-2 rounded">1600×1200</span>
+            <span class="bg-gray-100 px-2 rounded">1280×960</span>
+            <span class="bg-gray-100 px-2 rounded">800×600</span>
+          </div>
+        </template>
+
         <!-- 使用 v-model:file-list 管理所有图片 -->
         <NUpload
           v-model:file-list="screenshotList"
-          action="/api/file/uploadImg"
+          action="/api/admin/developer/myMicroApp/uploadScreenshot"
           :headers="{ token: authStore.token }"
-          name="imgfile"
-          accept="image/*"
+          name="screenshotfile"
+          accept=".png,.jpg,.jpeg,.webp,.gif"
           list-type="image-card"
           :max="5"
           @finish="handleScreenshotFinish"
