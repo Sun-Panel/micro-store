@@ -324,12 +324,16 @@ function handleIconFinish(data: any) {
     const response = xhr.response
     if (response) {
       const res = JSON.parse(response)
-      if (res.code === 0 && res.data && res.data.imageUrl)
+      if (res.code === 0 && res.data && res.data.imageUrl) {
         model.value.appIcon = res.data.imageUrl
+      }
+      else {
+        // ...
+        message.error(`图标上传失败：${res.msg}`)
+      }
     }
   }
 }
-
 function handleIconError(data: any) {
   console.error('Upload error:', data)
 }
@@ -447,11 +451,11 @@ function handleScreenshotFinish({ file, event }: { file: any, event?: any }) {
         <div class="flex items-center" style="width: 100%;">
           <NInput v-show="false" v-model:value="model.appIcon" placeholder="图标URL或上传" style="flex: 1;" />
           <NUpload
-            action="/api/file/uploadImg"
+            action="/api/admin/developer/myMicroApp/uploadIcon"
             :headers="{ token: authStore.token }"
-            name="imgfile"
+            name="iconfile"
             :show-file-list="false"
-            accept="image/*"
+            accept=".png,.jpg,.jpeg,.svg,.ico"
             style="margin-left: 10px;"
             @finish="handleIconFinish"
             @error="handleIconError"

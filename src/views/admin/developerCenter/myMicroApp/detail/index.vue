@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { NButton, NCard, NInput, NModal, NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
+import { NButton, NCard, NInput, NModal, NPopconfirm, NPopover, NSpace, NTag, useMessage } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MicroAppBasicInfo from '../components/MicroAppBasicInfo.vue'
@@ -45,6 +45,9 @@ const currentVersionDetail = ref<MicroApp.VersionInfo | null>(null)
 const offlineDialogShow = ref(false)
 const offlineVersion = ref<MicroApp.VersionInfo | null>(null)
 const offlineReason = ref('')
+
+// 拒绝详情弹窗
+const refusedPopoverShow = ref(false)
 
 // 获取分类选项
 async function fetchCategoryOptions() {
@@ -98,7 +101,7 @@ function getReviewStatusText(reviewStatus: number) {
     case 1:
       return '已通过'
     case 2:
-      return '已拒绝'
+      return '审核未通过'
     case -1:
       return '草稿'
     default:
@@ -330,6 +333,11 @@ function handlePreview() {
   window.open(url, '_blank')
 }
 
+// // 显示拒绝详情
+// function handleRefusedInfo() {
+//   refusedPopoverShow.value = true
+// }
+
 onMounted(async () => {
   await fetchCategoryOptions()
   fetchMicroAppInfo()
@@ -357,6 +365,24 @@ onMounted(async () => {
             <NTag v-if="microAppInfo?.microAppReview?.status !== undefined && microAppInfo?.microAppReview.status !== 1" :type="getReviewStatusTagType(microAppInfo.microAppReview.status)" size="small">
               {{ getReviewStatusText(microAppInfo.microAppReview.status) }}
             </NTag>
+            <NPopover
+              v-if="microAppInfo?.microAppReview?.status === 2"
+              v-model:show="refusedPopoverShow"
+              trigger="click"
+            >
+              <template #trigger>
+                <NButton size="tiny" type="error">
+                  查看详情
+                </NButton>
+              </template>
+
+              <div class="font-bold">
+                审核未通过原因
+              </div>
+              <div class="text-sm">
+                {{ microAppInfo?.microAppReview?.reviewNote || '暂无原因' }}
+              </div>
+            </NPopover>
 
             <!-- 草稿显示提交按钮 -->
             <NButton
@@ -368,7 +394,7 @@ onMounted(async () => {
               提交审核（基本信息）
             </NButton>
             <!-- 草稿和已拒绝状态显示提交审核按钮 -->
-            <NButton v-else-if="microAppInfo?.microAppReview?.status === 2" type="primary" @click="handleSubmitReview">
+            <NButton v-else-if="microAppInfo?.microAppReview?.status === 2" size="tiny" type="primary" @click="handleSubmitReview">
               重新提交审核
             </NButton>
 

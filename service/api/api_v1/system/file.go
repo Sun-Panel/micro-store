@@ -10,6 +10,7 @@ import (
 	"sun-panel/api/api_v1/common/base"
 	"sun-panel/global"
 	"sun-panel/lib/cmn"
+	"sun-panel/lib/file"
 	"sun-panel/models"
 	"time"
 
@@ -23,19 +24,18 @@ type FileApi struct{}
 func (a *FileApi) UploadImg(c *gin.Context) {
 	userInfo, _ := base.GetCurrentUserInfo(c)
 	configUpload := global.Config.GetValueString("base", "source_path")
-	f, err := c.FormFile("imgfile")
-	if err != nil {
-		apiReturn.ErrorByCode(c, 1300)
-		return
-	} else {
 
-		if f.Size > 1024*1024*5 {
-			apiReturn.Error(c, "文件尺寸不能大于5M")
-			return
-		}
+	// 创建按日期分类的子目录
+	fildDir := fmt.Sprintf("%s/%d/%d/%d/", configUpload, time.Now().Year(), time.Now().Month(), time.Now().Day())
+	isExist, _ := cmn.PathExists(fildDir)
+	if !isExist {
+		os.MkdirAll(fildDir, os.ModePerm)
+	}
 
-		fileExt := strings.ToLower(path.Ext(f.Filename))
-		agreeExts := []string{
+	// 使用 lib/file/upload 进行文件上传
+	uploadInfo, err := file.FormFileUpload(c, file.FormFileUploadOptions{
+		FormFileName: "imgfile",
+		AgreeExtNames: []string{
 			".png",
 			".jpg",
 			".gif",
@@ -43,29 +43,41 @@ func (a *FileApi) UploadImg(c *gin.Context) {
 			".webp",
 			".svg",
 			".ico",
-		}
+		},
+		MaxSize: 1024 * 1024 * 5, // 5MB
+		SaveDir: fildDir,
+	})
 
-		if !cmn.InArray(agreeExts, fileExt) {
+	if err != nil {
+		switch err {
+		case file.ErrUploadExceedMaxSize:
+			apiReturn.Error(c, "文件尺寸不能大于5M")
+			return
+		case file.ErrUploadExtensionNameNotAllowed:
 			apiReturn.ErrorByCode(c, 1301)
 			return
+		default:
+			apiReturn.ErrorByCode(c, 1300)
+			return
 		}
-		fileName := cmn.Md5(fmt.Sprintf("%s%s", f.Filename, time.Now().String()))
-		fildDir := fmt.Sprintf("%s/%d/%d/%d/", configUpload, time.Now().Year(), time.Now().Month(), time.Now().Day())
-		isExist, _ := cmn.PathExists(fildDir)
-		if !isExist {
-			os.MkdirAll(fildDir, os.ModePerm)
-		}
-		filepath := fmt.Sprintf("%s%s%s", fildDir, fileName, fileExt)
-		c.SaveUploadedFile(f, filepath)
-
-		pureFilePath := filepath[len(configUpload):]
-		// 向数据库添加记录
-		mFile := models.File{}
-		mFile.AddFile(userInfo.ID, f.Filename, fileExt, pureFilePath)
-		apiReturn.SuccessData(c, gin.H{
-			"imageUrl": global.UPLOAD_ROUTE + pureFilePath,
-		})
 	}
+
+	pureFilePath := uploadInfo.FileSavePath[len(configUpload):]
+	// 向数据库添加记录
+	mFile := models.File{}
+	mFile.AddFile(userInfo.ID, uploadInfo.FileOriginalName, uploadInfo.Ext, pureFilePath)
+
+	responseData := gin.H{
+		"imageUrl": global.UPLOAD_ROUTE + pureFilePath,
+	}
+
+	// 如果是图片文件，添加尺寸信息
+	if uploadInfo.Width > 0 && uploadInfo.Height > 0 {
+		responseData["width"] = uploadInfo.Width
+		responseData["height"] = uploadInfo.Height
+	}
+
+	apiReturn.SuccessData(c, responseData)
 }
 
 // 一直未使用有待测试

@@ -58,6 +58,8 @@ func InitMicroAppRouter(router *gin.RouterGroup) {
 		myMicroAppRouter.POST("developer/myMicroApp/list", apiGroup.MicroAppDeveloperApi.GetMyList)
 		myMicroAppRouter.POST("developer/myMicroApp/info", apiGroup.MicroAppDeveloperApi.GetInfo)
 		myMicroAppRouter.POST("developer/myMicroApp/getMicroInfoAndReviewInfoByMicroAppModelId", apiGroup.MicroAppDeveloperApi.GetMicroInfoAndReviewInfoByMicroAppModelId)
+		// 上传微应用图标
+		myMicroAppRouter.POST("developer/myMicroApp/uploadIcon", api_v1.ApiGroupApp.MicroAppApi.UploadMicroAppIcon)
 
 		// ==================== 微应用版本管理 ====================
 		myMicroAppRouter.POST("developer/version/getList", apiGroup.DeveloperVersionApi.GetList)

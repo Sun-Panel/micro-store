@@ -1,11 +1,16 @@
 package microapp
 
 import (
+	"fmt"
+	"os"
 	"sun-panel/api/api_v1/common/apiReturn"
 	"sun-panel/api/api_v1/common/base"
 	"sun-panel/biz"
 	"sun-panel/global"
+	"sun-panel/lib/cmn"
+	"sun-panel/lib/file"
 	"sun-panel/models"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -123,4 +128,69 @@ func (a *MicroAppApi) Test(c *gin.Context) {
 	// 	global.Logger.Infoln("安全审核结果:", cmn.AnyToJsonStr(securityAuditResult))
 	// }()
 
+}
+
+// UploadMicroAppIcon 上传微应用图标
+// 要求：
+// 1. 图标必须是正方形（宽高相等）
+// 2. 文件大小不超过 512KB
+// 3. 支持格式：.png, .jpg, .jpeg, .webp, .svg, .ico
+func (a *MicroAppApi) UploadMicroAppIcon(c *gin.Context) {
+	userInfo, _ := base.GetCurrentUserInfo(c)
+	configUpload := global.Config.GetValueString("base", "source_path")
+
+	// 创建按日期分类的子目录
+	fildDir := fmt.Sprintf("%s/%d/%d/%d/", configUpload, time.Now().Year(), time.Now().Month(), time.Now().Day())
+	isExist, _ := cmn.PathExists(fildDir)
+	if !isExist {
+		os.MkdirAll(fildDir, os.ModePerm)
+	}
+
+	// 使用 lib/file/upload 进行文件上传
+	uploadInfo, err := file.FormFileUpload(c, file.FormFileUploadOptions{
+		FormFileName: "iconfile",
+		AgreeExtNames: []string{
+			".png",
+			".jpg",
+			".jpeg",
+			".webp",
+			".svg",
+			".ico",
+		},
+		MaxSize: 512 * 1024, // 512KB
+		SaveDir: fildDir,
+	})
+
+	if err != nil {
+		switch err {
+		case file.ErrUploadExceedMaxSize:
+			apiReturn.Error(c, "图标文件不能大于512KB")
+			return
+		case file.ErrUploadExtensionNameNotAllowed:
+			apiReturn.ErrorByCode(c, 1301)
+			return
+		default:
+			apiReturn.ErrorByCode(c, 1300)
+			return
+		}
+	}
+
+	// 检查图片是否为正方形
+	if uploadInfo.Width > 0 && uploadInfo.Height > 0 && uploadInfo.Width != uploadInfo.Height {
+		// 删除已上传的文件
+		os.Remove(uploadInfo.FileSavePath)
+		apiReturn.Error(c, "图标宽高比例必须为 1:1")
+		return
+	}
+
+	pureFilePath := uploadInfo.FileSavePath[len(configUpload):]
+	// 向数据库添加记录
+	mFile := models.File{}
+	mFile.AddFile(userInfo.ID, uploadInfo.FileOriginalName, uploadInfo.Ext, pureFilePath)
+
+	responseData := gin.H{
+		"imageUrl": global.UPLOAD_ROUTE + pureFilePath,
+	}
+
+	apiReturn.SuccessData(c, responseData)
 }
