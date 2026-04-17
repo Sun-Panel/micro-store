@@ -58,9 +58,9 @@ type MicroAppUpdateStatusReq struct {
 
 // OfflineRequest 下架请求
 type MicroAppOfflineReq struct {
-	Id     uint   `json:"id" binding:"required"`
-	Type   int    `json:"type" binding:"required"` // 下架类型：1-作者下架 2-平台下架
-	Reason string `json:"reason"`                  // 下架原因
+	Id          uint   `json:"id" binding:"required"`
+	OfflineType int    `json:"offlineType" binding:"required"` // 下架类型：1-作者下架 2-平台下架
+	Reason      string `json:"reason"`                         // 下架原因
 }
 
 // UpdateLangRequest 更新语言请求

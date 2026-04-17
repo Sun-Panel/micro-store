@@ -2,9 +2,6 @@
 import { NButton, NCard, NInput, NModal, NPopconfirm, NPopover, NSpace, NTag, useMessage } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import MicroAppBasicInfo from '../components/MicroAppBasicInfo.vue'
-import MicroAppVersionInfo from '../components/MicroAppVersionInfo.vue'
-import EditMicroApp from '../EditMicroApp/index.vue'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { cancelReview, deletes, getMicroInfoAndReviewInfoByMicroAppModelId, offline, submitReview } from '@/api/admin/microAppDeveloper'
 import { cancelReview as cancelVersionReview, deleteVersion, getVersionList, offlineVersion as offlineVersionApi, submitReview as submitVersionReview } from '@/api/admin/microAppVersion'
@@ -13,6 +10,9 @@ import AddVersionModal from '@/components/common/VersionManagement/AddVersionMod
 import VersionDetailModal from '@/components/common/VersionManagement/VersionDetailModal.vue'
 import { microAppStatusMap } from '@/enums/panel'
 import { apiRespErrMsg } from '@/utils/cmn'
+import MicroAppBasicInfo from '../components/MicroAppBasicInfo.vue'
+import MicroAppVersionInfo from '../components/MicroAppVersionInfo.vue'
+import EditMicroApp from '../EditMicroApp/index.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -430,12 +430,21 @@ onMounted(async () => {
             <NButton type="primary" :disabled="microAppInfo?.microAppReview?.status === 0" @click="editDialogShow = true">
               编辑信息
             </NButton>
-            <NButton v-if="microAppInfo?.microApp?.status === 1" @click="handleChangeStatus(0)">
-              下架
+            <NPopconfirm v-if="microAppInfo?.microApp?.status === 1" @positive-click="handleChangeStatus(0)">
+              <template #trigger>
+                <NButton>
+                  下架
+                </NButton>
+              </template>
+              下架后重新上架需要再次审核，确定要下架吗？
+            </NPopconfirm>
+            <!-- 上架按钮，仅在非草稿状态，非审核状态，已下架状态显示 -->
+            <NButton
+              v-else-if="microAppInfo?.microApp?.status === 0 && microAppInfo?.microAppReview?.status !== 0 && microAppInfo?.microAppReview?.status !== -1"
+              type="success" @click="handleSubmitReview"
+            >
+              上架（提交审核）
             </NButton>
-            <!-- <NButton v-else-if="microAppInfo?.microApp?.status === 0" type="success" @click="handleChangeStatus(1)">
-              上架
-            </NButton> -->
             <NPopconfirm @positive-click="handleDelete">
               <template #trigger>
                 <NButton type="error">

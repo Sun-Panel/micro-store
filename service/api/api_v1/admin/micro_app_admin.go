@@ -129,7 +129,7 @@ func (a *MicroAppAdminApi) Deletes(c *gin.Context) {
 	apiReturn.Success(c)
 }
 
-// UpdateStatus 更新微应用状态（管理员专用）
+// UpdateStatus 更新微应用状态
 func (a *MicroAppAdminApi) UpdateStatus(c *gin.Context) {
 	param := MicroAppUpdateStatusReq{}
 	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
@@ -148,20 +148,20 @@ func (a *MicroAppAdminApi) UpdateStatus(c *gin.Context) {
 
 // Offline 下架微应用（管理员专用）
 func (a *MicroAppAdminApi) Offline(c *gin.Context) {
-	param := MicroAppOfflineReq{}
-	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
+	req := MicroAppOfflineReq{}
+	if err := c.ShouldBindBodyWith(&req, binding.JSON); err != nil {
 		apiReturn.ErrorParamFomat(c, err.Error())
 		return
 	}
 
 	// 平台下架时，原因必填
-	if param.Type == 2 && param.Reason == "" {
+	if req.OfflineType == 2 && req.Reason == "" {
 		apiReturn.ErrorParamFomat(c, "平台下架时，下架原因不能为空")
 		return
 	}
 
 	m := models.MicroApp{}
-	if err := m.Offline(global.Db, param.Id, param.Type, param.Reason); err != nil {
+	if err := m.Offline(global.Db, req.Id, req.OfflineType, req.Reason); err != nil {
 		apiReturn.ErrorDatabase(c, err.Error())
 		return
 	}
