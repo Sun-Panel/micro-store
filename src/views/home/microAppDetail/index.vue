@@ -109,6 +109,20 @@ const latestApprovedVersion = computed(() => {
   })[0]
 })
 
+// 获取版本说明（兼容多语言格式）
+function getVersionDescContent(versionDesc: Record<string, { content: string }> | string | undefined): string {
+  if (!versionDesc)
+    return ''
+  // 如果是字符串（旧格式），直接返回
+  if (typeof versionDesc === 'string')
+    return versionDesc
+  // 新格式：优先使用当前语言，否则用 zh-CN，最后用第一个可用语言
+  return versionDesc[currentLang.value]?.content
+    || versionDesc['zh-CN']?.content
+    || Object.values(versionDesc)[0]?.content
+    || ''
+}
+
 // 获取微应用详情
 async function fetchMicroAppInfo() {
   loading.value = true
@@ -267,7 +281,7 @@ onMounted(async () => {
       </NCard>
 
       <!-- 截图展示 -->
-      <NCard v-if="microAppInfo.screenshots" title="应用截图" :bordered="false" shadow="hover">
+      <NCard v-if="microAppInfo.screenshots" title="图集预览" :bordered="false" shadow="hover">
         <NImageGroup>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <NImage
@@ -284,15 +298,15 @@ onMounted(async () => {
       <NCard v-if="latestApprovedVersion" class="mb-6" title="最新版本" :bordered="false" shadow="hover">
         <div class="flex flex-col md:flex-row md:items-center gap-4">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+            <!-- <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
               <span class="text-blue-600 font-bold">V</span>
-            </div>
+            </div> -->
             <div>
               <div class="text-lg font-semibold text-gray-800">
                 {{ latestApprovedVersion.version }}
               </div>
-              <div v-if="latestApprovedVersion.versionDesc" class="text-sm text-gray-500 mt-1">
-                {{ latestApprovedVersion.versionDesc }}
+              <div v-if="getVersionDescContent(latestApprovedVersion.versionDesc)" class="text-sm text-gray-500 mt-1">
+                {{ getVersionDescContent(latestApprovedVersion.versionDesc) }}
               </div>
             </div>
           </div>
@@ -316,6 +330,35 @@ onMounted(async () => {
           暂无审核通过的版本
         </div>
       </NCard>
+
+      <!-- 版本历史 -->
+      <!-- <NCard v-if="versionList.length > 0" title="版本历史" :bordered="false" shadow="hover">
+        <div class="space-y-4">
+          <div
+            v-for="version in versionList.filter(v => v.status === MicroAppVersionStatus.APPROVED)"
+            :key="version.id"
+            class="border-b border-gray-100 last:border-0 pb-4 last:pb-0"
+          >
+            <div class="flex items-start gap-4">
+              <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                <span class="text-gray-600 text-sm font-medium">V</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="font-medium text-gray-800">{{ version.version }}</span>
+                  <span class="text-xs text-gray-400">{{ timeFormat(String(version.createTime)) }}</span>
+                </div>
+                <div v-if="getVersionDescContent(version.versionDesc)" class="text-sm text-gray-600 leading-relaxed">
+                  {{ getVersionDescContent(version.versionDesc) }}
+                </div>
+                <div v-else class="text-sm text-gray-400 italic">
+                  暂无版本说明
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </NCard> -->
     </div>
   </div>
 </template>

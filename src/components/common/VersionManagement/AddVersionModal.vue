@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { NButton, NInput, NModal, NSpace, NUpload, useMessage } from 'naive-ui'
-import { ref, watch } from 'vue'
+import { NButton, NInput, NModal, NSelect, NSpace, NUpload, useMessage } from 'naive-ui'
+import { computed, ref, watch } from 'vue'
 import { createVersion, submitReview, uploadVersionPackage } from '@/api/admin/microAppVersion'
 import { apiRespErrMsg } from '@/utils/cmn/apiMessage'
 
@@ -24,14 +24,62 @@ const uploadLoading = ref(false)
 const uploadedConfig = ref<MicroApp.VersionConfig | null>(null)
 const uploadCacheId = ref('')
 
-// 表单数据
+// 语言列表
+const langOptions = [
+  { label: '简体中文 (zh-CN)', value: 'zh-CN' },
+  { label: 'English (en-US)', value: 'en-US' },
+  // { label: '日本語 (ja-JP)', value: 'ja-JP' },
+  // { label: '한국어 (ko-KR)', value: 'ko-KR' },
+]
+
+// 表单数据 - 版本说明改为多语言格式
 const versionForm = ref({
   version: '',
   versionCode: 0,
   packageUrl: '',
   packageHash: '',
-  versionDesc: '',
+  versionDescMap: {} as Record<string, string>, // 多语言版本说明
 })
+
+// 当前选中的语言
+const currentLang = ref('')
+
+// 可添加的语言选项（排除已添加的）
+const availableLangOptions = computed(() => {
+  const usedLangs = Object.keys(versionForm.value.versionDescMap)
+  return langOptions.filter(l => !usedLangs.includes(l.value))
+})
+
+// 选中语言
+function selectLanguage(lang: string) {
+  currentLang.value = lang
+}
+
+// 添加语言
+function addLanguage() {
+  if (!currentLang.value)
+    return
+  // 初始化为空字符串
+  versionForm.value.versionDescMap[currentLang.value] = ''
+  currentLang.value = ''
+}
+
+// 删除语言
+function removeLanguage(lang: string) {
+  const newMap = { ...versionForm.value.versionDescMap }
+  delete newMap[lang]
+  versionForm.value.versionDescMap = newMap
+}
+
+// 获取当前语言的版本说明
+function getCurrentVersionDesc(lang: string): string {
+  return versionForm.value.versionDescMap[lang] || ''
+}
+
+// 设置当前语言的版本说明
+function setCurrentVersionDesc(lang: string, value: string) {
+  versionForm.value.versionDescMap[lang] = value
+}
 
 // 双向绑定
 const show = ref(props.visible)
@@ -47,8 +95,9 @@ watch(show, (val) => {
 
 // 重置表单
 function resetForm() {
-  versionForm.value = { version: '', versionCode: 0, packageUrl: '', packageHash: '', versionDesc: '' }
+  versionForm.value = { version: '', versionCode: 0, packageUrl: '', packageHash: '', versionDescMap: {} }
   uploadedConfig.value = null
+  currentLang.value = ''
 }
 
 // 处理文件上传
@@ -107,24 +156,24 @@ function handleVersionInput(value: string) {
   versionForm.value.versionCode = code
 }
 
+// 转换为多语言格式提交
+function formatVersionDesc(): Record<string, { content: string }> {
+  const result: Record<string, { content: string }> = {}
+  for (const [lang, content] of Object.entries(versionForm.value.versionDescMap)) {
+    if (content.trim()) {
+      result[lang] = { content: content.trim() }
+    }
+  }
+  return result
+}
+
 // 提交添加版本
 async function handleAddVersion() {
-  // if (!versionForm.value.packageUrl || !versionForm.value.version) {
-  //   message.warning('请上传版本包并填写版本号')
-  //   return
-  // }
-
   addVersionLoading.value = true
   try {
     // 创建版本
     const createRes = await createVersion<any>({
-      // appRecordId: props.appRecordId,
-      // version: versionForm.value.version,
-      // versionCode: versionForm.value.versionCode,
-      // packageUrl: versionForm.value.packageUrl,
-      // packageHash: versionForm.value.packageHash || '',
-      versionDesc: versionForm.value.versionDesc,
-      // config: uploadedConfig.value || undefined,
+      versionDesc: formatVersionDesc(),
       uploadCacheId: uploadCacheId.value,
     })
 
@@ -151,7 +200,7 @@ async function handleAddVersion() {
 </script>
 
 <template>
-  <NModal v-model:show="show" preset="card" style="width: 500px" title="添加版本" :mask-closable="false">
+  <NModal v-model:show="show" preset="card" style="width: 600px" title="添加版本" :mask-closable="false">
     <div class="space-y-4">
       <div>
         <div class="mb-2">
@@ -191,17 +240,66 @@ async function handleAddVersion() {
           支持 .zip 格式的微应用包
         </div>
       </div>
-      <!-- <div>
-        <div class="mb-2">
-          版本号 <span class="text-red-500">*</span>
-        </div>
-        <NInput v-model:value="versionForm.version" placeholder="如：1.0.0" @update:value="handleVersionInput" />
-      </div> -->
+
+      <!-- 版本说明（多语言） -->
       <div>
         <div class="mb-2">
           版本说明
         </div>
-        <NInput v-model:value="versionForm.versionDesc" type="textarea" placeholder="请输入版本说明" :rows="3" />
+
+        <!-- 已添加的语言卡片 -->
+        <div v-if="Object.keys(versionForm.versionDescMap).length > 0" class="space-y-3 mb-3">
+          <div
+            v-for="lang in Object.keys(versionForm.versionDescMap)"
+            :key="lang"
+            class="border rounded-lg p-3 transition-all"
+            :class="currentLang === lang ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300 cursor-pointer'"
+            @click="currentLang = lang"
+          >
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <div
+                  class="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all"
+                  :class="currentLang === lang ? 'border-blue-500 bg-blue-500' : 'border-gray-300'"
+                >
+                  <div v-if="currentLang === lang" class="w-2 h-2 rounded-full bg-white" />
+                </div>
+                <span class="font-medium">{{ langOptions.find(l => l.value === lang)?.label || lang }}</span>
+              </div>
+              <NButton size="tiny" quaternary @click.stop="removeLanguage(lang)">
+                删除
+              </NButton>
+            </div>
+            <NInput
+              :value="getCurrentVersionDesc(lang)"
+              type="textarea"
+              :placeholder="`请输入${langOptions.find(l => l.value === lang)?.label || lang}版本说明`"
+              :rows="2"
+              @update:value="(v: string) => setCurrentVersionDesc(lang, v)"
+              @click.stop
+            />
+          </div>
+        </div>
+
+        <!-- 添加语言选择器 -->
+        <div v-if="availableLangOptions.length > 0" class="flex gap-2">
+          <NSelect
+            v-model:value="currentLang"
+            :options="availableLangOptions"
+            placeholder="选择要添加的语言"
+            style="width: 200px"
+            filterable
+            size="small"
+          />
+          <NButton type="primary" :disabled="!currentLang" size="small" @click="addLanguage">
+            添加
+          </NButton>
+        </div>
+
+        <!-- 未添加任何语言时的提示 -->
+        <div v-if="Object.keys(versionForm.versionDescMap).length === 0" class="text-center py-4 text-gray-400">
+          请先添加语言，然后填写版本说明
+        </div>
       </div>
     </div>
 

@@ -1,9 +1,9 @@
 import type { App } from 'vue'
 import type { RouteRecordRaw } from 'vue-router'
 import { createRouter, createWebHistory } from 'vue-router'
-import { setupPageGuard } from './permission'
 import AdminLayout from '@/views/admin/index.vue'
 import HomeLayout from '@/views/home/layout/index.vue'
+import { setupPageGuard } from './permission'
 
 const adminRouter = {
   path: '/admin',

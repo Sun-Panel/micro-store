@@ -12,6 +12,7 @@ declare namespace MicroApp {
     points: number // 价格（积分数值）
     screenshots?: string // 图集（多个图片URL用逗号分隔）
     thirdCharge?: number // 第三方收费方式：0-不含 1-付费才可用 2-基础功能免费
+    adminName?: string
     haveIframe?: boolean // 是否包含iframe
   }
 
@@ -30,7 +31,7 @@ declare namespace MicroApp {
     versionCode: number
     packageUrl: string
     packageHash: string
-    versionDesc: string
+    versionDesc: Record<string, { content: string }> // 版本说明（多语言格式）
     config?: VersionConfig
     status: number // 审核状态：-1-草稿 0-待审核 1-已通过 2-已拒绝 3-已下架
     reviewTime?: string
@@ -197,7 +198,7 @@ declare namespace MicroApp {
     // versionCode: number
     // packageUrl: string
     // packageHash?: string
-    versionDesc?: string
+    versionDesc?: Record<string, { content: string }> // 版本说明（多语言格式）
     // config?: MicroAppVersionConfig
     uploadCacheId?: string
   }

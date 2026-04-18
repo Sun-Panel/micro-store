@@ -5,11 +5,15 @@ import "gorm.io/gorm"
 // 微应用多语言信息表
 type MicroAppLang struct {
 	BaseModel
-	MicroAppId string `gorm:"type:varchar(50);not null;uniqueIndex:idx_app_lang" json:"microAppId"` // 关联微应用ID
-	Lang       string `gorm:"type:varchar(10);not null;uniqueIndex:idx_app_lang" json:"lang"`       // 语言代码：zh-CN, en-US, ja-JP 等
-	AppName    string `gorm:"type:varchar(100);not null" json:"appName"`                             // 应用名称
-	AppDesc    string `gorm:"type:varchar(500)" json:"appDesc"`                                      // 应用简介
+	MicroAppId string         `gorm:"type:varchar(50);not null" json:"microAppId"` // 关联微应用ID
+	Lang       string         `gorm:"type:varchar(10);not null" json:"lang"`       // 语言代码：zh-CN, en-US, ja-JP 等
+	AppName    string         `gorm:"type:varchar(100);not null" json:"appName"`   // 应用名称
+	AppDesc    string         `gorm:"type:varchar(500)" json:"appDesc"`            // 应用简介
+	DeletedAt  gorm.DeletedAt `gorm:"index;uniqueIndex:idx_app_lang" json:"deletedAt,omitempty"`
 }
+
+// 复合唯一索引：micro_app_id + lang + deleted_at
+// 这样软删除后不会与新增记录冲突
 
 // 表名
 func (MicroAppLang) TableName() string {
@@ -35,7 +39,7 @@ func (m *MicroAppLang) CreateOrUpdate(db *gorm.DB) error {
 	// 先查询是否存在
 	var existing MicroAppLang
 	err := db.Where("micro_app_id = ? AND lang = ?", m.MicroAppId, m.Lang).First(&existing).Error
-	
+
 	if err == gorm.ErrRecordNotFound {
 		// 不存在，创建新记录
 		return db.Create(m).Error
@@ -43,7 +47,7 @@ func (m *MicroAppLang) CreateOrUpdate(db *gorm.DB) error {
 		// 其他错误
 		return err
 	}
-	
+
 	// 存在，更新记录
 	return db.Model(&existing).Updates(map[string]interface{}{
 		"app_name": m.AppName,

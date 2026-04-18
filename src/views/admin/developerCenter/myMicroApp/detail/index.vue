@@ -54,7 +54,7 @@ async function fetchCategoryOptions() {
   try {
     const { data } = await getCategoryList<Category.Info[]>()
     categoryOptions.value = data
-    console.log('API 获取的分类数据:', data)
+    // console.log('API 获取的分类数据:', data)
   }
   catch (error) {
     apiRespErrMsg(error)
@@ -264,7 +264,7 @@ async function handleDelete() {
     const res = await deletes<Common.Response<null>>([microAppInfo.value.microApp.id])
     if (res.code === 0) {
       message.success('删除成功')
-      router.push('/admin/myMicroApp')
+      router.push({ name: 'AdminMyMicroApp' })
     }
     else {
       apiRespErrMsg(res)

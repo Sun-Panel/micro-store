@@ -52,7 +52,7 @@ const rules = computed<FormRules>(() => ({
       trigger: 'blur',
     },
   ],
-  appName: [{ required: true, trigger: 'blur', message: '请输入微应用名称' }],
+  adminName: [{ required: true, trigger: 'blur', message: '请输入微应用名称' }],
 }))
 
 // 弹窗显示状态
@@ -95,7 +95,7 @@ async function submit() {
   try {
     await create({
       microAppId: model.value.microAppId,
-      appName: model.value.adminName,
+      adminName: model.value.adminName,
     })
     emit('done')
     show.value = false

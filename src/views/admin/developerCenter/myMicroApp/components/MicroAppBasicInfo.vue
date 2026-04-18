@@ -2,12 +2,12 @@
 import { NCard, NImage, NImageGroup, NSelect, NTag } from 'naive-ui'
 import { computed, ref } from 'vue'
 import { microAppChargeTypeMap, microAppStatusMap, microAppThirdChargeTypeMap } from '@/enums/panel'
+import { t } from '@/locales'
 import { timeFormat } from '@/utils/cmn'
 import { getAppDescByLang, getAppNameByLang, getCurrentLang, getLangListFromAppInfo, getLangMapFromAppInfo } from '@/utils/functions'
-import { t } from '@/locales'
 
 const props = defineProps<{
-  microAppInfo?: MicroApp.BaseInfo
+  microAppInfo?: MicroApp.Info
   createTime?: string
   shelvesStatus?: number
   categoryOptions?: Category.Info[]

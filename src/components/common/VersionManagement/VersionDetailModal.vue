@@ -8,13 +8,13 @@ import { apiRespErrMsg } from '@/utils/cmn/apiMessage'
 interface Props {
   visible: boolean
   versionInfo: any
-  microAppInfo: MicroApp.MicroAppInfo | undefined
+  microAppInfo: MicroApp.Info | undefined
 }
 
 const props = defineProps<Props>()
 const emit = defineEmits<{
-  'update:visible': [value: boolean]
-  'done': []
+  (e: 'update:visible', value: boolean): void
+  (e: 'done'): void
 }>()
 
 const message = useMessage()
@@ -29,12 +29,26 @@ const detailInfo = ref<{
   microAppId: string
   author: string
   version: string
-  versionDesc: string
+  versionDesc: Record<string, { content: string }> // 多语言格式
   permissions: string[]
   dataNodes: Record<string, any>
   networkDomains: string[]
   appInfo: Record<string, { appName: string, appDesc: string }>
 } | null>(null)
+
+// 获取版本说明（兼容新旧格式）
+function getVersionDescContent(versionDesc: Record<string, { content: string }> | string | undefined): string {
+  if (!versionDesc)
+    return ''
+  // 如果是字符串（旧格式），直接返回
+  if (typeof versionDesc === 'string')
+    return versionDesc
+  // 新格式：优先使用当前语言，否则用 zh-CN，最后用第一个可用语言
+  return versionDesc[currentLang.value]?.content
+    || versionDesc['zh-CN']?.content
+    || Object.values(versionDesc)[0]?.content
+    || ''
+}
 
 // 可用的语言列表
 const langList = computed(() => {
@@ -184,7 +198,7 @@ async function handleSetAsMainInfo() {
         remark: props.microAppInfo.remark,
         categoryId: props.microAppInfo.categoryId,
         chargeType: props.microAppInfo.chargeType,
-        price: props.microAppInfo.price || 0,
+        points: props.microAppInfo.points || 0,
         screenshots: props.microAppInfo.screenshots || '',
       } as any)
 
@@ -261,11 +275,11 @@ async function handleSetAsMainInfo() {
         />
       </div>
 
-      <div v-if="detailInfo.versionDesc" class="text-sm">
+      <div v-if="getVersionDescContent(detailInfo.versionDesc)" class="text-sm">
         <div class="text-gray-500">
           版本说明：
         </div>
-        <div>{{ detailInfo.versionDesc }}</div>
+        <div>{{ getVersionDescContent(detailInfo.versionDesc) }}</div>
       </div>
 
       <div v-if="detailInfo.permissions?.length" class="text-sm">

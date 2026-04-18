@@ -28,6 +28,19 @@ const reviewForm = ref({
 const iframeModalVisible = ref(false)
 const securityAuditModalVisible = ref(false)
 
+// 获取版本说明（兼容多语言格式）
+function getVersionDescContent(versionDesc: Record<string, { content: string }> | string | undefined): string {
+  if (!versionDesc)
+    return ''
+  // 如果是字符串（旧格式），直接返回
+  if (typeof versionDesc === 'string')
+    return versionDesc
+  // 新格式：优先用 zh-CN，最后用第一个可用语言
+  return versionDesc['zh-CN']?.content
+    || Object.values(versionDesc)[0]?.content
+    || ''
+}
+
 // 严重程度映射
 const severityMap: Record<string, { label: string, color: 'error' | 'warning' | 'default' | 'success', value: number }> = {
   CRITICAL: { label: '高危', color: 'error', value: 4 },
@@ -148,7 +161,7 @@ function openExternalUrl(url: string) {
               {{ currentApprovedVersion.version }}
             </NDescriptionsItem>
             <NDescriptionsItem label="版本说明">
-              {{ currentApprovedVersion.versionDesc || '暂无说明' }}
+              {{ getVersionDescContent(currentApprovedVersion.versionDesc) || '暂无说明' }}
             </NDescriptionsItem>
             <NDescriptionsItem label="包地址">
               <a :href="currentApprovedVersion.packageUrl" target="_blank" class="text-blue-600 hover:underline">
@@ -186,7 +199,7 @@ function openExternalUrl(url: string) {
               <span v-if="!currentApprovedVersion || versionInfo.version !== currentApprovedVersion.version" class="ml-2 text-xs bg-red-100 text-red-600 px-2 py-1 rounded">新版本</span>
             </NDescriptionsItem>
             <NDescriptionsItem label="版本说明">
-              {{ versionInfo.versionDesc || '暂无说明' }}
+              {{ getVersionDescContent(versionInfo.versionDesc) || '暂无说明' }}
             </NDescriptionsItem>
             <NDescriptionsItem label="包地址">
               <a :href="versionInfo.packageUrl" target="_blank" class="text-blue-600 hover:underline">

@@ -1,5 +1,7 @@
 package admin
 
+import "sun-panel/models/datatype"
+
 // ==================== 开发者端版本管理 DTO ====================
 
 // MicroAppVersionGetListReq 获取版本列表请求
@@ -22,17 +24,17 @@ type MicroAppVersionCreateReq struct {
 	// VersionCode   int                           `json:"versionCode" binding:"required"`
 	// PackageUrl    string                        `json:"packageUrl" binding:"required"`
 	// PackageHash   string                        `json:"packageHash"`
-	VersionDesc string `json:"versionDesc"`
+	VersionDesc datatype.VersionDesc `json:"versionDesc"`
 	// Config        *models.MicroAppVersionConfig `json:"config"` // 完整配置信息
 	UploadCacheId string `json:"uploadCacheId"`
 }
 
 // MicroAppVersionUpdateReq 更新版本请求
 type MicroAppVersionUpdateReq struct {
-	Id          uint   `json:"id" binding:"required"`
-	Version     string `json:"version"`
-	VersionCode int    `json:"versionCode"`
-	VersionDesc string `json:"versionDesc"`
+	Id          uint                `json:"id" binding:"required"`
+	Version     string              `json:"version"`
+	VersionCode int                 `json:"versionCode"`
+	VersionDesc datatype.VersionDesc `json:"versionDesc"`
 }
 
 // MicroAppVersionSubmitReviewReq 提交审核请求

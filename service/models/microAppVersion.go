@@ -41,7 +41,7 @@ type MicroAppVersion struct {
 	PackageUrl          string                        `gorm:"type:varchar(500);not null" json:"packageUrl"`      // 应用包下载地址
 	PackageSrc          string                        `gorm:"type:varchar(500);not null" json:"packageSrc"`      // 应用包源
 	PackageHash         string                        `gorm:"type:varchar(100);not null" json:"packageHash"`     // 版本校验值（MD5/SHA）
-	VersionDesc         string                        `gorm:"type:varchar(1000)" json:"versionDesc"`             // 版本说明
+	VersionDesc         datatype.VersionDesc          `gorm:"type:text" json:"versionDesc"`             // 版本说明（多语言格式）
 	Config              *MicroAppVersionConfig        `gorm:"type:json;serializer:json" json:"config"`           // 完整配置信息（JSON）
 	Status              int                           `gorm:"type:tinyint(2);not null;default:-1" json:"status"` // 审核状态：-1-草稿 0-待审核 1-通过 2-拒绝
 	SecurityAuditReport *datatype.SecurityAuditReport `gorm:"type:text" json:"codeSecurityAudit"`                // 代码安全审核报告

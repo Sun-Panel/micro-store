@@ -7,6 +7,7 @@ import (
 	"sun-panel/api/api_v1/common/base"
 	"sun-panel/biz"
 	"sun-panel/global"
+	"sun-panel/lib/cmn"
 	"sun-panel/models"
 
 	"github.com/gin-gonic/gin"
@@ -169,7 +170,10 @@ func (a *MicroAppDeveloperApi) Create(c *gin.Context) {
 		MicroAppBaseInfo: models.MicroAppBaseInfo{
 			AdminName: param.AdminName,
 		},
+		DeveloperId: developer.ID,
 	}
+
+	global.Logger.Debugln("CreateAppAndReview", "opts", cmn.AnyToJsonStr(opts))
 
 	result, err := biz.MicroAppDeveloper.CreateAppAndReview(global.Db, opts)
 	if err != nil {
