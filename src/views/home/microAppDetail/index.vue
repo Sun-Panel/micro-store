@@ -1,11 +1,17 @@
 <script lang="ts" setup>
+import moment from 'moment'
 import { NButton, NCard, NImage, NImageGroup, NTag, useMessage } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { getDownloadUrl, getInfo, getVersionList } from '@/api/microApp'
 import { microAppChargeTypeMap, microAppThirdChargeTypeMap, MicroAppVersionStatus } from '@/enums/panel'
-import { timeFormat } from '@/utils/cmn'
+import 'moment/dist/locale/zh-cn'
+
+// 只显示日期，不显示时间
+function dateFormat(timeString?: string) {
+  return moment(timeString).format('YYYY-MM-DD')
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -249,38 +255,89 @@ onMounted(async () => {
               </NTag>
             </div>
 
-            <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-500 mb-3">
-              <span>AppID: {{ microAppInfo.microAppId }}</span>
-              <span>作者: {{ microAppInfo.developer?.name || '未知' }}</span>
-              <span>分类: {{ categoryName }}</span>
-              <span>收费: {{ microAppChargeTypeMap[microAppInfo.chargeType] || '免费' }}</span>
-              <span>第三方收费: {{ microAppThirdChargeTypeMap[microAppInfo.thirdCharge || 0] || '不含' }}</span>
-              <span>包含iframe: {{ microAppInfo.haveIframe ? '是' : '否' }}</span>
-              <!-- <span>创建时间: {{ timeFormat(microAppInfo) }}</span> -->
+            <!-- 基础信息 -->
+            <div class="flex flex-wrap gap-x-6 gap-y-2 mb-3">
+              <div class="text-sm">
+                <span class="text-gray-400">AppID:</span>
+                <span class="text-gray-600 ml-1">{{ microAppInfo.microAppId }}</span>
+              </div>
+              <div class="text-sm">
+                <span class="text-gray-400">作者:</span>
+                <span class="text-gray-600 ml-1">{{ microAppInfo.developer?.name || '未知' }}</span>
+              </div>
+              <div class="text-sm">
+                <span class="text-gray-400">分类:</span>
+                <span class="text-gray-600 ml-1">{{ categoryName }}</span>
+              </div>
+              <div v-if="latestApprovedVersion" class="text-sm">
+                <span class="text-gray-400">版本:</span>
+                <span class="font-medium ml-1">{{ latestApprovedVersion.version }}</span>
+                <span class="text-gray-400 text-xs ml-1">({{ dateFormat(String(latestApprovedVersion.createTime)) }})</span>
+              </div>
+              <div v-else class="text-sm">
+                <span class="text-gray-400">版本:</span>
+                <span class="text-gray-400 ml-1">未发布</span>
+              </div>
+              <div class="text-sm">
+                <span class="text-gray-400">收费:</span>
+                <span class="ml-1">{{ microAppChargeTypeMap[microAppInfo.chargeType] || '免费' }}</span>
+              </div>
+              <div class="text-sm">
+                <span class="text-gray-400">第三方收费:</span>
+                <span class="ml-1">{{ microAppThirdChargeTypeMap[microAppInfo.thirdCharge || 0] || '不含' }}</span>
+              </div>
+              <div class="text-sm">
+                <span class="text-gray-400">使用Iframe:</span>
+                <span class="ml-1">{{ microAppInfo.haveIframe ? '是' : '否' }}</span>
+              </div>
             </div>
 
-            <!-- <p class="text-gray-600 mb-1">
-              权限: {{ microAppInfo.permissionLevel }}
-            </p> -->
+            <!-- 介绍 -->
+            <div class="mt-4 pt-4 border-t border-gray-100">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="w-1 h-4 bg-blue-500 rounded-full" />
+                <span class="text-sm font-medium text-gray-700">应用介绍</span>
+              </div>
+              <div v-if="displayAppDesc" class="text-sm text-gray-600 leading-relaxed pl-3">
+                {{ displayAppDesc }}
+              </div>
+              <div v-else class="text-sm text-gray-400 pl-3">
+                暂无介绍
+              </div>
+            </div>
 
-            <!-- <p class="text-gray-600 mb-1">
-              支持的语言: {{ baseInfoLangList.join(', ') }}
-            </p> -->
-
-            <p class="text-gray-600">
-              介绍:
-            </p>
-            <p v-if="displayAppDesc" class="text-gray-600 leading-relaxed">
-              {{ displayAppDesc }}
-            </p>
-            <p v-else class="text-gray-400">
-              -
-            </p>
+            <!-- 新版本特性 -->
+            <div v-if="latestApprovedVersion" class="mt-4 pt-4 border-t border-gray-100">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="w-1 h-4 bg-green-500 rounded-full" />
+                <span class="text-sm font-medium text-gray-700">新版本特性 (v{{ latestApprovedVersion.version }})</span>
+              </div>
+              <div class="text-sm text-gray-600 leading-relaxed pl-3">
+                {{ getVersionDescContent(latestApprovedVersion.versionDesc) || '暂无版本说明' }}
+              </div>
+            </div>
           </div>
         </div>
       </NCard>
 
-      <!-- 截图展示 -->
+      <!-- 下载及安装按钮 -->
+      <div v-if="latestApprovedVersion" class="flex items-center justify-center gap-3 mb-5">
+        <NButton type="primary" @click="handleDownloadByVersionId">
+          下载
+        </NButton>
+        <NButton @click="handleInstall">
+          安装
+        </NButton>
+      </div>
+
+      <!-- 无版本提示 -->
+      <NCard v-else class="mb-6" :bordered="false" shadow="hover">
+        <div class="text-center py-8 text-gray-400">
+          暂无审核通过的版本
+        </div>
+      </NCard>
+
+      <!-- 图集预览 -->
       <NCard v-if="microAppInfo.screenshots" title="图集预览" :bordered="false" shadow="hover">
         <NImageGroup>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -295,17 +352,17 @@ onMounted(async () => {
       </NCard>
 
       <!-- 版本信息卡片 -->
-      <NCard v-if="latestApprovedVersion" class="mb-6" title="最新版本" :bordered="false" shadow="hover">
+      <!-- <NCard v-if="latestApprovedVersion" class="mb-6" title="最新版本" :bordered="false" shadow="hover">
         <div class="flex flex-col md:flex-row md:items-center gap-4">
           <div class="flex items-center gap-3">
-            <!-- <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
               <span class="text-blue-600 font-bold">V</span>
-            </div> -->
+            </div>
             <div>
               <div class="text-lg font-semibold text-gray-800">
                 {{ latestApprovedVersion.version }}
               </div>
-              <div v-if="getVersionDescContent(latestApprovedVersion.versionDesc)" class="text-sm text-gray-500 mt-1">
+              <div class="text-sm text-gray-500 mt-1">
                 {{ getVersionDescContent(latestApprovedVersion.versionDesc) }}
               </div>
             </div>
@@ -322,14 +379,14 @@ onMounted(async () => {
             </NButton>
           </div>
         </div>
-      </NCard>
+      </NCard> -->
 
       <!-- 无版本提示 -->
-      <NCard v-else class="mb-6" :bordered="false" shadow="hover">
+      <!-- <NCard v-else class="mb-6" :bordered="false" shadow="hover">
         <div class="text-center py-8 text-gray-400">
           暂无审核通过的版本
         </div>
-      </NCard>
+      </NCard> -->
 
       <!-- 版本历史 -->
       <!-- <NCard v-if="versionList.length > 0" title="版本历史" :bordered="false" shadow="hover">
