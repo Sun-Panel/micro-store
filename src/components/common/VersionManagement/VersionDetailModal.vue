@@ -9,6 +9,7 @@ interface Props {
   visible: boolean
   versionInfo: any
   microAppInfo: MicroApp.Info | undefined
+  showSetMainAppBtn?: boolean
 }
 
 const props = defineProps<Props>()
@@ -222,7 +223,7 @@ async function handleSetAsMainInfo() {
 </script>
 
 <template>
-  <NModal v-model:show="show" preset="card" style="width: 600px" title="版本详情">
+  <NModal v-model:show="show" preset="card" style="width: 600px" title="版本详情及包信息">
     <div v-if="detailInfo" class="space-y-4">
       <!-- 语言切换 -->
       <div v-if="langList.length > 0" class="flex justify-end">
@@ -313,7 +314,7 @@ async function handleSetAsMainInfo() {
         <NButton @click="show = false">
           关闭
         </NButton>
-        <NButton type="primary" :loading="loading" @click="handleSetAsMainInfo">
+        <NButton v-if="showSetMainAppBtn" type="primary" :loading="loading" @click="handleSetAsMainInfo">
           设为微应用主信息
         </NButton>
       </NSpace>

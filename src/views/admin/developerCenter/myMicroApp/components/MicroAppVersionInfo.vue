@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import type { DataTableColumns } from 'naive-ui'
-import { NButton, NDataTable, NPopconfirm, NSpace, NTag } from 'naive-ui'
+import { NButton, NDataTable, NPopconfirm, NPopover, NSpace, NTag } from 'naive-ui'
 import { computed, h } from 'vue'
+import { SvgIcon } from '@/components/common'
 import { MicroAppVersionStatus, microAppVersionStatusMap } from '@/enums/panel'
 import { timeFormat } from '@/utils/cmn'
 
@@ -51,9 +52,31 @@ const columns = computed<DataTableColumns<MicroApp.VersionInfo>>(() => [
     key: 'status',
     width: 100,
     render(row) {
-      return h(NTag, { type: getVersionStatusType(row.status), size: 'small' }, {
+      const tag = h(NTag, { type: getVersionStatusType(row.status), size: 'small' }, {
         default: () => getVersionStatusText(row.status),
+        ...(row.status === MicroAppVersionStatus.OFFLINE && row.offlineReason
+          ? {
+              icon: () => h(SvgIcon, { icon: 'lucide:info', style: 'color: #f0a020;' }),
+            }
+          : {}),
       })
+
+      // 已下架状态且有下架原因时，用 NPopover 包裹整个 NTag
+      if (row.status === MicroAppVersionStatus.OFFLINE && row.offlineReason) {
+        return h(
+          NPopover,
+          { trigger: 'hover', placement: 'top' },
+          {
+            trigger: () => tag,
+            default: () => [
+              h('div', { style: 'font-weight: 500; margin-bottom: 4px;' }, '下架原因：'),
+              h('div', { style: 'max-width: 280px; word-break: break-all;' }, row.offlineReason),
+            ],
+          },
+        )
+      }
+
+      return tag
     },
   },
   {

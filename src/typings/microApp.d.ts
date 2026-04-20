@@ -2,7 +2,6 @@ declare namespace MicroApp {
   // 微应用基础信息（公共字段）
   interface BaseInfo {
     microAppId: string
-    adminName: string // 应用名称(开发者可见)
     appName: string // 应用名称（默认语言）
     appIcon: string // 应用图标URL
     appDesc: string // 应用简介（默认语言）
@@ -12,7 +11,7 @@ declare namespace MicroApp {
     points: number // 价格（积分数值）
     screenshots?: string // 图集（多个图片URL用逗号分隔）
     thirdCharge?: number // 第三方收费方式：0-不含 1-付费才可用 2-基础功能免费
-    adminName?: string
+    adminName?: string // 应用名称(开发者可见)
     haveIframe?: boolean // 是否包含iframe
   }
 

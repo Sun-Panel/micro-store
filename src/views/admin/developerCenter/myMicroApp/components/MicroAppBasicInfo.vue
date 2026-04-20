@@ -7,7 +7,7 @@ import { timeFormat } from '@/utils/cmn'
 import { getAppDescByLang, getAppNameByLang, getCurrentLang, getLangListFromAppInfo, getLangMapFromAppInfo } from '@/utils/functions'
 
 const props = defineProps<{
-  microAppInfo?: MicroApp.Info
+  microAppInfo?: MicroApp.BaseInfo
   createTime?: string
   shelvesStatus?: number
   categoryOptions?: Category.Info[]

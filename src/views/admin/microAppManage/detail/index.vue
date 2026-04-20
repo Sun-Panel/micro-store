@@ -1,15 +1,14 @@
 <script lang="ts" setup>
-import { NButton, NCard, NInput, NModal, NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
+import { NButton, NCard, NInput, NModal, NSpace, NTag, useMessage } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { deletes, getInfo as getMicroAppInfo, offline, updateStatus } from '@/api/admin/microApp'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { offlineVersion as adminOfflineVersion, cancelReview, getVersionList } from '@/api/admin/microAppVersion'
 import VersionDetailModal from '@/components/common/VersionManagement/VersionDetailModal.vue'
-import { microAppStatusMap, MicroAppVersionStatus } from '@/enums/panel'
 import { apiRespErrMsg } from '@/utils/cmn'
-import MicroAppBasicInfo from '../../myMicroApp/components/MicroAppBasicInfo.vue'
-import MicroAppVersionInfo from '../../myMicroApp/components/MicroAppVersionInfo.vue'
+import MicroAppBasicInfo from '../../developerCenter/myMicroApp/components/MicroAppBasicInfo.vue'
+import MicroAppVersionInfo from '../../developerCenter/myMicroApp/components/MicroAppVersionInfo.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -19,16 +18,19 @@ const message = useMessage()
 const microAppId = computed(() => Number(route.params.id))
 
 // 数据
-const microAppInfo = ref<MicroApp.MicroAppInfo>()
+const microAppInfo = ref<MicroApp.Info>()
 const versionList = ref<MicroApp.VersionInfo[]>([])
 const loading = ref(false)
 const versionLoading = ref(false)
 
-const categoryOptions = ref<{ label: string, value: number }[]>([])
+const categoryOptions = ref<Category.Info[]>([])
 
 // 版本详情弹窗
 const versionDetailShow = ref(false)
 const currentVersionDetail = ref<MicroApp.VersionInfo | null>(null)
+
+// 删除确认弹窗
+const deleteDialogShow = ref(false)
 
 // 下架弹窗
 const offlineDialogShow = ref(false)
@@ -42,11 +44,8 @@ const versionOfflineReason = ref('')
 // 获取分类选项
 async function fetchCategoryOptions() {
   try {
-    const res = await getCategoryList<any>()
-    categoryOptions.value = res.data?.map((item: any) => ({
-      label: item.name,
-      value: item.id,
-    })) || []
+    const res = await getCategoryList<Category.Info[]>()
+    categoryOptions.value = res.data || []
   }
   catch (error) {
     apiRespErrMsg(error)
@@ -149,12 +148,12 @@ async function handleVersionOffline() {
 
 // 确认下架
 async function handleOffline() {
-  if (!microAppInfo.value)
+  if (!microAppInfo.value || !microAppInfo.value.id)
     return
   try {
     const res = await offline<any>({
       id: microAppInfo.value.id,
-      type: 2, // 平台下架
+      offlineType: 2, // 平台下架
       reason: offlineReason.value || undefined,
     })
     if (res.code === 0) {
@@ -173,7 +172,7 @@ async function handleOffline() {
 
 // 上架
 async function handleChangeStatus(status: number) {
-  if (!microAppInfo.value)
+  if (!microAppInfo.value || !microAppInfo.value.id)
     return
   try {
     const res = await updateStatus({ id: microAppInfo.value.id, status })
@@ -192,8 +191,16 @@ async function handleChangeStatus(status: number) {
 
 // 删除微应用
 async function handleDelete() {
-  if (!microAppInfo.value)
+  if (!microAppInfo.value || !microAppInfo.value.id)
     return
+  deleteDialogShow.value = true
+}
+
+// 执行删除
+async function handleConfirmDelete() {
+  if (!microAppInfo.value || !microAppInfo.value.id)
+    return
+
   try {
     const res = await deletes([microAppInfo.value.id])
     if (res.code === 0) {
@@ -206,6 +213,9 @@ async function handleDelete() {
   }
   catch (error) {
     apiRespErrMsg(error)
+  }
+  finally {
+    deleteDialogShow.value = false
   }
 }
 
@@ -246,8 +256,11 @@ onMounted(async () => {
               已通过
             </NTag>
             <NTag v-if="microAppInfo.reviewStatus === 3" type="error" size="small">
-              已拒绝
+              已下架
             </NTag>
+            <span v-if="microAppInfo.reviewStatus === 3 && microAppInfo.offlineReason" class="text-gray-500 text-sm">
+              原因：{{ microAppInfo.offlineReason }}
+            </span>
           </div>
         </div>
         <NSpace>
@@ -261,14 +274,14 @@ onMounted(async () => {
             </NButton>
           </template>
           <!-- 审核中状态 -->
-          <template v-else-if="microAppInfo?.reviewStatus === 1">
+          <!-- <template v-else-if="microAppInfo?.reviewStatus === 1">
             <NButton type="warning" @click="handleReject">
               拒绝
             </NButton>
             <NButton type="success" @click="handleApprove">
               通过
             </NButton>
-          </template>
+          </template> -->
           <!-- 已上架状态 -->
           <NButton v-else-if="microAppInfo?.status === 1" @click="openOfflineDialog">
             下架
@@ -276,6 +289,9 @@ onMounted(async () => {
           <!-- 已下架状态 -->
           <NButton v-else-if="microAppInfo?.status === 0" type="success" @click="handleChangeStatus(1)">
             上架
+          </NButton>
+          <NButton type="error" @click="handleDelete">
+            删除
           </NButton>
         </NSpace>
       </div>
@@ -354,6 +370,23 @@ onMounted(async () => {
           placeholder="请输入下架原因"
           :rows="3"
         />
+      </div>
+    </NModal>
+
+    <!-- 删除确认弹窗 -->
+    <NModal
+      v-model:show="deleteDialogShow"
+      preset="dialog"
+      title="删除微应用"
+      type="warning"
+      positive-text="确认删除"
+      negative-text="取消"
+      @positive-click="handleConfirmDelete"
+    >
+      <div class="py-4">
+        <div class="text-gray-600">
+          确定要删除该微应用吗？删除后将无法恢复。
+        </div>
       </div>
     </NModal>
   </div>

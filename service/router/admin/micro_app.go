@@ -14,13 +14,18 @@ func InitMicroAppRouter(router *gin.RouterGroup) {
 	loginRouter := router.Group("", middleware.LoginInterceptor)
 
 	// ==================== 管理员专用接口（微应用） ====================
-	loginRouter.POST("microApp/getList", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.MicroAppAdminApi.GetList)
-	// loginRouter.POST("microApp/getInfo", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.MicroAppAdminApi.GetInfo)
-	loginRouter.POST("microApp/updateStatus", middleware.MultiRolesInterceptor(models.ROLE_ADMIN), apiGroup.MicroAppAdminApi.UpdateStatus)
+	adminRouter := loginRouter.Group("", middleware.MultiRolesInterceptor(models.ROLE_ADMIN))
+	{
 
-	// 管理员和开发者共享接口
-	loginRouter.POST("microApp/deletes", middleware.MultiRolesInterceptor(models.ROLE_ADMIN|models.ROLE_DEVELOPER), apiGroup.MicroAppAdminApi.Deletes)
-	loginRouter.POST("microApp/offline", middleware.MultiRolesInterceptor(models.ROLE_ADMIN|models.ROLE_DEVELOPER), apiGroup.MicroAppAdminApi.Offline)
+		adminRouter.POST("microApp/getList", apiGroup.MicroAppAdminApi.GetList)
+		adminRouter.POST("microApp/getInfo", apiGroup.MicroAppAdminApi.GetInfo)
+		adminRouter.POST("microApp/updateStatus", apiGroup.MicroAppAdminApi.UpdateStatus)
+
+		// 管理员和开发者共享接口
+		adminRouter.POST("microApp/deletes", apiGroup.MicroAppAdminApi.Deletes)
+		adminRouter.POST("microApp/offline", apiGroup.MicroAppAdminApi.Offline)
+
+	}
 
 	// ==================== 审核员专用接口（微应用） ====================
 	auditorRouter := loginRouter.Group("", middleware.MultiRolesInterceptor(models.ROLE_AUDITOR))

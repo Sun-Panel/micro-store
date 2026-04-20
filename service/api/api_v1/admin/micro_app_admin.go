@@ -2,6 +2,8 @@ package admin
 
 import (
 	"sun-panel/api/api_v1/common/apiReturn"
+	"sun-panel/api/api_v1/common/base"
+	"sun-panel/biz"
 	"sun-panel/global"
 	"sun-panel/models"
 
@@ -40,6 +42,55 @@ func (a *MicroAppAdminApi) GetList(c *gin.Context) {
 	}
 
 	apiReturn.SuccessListData(c, list, total)
+}
+
+// UpdateStatus 更新微应用状态
+func (a *MicroAppAdminApi) GetInfo(c *gin.Context) {
+	req := models.BaseModel{}
+	if err := c.ShouldBindBodyWith(&req, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	lang := base.GetCurrentUserLang(c)
+
+	// 获取基础信息（有缓存优化）
+	info, err := biz.MicroApp.GetByIdWithLang(global.Db.Debug(), req.ID, lang, "Developer", "LangList")
+	if err != nil {
+		handleBizError(c, err)
+		return
+	}
+
+	// 获取扩展信息（审核状态、草稿）
+	reviewStatus, draft, err := biz.MicroAppDeveloper.GetDeveloperAppExtendInfo(global.Db, info.MicroAppId)
+	if err != nil {
+		handleBizError(c, err)
+		return
+	}
+
+	// 组合数据返回
+	result := map[string]interface{}{
+		"id":            info.ID,
+		"microAppId":    info.MicroAppId,
+		"appName":       info.AppName,
+		"appIcon":       info.AppIcon,
+		"appDesc":       info.AppDesc,
+		"remark":        info.Remark,
+		"categoryId":    info.CategoryId,
+		"chargeType":    info.ChargeType,
+		"points":        info.Points,
+		"authorId":      info.DeveloperId,
+		"status":        info.Status,
+		"screenshots":   info.Screenshots,
+		"langList":      info.LangList,
+		"createTime":    info.CreatedAt,
+		"updateTime":    info.UpdatedAt,
+		"reviewStatus":  reviewStatus,       // 审核状态：0-已通过 1-审核中 2-已拒绝 3-草稿
+		"draft":         draft,              // 草稿版本（如果存在）
+		"offlineReason": info.OfflineReason, // 下线原因
+	}
+
+	apiReturn.SuccessData(c, result)
 }
 
 // // GetInfo 获取微应用详情（管理员专用）
