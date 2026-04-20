@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { DataTableColumns } from 'naive-ui'
-import { NButton, NDataTable, NModal, NSelect, NSpace, NTag, useMessage } from 'naive-ui'
-import { computed, h, ref, watch } from 'vue'
+import { NButton, NDataTable, NDivider, NModal, NSelect, NSpace, NTag, useMessage } from 'naive-ui'
+import { computed, ref, watch } from 'vue'
 import { updateLang, update as updateMicroApp } from '@/api/admin/microAppDeveloper'
 import { apiRespErrMsg } from '@/utils/cmn/apiMessage'
 
@@ -131,7 +131,7 @@ function initDetailInfo() {
   }
 
   detailInfo.value = {
-    iconURL: config?.icon || props.microAppInfo.appIcon || '',
+    iconURL: props.versionInfo.iconUrl || '',
     appName: '',
     appDesc: '',
     microAppId: config?.microAppId || props.microAppInfo.microAppId || '',
@@ -224,17 +224,27 @@ async function handleSetAsMainInfo() {
 
 <template>
   <NModal v-model:show="show" preset="card" style="width: 600px" title="版本详情及包信息">
-    <div v-if="detailInfo" class="space-y-4">
-      <!-- 语言切换 -->
-      <div v-if="langList.length > 0" class="flex justify-end">
-        <NSelect
-          v-model:value="currentLang"
-          :options="langList.map(lang => ({ label: lang, value: lang }))"
-          style="width: 120px"
-          size="small"
-        />
-      </div>
+    <template #header>
+      <div class="flex items-center justify-between">
+        <span>版本详情及包信息</span>
 
+        <!-- 语言切换 -->
+        <div v-if="langList.length > 0" class="flex justify-end">
+          <NSelect
+            v-model:value="currentLang"
+            :options="langList.map(lang => ({ label: lang, value: lang }))"
+            style="width: 120px"
+            size="small"
+          />
+        </div>
+      </div>
+    </template>
+
+    <NDivider title-placement="left" style="margin:2px 0">
+      包信息
+    </NDivider>
+
+    <div v-if="detailInfo" class="space-y-4 mt-2">
       <div class="flex items-start gap-4">
         <img v-if="detailInfo.iconURL" :src="detailInfo.iconURL" class="w-20 h-20 object-contain border rounded">
         <div v-else class="w-20 h-20 bg-gray-100 border rounded flex items-center justify-center text-gray-400">
@@ -276,13 +286,6 @@ async function handleSetAsMainInfo() {
         />
       </div>
 
-      <div v-if="getVersionDescContent(detailInfo.versionDesc)" class="text-sm">
-        <div class="text-gray-500">
-          版本说明：
-        </div>
-        <div>{{ getVersionDescContent(detailInfo.versionDesc) }}</div>
-      </div>
-
       <div v-if="detailInfo.permissions?.length" class="text-sm">
         <div class="text-gray-500">
           权限：
@@ -307,6 +310,17 @@ async function handleSetAsMainInfo() {
     </div>
     <div v-else class="text-center py-8 text-gray-500">
       暂无详情信息
+    </div>
+
+    <NDivider title-placement="left" style="margin:2px 0;margin-top:20px">
+      版本新特性说明
+    </NDivider>
+
+    <div v-if="detailInfo && getVersionDescContent(detailInfo.versionDesc)" class="text-sm">
+      <!-- <div class="text-gray-500">
+        版本说明：
+      </div> -->
+      <div>{{ getVersionDescContent(detailInfo.versionDesc) }}</div>
     </div>
 
     <template #footer>
