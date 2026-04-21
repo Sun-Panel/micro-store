@@ -251,10 +251,10 @@ func (s *MicroAppDeveloperService) SubmitAppReview(db *gorm.DB, reviewId, develo
 	// 	return err
 	// }
 
-	// 检查必填项
-	if review.AppName == "" {
-		return NewBizError(ErrCodeInvalidParam)
-	}
+	// // 检查必填项
+	// if review.AppName == "" {
+	// 	return NewBizError(ErrCodeInvalidParam)
+	// }
 	if review.AppIcon == "" {
 		return NewBizError(ErrCodeInvalidParam)
 	}
@@ -314,9 +314,9 @@ func (s *MicroAppDeveloperService) GetOrCreateDraftApp(db *gorm.DB, reviewId, de
 	// 创建新的草稿记录
 	draft = models.MicroAppReview{
 		MicroAppBaseInfo: models.MicroAppBaseInfo{
-			AppName:     app.AppName,
-			AppIcon:     app.AppIcon,
-			AppDesc:     app.AppDesc,
+			// AppName:     app.AppName,
+			AppIcon: app.AppIcon,
+			// AppDesc:     app.AppDesc,
 			CategoryId:  app.CategoryId,
 			ChargeType:  app.ChargeType,
 			Points:      app.Points,
@@ -364,9 +364,9 @@ func (s *MicroAppDeveloperService) UpdateDraftApp(db *gorm.DB, opts DeveloperApp
 	err = db.Transaction(func(tx *gorm.DB) error {
 		// 更新应用基本信息到审核表
 		if err := tx.Model(&models.MicroAppReview{}).Where("id = ?", draft.ID).Updates(map[string]interface{}{
-			"app_name":    opts.MicroAppBaseInfo.AppName,
-			"app_icon":    opts.MicroAppBaseInfo.AppIcon,
-			"app_desc":    opts.MicroAppBaseInfo.AppDesc,
+			// "app_name":    opts.MicroAppBaseInfo.AppName,
+			"app_icon": opts.MicroAppBaseInfo.AppIcon,
+			// "app_desc":    opts.MicroAppBaseInfo.AppDesc,
 			"remark":      opts.MicroAppBaseInfo.Remark,
 			"category_id": opts.MicroAppBaseInfo.CategoryId,
 			"charge_type": opts.MicroAppBaseInfo.ChargeType,

@@ -123,17 +123,17 @@ func (a *MicroAppAuditorApi) ReviewApp(c *gin.Context) {
 		if param.Status == 1 {
 			// 更新生效版本
 			if err := tx.Model(&models.MicroApp{}).Where("id = ?", review.AppRecordId).Updates(map[string]interface{}{
-				"app_name":    review.AppName,
-				"app_icon":    review.AppIcon,
-				"app_desc":    review.AppDesc,
-				"category_id": review.CategoryId,
-				"charge_type": review.ChargeType,
-				"points":      review.Points,
-				"screenshots": review.Screenshots,
-				"remark":      review.Remark,
-				"status":      1, // 上架
+				// "app_name":    review.AppName,
+				"app_icon": review.AppIcon,
+				// "app_desc":    review.AppDesc,
+				"category_id":  review.CategoryId,
+				"charge_type":  review.ChargeType,
+				"points":       review.Points,
+				"screenshots":  review.Screenshots,
+				"remark":       review.Remark,
+				"status":       1, // 上架
 				"third_charge": review.ThirdCharge,
-				"have_iframe": review.HaveIframe,
+				"have_iframe":  review.HaveIframe,
 			}).Error; err != nil {
 				return err
 			}

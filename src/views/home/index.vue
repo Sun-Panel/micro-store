@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { NAvatar, NCard } from 'naive-ui'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { getList as getListApi } from '@/api/microApp'
 import { router } from '@/router'
 
 interface MicroAppListItem extends MicroApp.Info {
-  developerName: string
+  // developerName: string
+  developer: MicroApp.DeveloperInfo
 }
 
 const list = ref<MicroAppListItem[]>([])
@@ -13,6 +14,59 @@ const req = ref<MicroApp.GetListRequest>({
   page: 1,
   limit: 10,
 })
+
+// ==================== 多语言处理 ====================
+// 浏览器语言检测
+function getBrowserLang(): string {
+  const lang = navigator.language || (navigator as any).userLanguage || 'zh-CN'
+  if (lang.startsWith('zh'))
+    return 'zh-CN'
+  if (lang.startsWith('en'))
+    return 'en-US'
+  if (lang.startsWith('ja'))
+    return 'ja-JP'
+  if (lang.startsWith('ko'))
+    return 'ko-KR'
+  return 'zh-CN'
+}
+
+// 当前语言
+const currentLang = computed(() => getBrowserLang())
+
+// 获取应用的多语言列表
+function getLangList(item: MicroAppListItem): string[] {
+  const langList = item.langList || []
+  if (langList.length > 0) {
+    return langList.map(l => l.lang)
+  }
+  return ['zh-CN']
+}
+
+// 获取指定语言下的应用名称
+function getAppName(item: MicroAppListItem): string {
+  const langMap: Record<string, MicroApp.LangInfo> = {}
+  const langList = item.langList || []
+  langList.forEach((l) => {
+    langMap[l.lang] = l
+  })
+  return langMap[currentLang.value]?.appName
+    || langMap['zh-CN']?.appName
+    || item.appName
+    || ''
+}
+
+// 获取指定语言下的应用描述
+function getAppDesc(item: MicroAppListItem): string {
+  const langMap: Record<string, MicroApp.LangInfo> = {}
+  const langList = item.langList || []
+  langList.forEach((l) => {
+    langMap[l.lang] = l
+  })
+  return langMap[currentLang.value]?.appDesc
+    || langMap['zh-CN']?.appDesc
+    || item.appDesc
+    || ''
+}
 
 // 模拟10条数据（当API调用失败时使用）
 // const mockData: MicroApp.Info[] = [
@@ -223,19 +277,22 @@ onMounted(() => {
         <div class="flex items-center gap-2">
           <NAvatar
             :size="50"
-            :src="item.appIcon || 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg'"
+            :style="{
+              backgroundColor: 'transparent',
+            }"
+            :src="item.appIcon || '-'"
           />
           <div class="flex flex-col">
             <div class="text-lg font-medium">
-              {{ item.appName || '微应用名字' }}
+              {{ getAppName(item) || 'Unknown' }}
             </div>
             <div class="text-sm text-gray-500">
-              作者：{{ item.developerName || '56555' }}
+              作者：{{ item.developer?.name || 'Unknown' }}
             </div>
           </div>
         </div>
         <div class="text-sm mt-2 text-gray-600">
-          {{ item.appDesc || '描述描述描述描述描述描述' }}
+          {{ getAppDesc(item) || '-' }}
         </div>
       </NCard>
     </div>

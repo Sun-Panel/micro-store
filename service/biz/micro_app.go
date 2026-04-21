@@ -149,7 +149,7 @@ type GetListOptions struct {
 //
 // 返回：
 //   - 微应用列表、总数、错误
-func (s *microApp) GetList(db *gorm.DB, opts GetListOptions) ([]models.MicroAppWithLang, int64, error) {
+func (s *microApp) GetList(db *gorm.DB, opts GetListOptions) ([]models.MicroAppListItem, int64, error) {
 	m := models.MicroApp{}
 	status := 1 // 默认只查询上架的应用
 
@@ -179,17 +179,26 @@ func (s *microApp) GetList(db *gorm.DB, opts GetListOptions) ([]models.MicroAppW
 		}
 	}
 
-	queryOpts := models.MicroAppQueryOptions{
-		Page:             opts.Page,
-		Limit:            opts.Limit,
-		Status:           &status,
-		CategoryId:       categoryId,
-		KeyWord:          opts.Keyword,
-		SortBy:           sortBy,
-		SortOrder:        sortOrder,
-		Lang:             opts.Lang,
-		IncludeDeveloper: true, // 包含开发者信息
+	// 构建回退语言列表：en 开头的语言作为兜底
+	fallbackLangs := []string{}
+	if opts.Lang != "" && !strings.HasPrefix(opts.Lang, "en") {
+		fallbackLangs = append(fallbackLangs, "en-US")
 	}
 
-	return m.GetListWithLang(db, queryOpts)
+	queryOpts := models.MicroAppListWithLangQueryOpts{
+		MicroAppListQueryOpts: models.MicroAppListQueryOpts{
+			Page:             opts.Page,
+			Limit:            opts.Limit,
+			Status:           &status,
+			CategoryId:       categoryId,
+			KeyWord:          opts.Keyword,
+			SortBy:           sortBy,
+			SortOrder:        sortOrder,
+			IncludeDeveloper: true, // 包含开发者信息
+		},
+		Lang:          opts.Lang,
+		FallbackLangs: fallbackLangs,
+	}
+
+	return m.GetAppListWithLang(db, queryOpts)
 }

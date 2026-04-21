@@ -81,11 +81,11 @@ func (a *MicroAppDeveloperApi) GetInfo(c *gin.Context) {
 
 	// 组合数据返回
 	result := map[string]interface{}{
-		"id":           info.ID,
-		"microAppId":   info.MicroAppId,
-		"appName":      info.AppName,
-		"appIcon":      info.AppIcon,
-		"appDesc":      info.AppDesc,
+		"id":         info.ID,
+		"microAppId": info.MicroAppId,
+		// "appName":      info.AppName,
+		"appIcon": info.AppIcon,
+		// "appDesc":      info.AppDesc,
 		"remark":       info.Remark,
 		"categoryId":   info.CategoryId,
 		"chargeType":   info.ChargeType,
@@ -202,9 +202,9 @@ func (a *MicroAppDeveloperApi) Update(c *gin.Context) {
 	opts := biz.DeveloperAppOptions{
 		ID: param.ID,
 		MicroAppBaseInfo: models.MicroAppBaseInfo{
-			AppName:     param.AppName,
-			AppIcon:     param.AppIcon,
-			AppDesc:     param.AppDesc,
+			// AppName:     param.AppName,
+			AppIcon: param.AppIcon,
+			// AppDesc:     param.AppDesc,
 			Remark:      param.Remark,
 			CategoryId:  param.CategoryId,
 			ChargeType:  param.ChargeType,

@@ -53,8 +53,8 @@ const pointsDefaultValue = ref(1)
 // 收费方式选项
 const chargeTypeOptions = [
   { label: microAppChargeTypeMap[0], value: 0 },
-  { label: microAppChargeTypeMap[1], value: 1 },
-  { label: microAppChargeTypeMap[2], value: 2 },
+  { label: `${microAppChargeTypeMap[1]}-(开发中)`, value: 1, disabled: true },
+  { label: `${microAppChargeTypeMap[2]}-(开发中)`, value: 2, disabled: true },
 ]
 
 // 第三方收费方式选项

@@ -50,6 +50,14 @@ func (a *MicroAppApi) GetList(c *gin.Context) {
 		return
 	}
 
+	// 获取语言参数，header 优先级高于 cookie
+	lang := c.GetHeader("Lang")
+	if lang == "" {
+		lang, _ = c.Cookie("Lang")
+	}
+
+	global.Logger.Debugln("lang:", lang)
+
 	// 参数校验和默认值设置
 	if req.Page < 1 {
 		req.Page = 1
@@ -68,6 +76,7 @@ func (a *MicroAppApi) GetList(c *gin.Context) {
 		Order:      req.Order,
 		CategoryId: req.CategoryId,
 		Keyword:    req.Keyword,
+		Lang:       lang,
 	})
 	if err != nil {
 		apiReturn.ErrorDatabase(c, err.Error())

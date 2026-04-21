@@ -9,7 +9,7 @@ type MicroAppLang struct {
 	Lang       string         `gorm:"type:varchar(10);not null" json:"lang"`       // 语言代码：zh-CN, en-US, ja-JP 等
 	AppName    string         `gorm:"type:varchar(100);not null" json:"appName"`   // 应用名称
 	AppDesc    string         `gorm:"type:varchar(500)" json:"appDesc"`            // 应用简介
-	DeletedAt  gorm.DeletedAt `gorm:"index;uniqueIndex:idx_app_lang" json:"deletedAt,omitempty"`
+	DeletedAt  gorm.DeletedAt `gorm:"uniqueIndex:idx_app_lang" json:"deletedAt,omitempty"`
 }
 
 // 复合唯一索引：micro_app_id + lang + deleted_at

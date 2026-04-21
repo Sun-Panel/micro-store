@@ -70,11 +70,11 @@ func (a *MicroAppAdminApi) GetInfo(c *gin.Context) {
 
 	// 组合数据返回
 	result := map[string]interface{}{
-		"id":            info.ID,
-		"microAppId":    info.MicroAppId,
-		"appName":       info.AppName,
-		"appIcon":       info.AppIcon,
-		"appDesc":       info.AppDesc,
+		"id":         info.ID,
+		"microAppId": info.MicroAppId,
+		// "appName":       info.AppName,
+		"appIcon": info.AppIcon,
+		// "appDesc":       info.AppDesc,
 		"remark":        info.Remark,
 		"categoryId":    info.CategoryId,
 		"chargeType":    info.ChargeType,

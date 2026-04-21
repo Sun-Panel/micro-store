@@ -149,7 +149,7 @@ func (s *MicroAppVersionService) GetPendingListWithAppInfo(db *gorm.DB, page, li
 			"reviewNote":  v.ReviewNote,
 		}
 		if app, ok := appMap[v.AppRecordId]; ok {
-			appInfo["appName"] = app.AppName
+			// appInfo["appName"] = app.AppName
 			appInfo["appIcon"] = app.AppIcon
 		}
 		result[i] = appInfo
