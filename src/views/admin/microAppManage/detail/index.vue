@@ -1,11 +1,13 @@
 <script lang="ts" setup>
-import { NButton, NCard, NInput, NModal, NSpace, NTag, useMessage } from 'naive-ui'
+import { NButton, NCard, NInput, NModal, NPopover, NSpace, NTag, useMessage } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { deletes, getInfo as getMicroAppInfo, offline, updateStatus } from '@/api/admin/microApp'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { offlineVersion as adminOfflineVersion, cancelReview, getVersionList } from '@/api/admin/microAppVersion'
+import { SvgIcon } from '@/components/common'
 import VersionDetailModal from '@/components/common/VersionManagement/VersionDetailModal.vue'
+import { microAppStatusMap } from '@/enums/panel'
 import { apiRespErrMsg } from '@/utils/cmn'
 import { getAppDescByLang, getAppNameByLang, getCurrentLang, getLangMapFromAppInfo } from '@/utils/functions'
 import MicroAppBasicInfo from '../../developerCenter/myMicroApp/components/MicroAppBasicInfo.vue'
@@ -14,6 +16,31 @@ import MicroAppVersionInfo from '../../developerCenter/myMicroApp/components/Mic
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
+
+// 应用状态标签类型
+function getStatusTagType(status: number) {
+  switch (status) {
+    case -1: return 'info' // 草稿
+    case 0: return 'default' // 下架
+    case 1: return 'success' // 上架
+    case 2: return 'warning' // 审核中
+    default: return 'default'
+  }
+}
+
+// 审核状态标签类型
+function getReviewStatusTagType(reviewStatus: number) {
+  switch (reviewStatus) {
+    case 1: return 'success' // 已通过
+    case 0: return 'warning' // 审核中
+    case 2: return 'error' // 已拒绝
+    case -1: return 'info' // 草稿
+    default: return 'default'
+  }
+}
+
+// 审核未通过弹窗
+const refusedPopoverShow = ref(false)
 
 // 微应用ID
 const microAppId = computed(() => Number(route.params.id))
@@ -255,20 +282,47 @@ onMounted(async () => {
             返回列表
           </NButton>
           <span class="text-lg font-bold">{{ appName || '微应用详情' }}</span>
-          <!-- 审核状态 -->
-          <div v-if="microAppInfo?.reviewStatus && microAppInfo.reviewStatus !== 0" class="flex items-center gap-2">
-            <NTag v-if="microAppInfo.reviewStatus === 1" type="warning" size="small">
-              审核中
+          <!-- 应用状态 -->
+          <div class="flex items-center gap-2">
+            <NPopover v-if="microAppInfo?.status === 0 && microAppInfo.offlineReason" trigger="hover">
+              <template #trigger>
+                <NTag :type="getStatusTagType(microAppInfo.status)" size="small" style="cursor: pointer;">
+                  {{ microAppStatusMap[microAppInfo.status] }}
+                  <template v-if="microAppInfo.offlineReason !== ''" #icon>
+                    <SvgIcon icon="lucide:info" />
+                  </template>
+                </NTag>
+              </template>
+              {{ microAppInfo.offlineReason }}
+            </NPopover>
+            <NTag v-else-if="microAppInfo?.status !== undefined" :type="getStatusTagType(microAppInfo.status)" size="small">
+              {{ microAppStatusMap[microAppInfo.status] }}
             </NTag>
-            <NTag v-if="microAppInfo.reviewStatus === 2" type="success" size="small">
-              已通过
+            <!-- 审核状态 -->
+            <NTag
+              v-if="microAppInfo?.reviewStatus !== undefined && microAppInfo.reviewStatus !== 0 && microAppInfo.reviewStatus !== 1"
+              :type="getReviewStatusTagType(microAppInfo.reviewStatus === 3 ? 2 : microAppInfo.reviewStatus)"
+              size="small"
+            >
+              {{ microAppInfo.reviewStatus === 2 ? '已通过' : microAppInfo.reviewStatus === 3 ? '审核未通过' : '' }}
             </NTag>
-            <NTag v-if="microAppInfo.reviewStatus === 3" type="error" size="small">
-              已下架
-            </NTag>
-            <span v-if="microAppInfo.reviewStatus === 3 && microAppInfo.offlineReason" class="text-gray-500 text-sm">
-              原因：{{ microAppInfo.offlineReason }}
-            </span>
+            <NPopover
+              v-if="microAppInfo?.reviewStatus === 3"
+              v-model:show="refusedPopoverShow"
+              trigger="click"
+            >
+              <template #trigger>
+                <NButton size="tiny" type="error">
+                  查看详情
+                </NButton>
+              </template>
+              <div class="font-bold">
+                审核未通过原因
+              </div>
+              <div class="text-sm">
+                {{ microAppInfo?.offlineReason || '暂无原因' }}
+              </div>
+            </NPopover>
           </div>
         </div>
         <NSpace>

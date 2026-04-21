@@ -1,10 +1,11 @@
 <script lang="ts" setup>
-import { NButton, NCard, NInput, NModal, NPopconfirm, NPopover, NSpace, NTag, useMessage } from 'naive-ui'
+import { NButton, NCard, NModal, NPopconfirm, NPopover, NSpace, NTag, useMessage } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { cancelReview, deletes, getMicroInfoAndReviewInfoByMicroAppModelId, offline, submitReview } from '@/api/admin/microAppDeveloper'
 import { cancelReview as cancelVersionReview, deleteVersion, getVersionList, offlineVersion as offlineVersionApi, submitReview as submitVersionReview } from '@/api/admin/microAppVersion'
+import { SvgIcon } from '@/components/common'
 import ReviewHistoryModal from '@/components/common/ReviewHistoryModal/index.vue'
 import AddVersionModal from '@/components/common/VersionManagement/AddVersionModal.vue'
 import VersionDetailModal from '@/components/common/VersionManagement/VersionDetailModal.vue'
@@ -366,11 +367,25 @@ onMounted(async () => {
           <!-- 应用状态和审核状态 -->
           <div class="flex items-center gap-2">
             <!-- 应用状态 -->
-            <NTag v-if="reviewResponse?.microApp?.status !== undefined" :type="getStatusTagType(reviewResponse.microApp.status)" size="small">
+            <NPopover v-if="reviewResponse?.microApp?.status === 0 && reviewResponse.microApp.offlineReason" trigger="hover">
+              <template #trigger>
+                <NTag :type="getStatusTagType(reviewResponse.microApp.status)" size="small" style="cursor: pointer;">
+                  {{ microAppStatusMap[reviewResponse.microApp.status] }}
+                  <template v-if="reviewResponse.microApp.offlineReason !== ''" #icon>
+                    <SvgIcon icon="lucide:info" />
+                  </template>
+                </NTag>
+              </template>
+              {{ reviewResponse.microApp.offlineReason }}
+            </NPopover>
+            <NTag v-else-if="reviewResponse?.microApp?.status !== undefined" :type="getStatusTagType(reviewResponse.microApp.status)" size="small">
               {{ microAppStatusMap[reviewResponse.microApp.status] }}
             </NTag>
             <!-- 审核状态 -->
-            <NTag v-if="reviewResponse?.microAppReview?.status !== undefined && reviewResponse?.microAppReview.status !== 1" :type="getReviewStatusTagType(reviewResponse.microAppReview.status)" size="small">
+            <NTag
+              v-if="reviewResponse?.microAppReview?.status !== undefined && reviewResponse?.microAppReview.status !== 1"
+              :type="getReviewStatusTagType(reviewResponse.microAppReview.status)" size="small"
+            >
               {{ getReviewStatusText(reviewResponse.microAppReview.status) }}
             </NTag>
             <NPopover
