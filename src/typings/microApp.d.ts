@@ -324,6 +324,13 @@ declare namespace MicroApp {
     reviewNote?: string
   }
 
+  // 管理员审核版本请求
+  interface ReviewVersionRequest {
+    versionId: number
+    status: number
+    reviewNote?: string
+  }
+
   // 获取审核历史请求
   interface GetReviewHistoryRequest {
     appRecordId: number

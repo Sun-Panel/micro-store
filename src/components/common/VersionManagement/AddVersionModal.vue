@@ -50,10 +50,10 @@ const availableLangOptions = computed(() => {
   return langOptions.filter(l => !usedLangs.includes(l.value))
 })
 
-// 选中语言
-function selectLanguage(lang: string) {
-  currentLang.value = lang
-}
+// // 选中语言
+// function selectLanguage(lang: string) {
+//   currentLang.value = lang
+// }
 
 // 添加语言
 function addLanguage() {

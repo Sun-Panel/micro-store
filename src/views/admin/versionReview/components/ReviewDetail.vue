@@ -209,7 +209,7 @@ function openExternalUrl(url: string) {
                 size="tiny"
                 type="primary"
                 class="ml-2"
-                @click="handleDownloadByVersionId(versionInfo.id)"
+                @click="handleDownloadByVersionId(versionInfo!.id)"
               >
                 下载
               </NButton>
@@ -406,7 +406,7 @@ function openExternalUrl(url: string) {
                 扫描时间：{{ new Date(currentApprovedVersion.codeSecurityAudit.scanTime).toLocaleString() }}
               </div>
               <div v-if="currentApprovedVersion.codeSecurityAudit.reportUrl" class="mt-2">
-                <NButton size="small" type="primary" @click="openExternalUrl(currentApprovedVersion.codeSecurityAudit.reportUrl!)">
+                <NButton size="small" type="primary" @click="openExternalUrl(currentApprovedVersion!.codeSecurityAudit?.reportUrl!)">
                   查看完整报告
                 </NButton>
               </div>
@@ -492,7 +492,7 @@ function openExternalUrl(url: string) {
                 扫描时间：{{ new Date(versionInfo.codeSecurityAudit.scanTime).toLocaleString() }}
               </div>
               <div v-if="versionInfo.codeSecurityAudit.reportUrl" class="mt-2">
-                <NButton size="small" type="primary" @click="openExternalUrl(versionInfo.codeSecurityAudit.reportUrl!)">
+                <NButton size="small" type="primary" @click="openExternalUrl(versionInfo!.codeSecurityAudit?.reportUrl!)">
                   查看完整报告
                 </NButton>
               </div>

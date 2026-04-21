@@ -125,10 +125,10 @@ function handleSelect() {
   fetchList()
 }
 
-function handleAdd() {
-  editInfo.value = undefined
-  editDialogShow.value = true
-}
+// function handleAdd() {
+//   editInfo.value = undefined
+//   editDialogShow.value = true
+// }
 
 function handleDone() {
   editDialogShow.value = false

@@ -34,13 +34,13 @@ function getBrowserLang(): string {
 const currentLang = computed(() => getBrowserLang())
 
 // 获取应用的多语言列表
-function getLangList(item: MicroAppListItem): string[] {
-  const langList = item.langList || []
-  if (langList.length > 0) {
-    return langList.map(l => l.lang)
-  }
-  return ['zh-CN']
-}
+// function getLangList(item: MicroAppListItem): string[] {
+//   const langList = item.langList || []
+//   if (langList.length > 0) {
+//     return langList.map(l => l.lang)
+//   }
+//   return ['zh-CN']
+// }
 
 // 获取指定语言下的应用名称
 function getAppName(item: MicroAppListItem): string {

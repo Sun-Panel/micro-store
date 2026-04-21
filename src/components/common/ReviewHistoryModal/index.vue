@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { NButton, NCard, NModal, NTag } from 'naive-ui'
+import { NCard, NModal, NTag } from 'naive-ui'
 import { computed, ref, watch } from 'vue'
-import { getReviewHistory } from '@/api/admin/microAppDeveloper'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
+import { getReviewHistory } from '@/api/admin/microAppDeveloper'
 
 interface Props {
   visible: boolean
@@ -11,7 +11,7 @@ interface Props {
 
 const props = defineProps<Props>()
 const emit = defineEmits<{
-  'update:visible': [value: boolean]
+  (e: 'update:visible', value: boolean): void
 }>()
 
 const reviewHistoryList = ref<MicroApp.MicroAppReviewInfo[]>([])
