@@ -25,7 +25,7 @@ func (a *MicroAppAdminApi) GetList(c *gin.Context) {
 
 	m := models.MicroApp{}
 	// 管理员可以查看所有应用，不限制 authorId
-	opts := models.MicroAppQueryOptions{
+	opts := models.MicroAppListQueryOpts{
 		Page:             param.Page,
 		Limit:            param.Limit,
 		Status:           param.Status,
@@ -34,8 +34,9 @@ func (a *MicroAppAdminApi) GetList(c *gin.Context) {
 		IncludeDeveloper: true,
 		SortBy:           param.SortBy,
 		SortOrder:        param.SortOrder,
+		IncludeLangList:  true,
 	}
-	list, total, err := m.GetListWithAllLangs(global.Db, opts)
+	list, total, err := m.GetAppList(global.Db, opts)
 	if err != nil {
 		apiReturn.ErrorDatabase(c, err.Error())
 		return

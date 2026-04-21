@@ -1,12 +1,12 @@
 <script lang="ts" setup>
-import { NButton, NCard, NDropdown, NInput, NInputGroup, NSelect, NSpace, NTag, useDialog, useMessage } from 'naive-ui'
+import { NButton, NCard, NSpace, useMessage } from 'naive-ui'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import SimpleCreateMicroApp from './SimpleCreateMicroApp/index.vue'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
-import { cancelReview, deletes, getList, offline, submitReview } from '@/api/admin/microAppDeveloper'
+import { getList } from '@/api/admin/microAppDeveloper'
 import ReviewHistoryModal from '@/components/common/ReviewHistoryModal/index.vue'
-import { microAppChargeTypeMap, microAppReviewStatusMap, microAppStatusMap } from '@/enums/panel'
+import { microAppChargeTypeMap, microAppStatusMap } from '@/enums/panel'
+import SimpleCreateMicroApp from './SimpleCreateMicroApp/index.vue'
 
 const message = useMessage()
 const router = useRouter()
@@ -19,25 +19,25 @@ const statusFilter = ref<number | null>(null)
 const categoryFilter = ref<number | null>(null)
 const sortBy = ref<string>('id') // 排序字段
 const sortOrder = ref<string>('desc') // 排序方式
-const dialog = useDialog()
+// const dialog = useDialog()
 const categoryOptions = ref<{ label: string, value: number }[]>([])
 
 // 状态选项
-const statusOptions = [
-  { label: '全部', value: null },
-  { label: microAppStatusMap[0], value: 0 },
-  { label: microAppStatusMap[1], value: 1 },
-  { label: microAppStatusMap[2], value: 2 },
-]
+// const statusOptions = [
+//   { label: '全部', value: null },
+//   { label: microAppStatusMap[0], value: 0 },
+//   { label: microAppStatusMap[1], value: 1 },
+//   { label: microAppStatusMap[2], value: 2 },
+// ]
 
-// 排序选项
-const sortOptions = [
-  { label: '默认排序', value: 'id' },
-  { label: '下载量', value: 'download_count' },
-  { label: '安装量', value: 'install_count' },
-]
+// // 排序选项
+// const sortOptions = [
+//   { label: '默认排序', value: 'id' },
+//   { label: '下载量', value: 'download_count' },
+//   { label: '安装量', value: 'install_count' },
+// ]
 
-// 卡片列表数据
+// // 卡片列表数据
 const dataList = ref<MicroApp.Info[]>([])
 
 async function fetchCategoryOptions() {
@@ -75,16 +75,16 @@ async function fetchList() {
     dataList.value = data.list || []
   }
   catch (error) {
-    message.error('获取列表失败')
+    console.error(`获取列表失败${error}`)
   }
   finally {
     tableIsLoading.value = false
   }
 }
 
-function handleSelect() {
-  fetchList()
-}
+// function handleSelect() {
+//   fetchList()
+// }
 
 // // 获取审核状态标签类型
 // function getReviewStatusTagType(reviewStatus: number) {
@@ -136,7 +136,7 @@ onMounted(async () => {
     <!-- 搜索栏 -->
     <NCard class="mb-[20px]">
       <div class="flex">
-        <NInputGroup style="max-width: 850px;">
+        <!-- <NInputGroup style="max-width: 850px;">
           <NInput v-model:value="keyWord" :style="{ width: '30%' }" placeholder="请输入应用名称搜索" />
           <NSelect v-model:value="statusFilter" :options="statusOptions" :style="{ width: '100px' }" placeholder="状态" />
           <NSelect v-model:value="categoryFilter" :options="categoryOptions" :style="{ width: '120px' }" placeholder="分类" />
@@ -144,8 +144,8 @@ onMounted(async () => {
           <NButton type="primary" @click="handleSelect">
             查询
           </NButton>
-        </NInputGroup>
-        <span class="flex ml-auto">
+        </NInputGroup> -->
+        <span class="flex">
           <NButton type="primary" ghost @click="handleAdd">创建微应用</NButton>
         </span>
       </div>

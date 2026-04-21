@@ -10,6 +10,7 @@ import AddVersionModal from '@/components/common/VersionManagement/AddVersionMod
 import VersionDetailModal from '@/components/common/VersionManagement/VersionDetailModal.vue'
 import { microAppStatusMap } from '@/enums/panel'
 import { apiRespErrMsg } from '@/utils/cmn'
+import { getAppDescByLang, getAppNameByLang, getCurrentLang } from '@/utils/functions'
 import MicroAppBasicInfo from '../components/MicroAppBasicInfo.vue'
 import MicroAppVersionInfo from '../components/MicroAppVersionInfo.vue'
 import EditMicroApp from '../EditMicroApp/index.vue'
@@ -26,6 +27,13 @@ const reviewResponse = ref<MicroApp.GetInfoWithReviewResponse | null>(null)
 const versionList = ref<MicroApp.VersionInfo[]>([])
 const loading = ref(false)
 const versionLoading = ref(false)
+
+// 从 langMap 获取当前语言的 appName/appDesc
+const currentLangMap = computed(() => reviewResponse.value?.microAppReview?.langMap ?? {})
+const currentLangList = computed(() => Object.keys(currentLangMap.value))
+const currentLang = computed(() => getCurrentLang(currentLangList.value))
+const appName = computed(() => getAppNameByLang(currentLangMap.value, currentLang.value, reviewResponse.value?.microAppReview?.appName))
+const appDesc = computed(() => getAppDescByLang(currentLangMap.value, currentLang.value, reviewResponse.value?.microAppReview?.appDesc))
 
 // 编辑弹窗
 const editDialogShow = ref(false)
@@ -463,14 +471,17 @@ onMounted(async () => {
     </NCard>
 
     <!-- 基本信息组件 -->
-    <MicroAppBasicInfo
-      class="mb-[20px]"
-      :micro-app-info="reviewResponse?.microAppReview ?? undefined"
-      :shelves-status="reviewResponse?.microApp.status"
-      :create-time="reviewResponse?.microApp.createTime"
-      :lang="reviewResponse?.microAppReview?.langMap"
-      :category-options="categoryOptions"
-    />
+    <NCard title="基本信息" size="small" class="mb-2">
+      <MicroAppBasicInfo
+        class="mb-[20px]"
+        :micro-app-info="reviewResponse?.microAppReview ?? undefined"
+        :shelves-status="reviewResponse?.microApp.status"
+        :create-time="reviewResponse?.microApp.createTime"
+        :app-name="appName"
+        :app-desc="appDesc"
+        :category-options="categoryOptions"
+      />
+    </NCard>
 
     <!-- 版本管理组件 -->
     <MicroAppVersionInfo

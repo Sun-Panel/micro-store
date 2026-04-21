@@ -409,7 +409,7 @@ func (m *MicroApp) GetAppList(db *gorm.DB, opts MicroAppListQueryOpts) ([]MicroA
 	var list []MicroAppListItem
 	var total int64
 
-	query := db.Model(&MicroApp{})
+	query := db.Table("micro_app").Where("micro_app.deleted_at IS NULL")
 
 	// 状态筛选
 	if opts.Status != nil {
@@ -431,13 +431,13 @@ func (m *MicroApp) GetAppList(db *gorm.DB, opts MicroAppListQueryOpts) ([]MicroA
 		query = query.Where("micro_app.developer_id = ?", *opts.DeveloperId)
 	}
 
-	// 关键字搜索（通过子查询在多语言表中匹配 app_name 或 app_desc）
+	// 关键字搜索（匹配 microAppId 或多语言表的 app_name/app_desc）
 	if opts.KeyWord != "" {
 		like := "%" + opts.KeyWord + "%"
 		subQuery := db.Model(&MicroAppLang{}).
 			Select("DISTINCT micro_app_id").
 			Where("app_name LIKE ? OR app_desc LIKE ?", like, like)
-		query = query.Where("micro_app.micro_app_id IN (?)", subQuery)
+		query = query.Where("micro_app.micro_app_id LIKE ? OR micro_app.micro_app_id IN (?)", like, subQuery)
 	}
 
 	// 获取总数
@@ -479,7 +479,7 @@ func (m *MicroApp) GetAppList(db *gorm.DB, opts MicroAppListQueryOpts) ([]MicroA
 		query = query.Preload("Developer")
 	}
 
-	if err := query.Find(&list).Error; err != nil {
+	if err := query.Select("micro_app.*").Find(&list).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -517,13 +517,13 @@ func (m *MicroApp) GetAppListWithLang(db *gorm.DB, opts MicroAppListWithLangQuer
 		countQuery = countQuery.Where("micro_app.developer_id = ?", *opts.DeveloperId)
 	}
 
-	// 关键字搜索（在多语言表中匹配）
+	// 关键字搜索（在多语言表中匹配，或匹配 microAppId）
 	if opts.KeyWord != "" {
 		like := "%" + opts.KeyWord + "%"
 		subQuery := db.Model(&MicroAppLang{}).
 			Select("DISTINCT micro_app_id").
 			Where("app_name LIKE ? OR app_desc LIKE ?", like, like)
-		countQuery = countQuery.Where("micro_app.micro_app_id IN (?)", subQuery)
+		countQuery = countQuery.Where("micro_app.micro_app_id LIKE ? OR micro_app.micro_app_id IN (?)", like, subQuery)
 	}
 
 	// 获取总数（不走 JOIN）
@@ -581,7 +581,7 @@ func (m *MicroApp) GetAppListWithLang(db *gorm.DB, opts MicroAppListWithLangQuer
 		subQuery := db.Model(&MicroAppLang{}).
 			Select("DISTINCT micro_app_id").
 			Where("app_name LIKE ? OR app_desc LIKE ?", like, like)
-		query = query.Where("micro_app.micro_app_id IN (?)", subQuery)
+		query = query.Where("micro_app.micro_app_id LIKE ? OR micro_app.micro_app_id IN (?)", like, subQuery)
 	}
 
 	// 排序

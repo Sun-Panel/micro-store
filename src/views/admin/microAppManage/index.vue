@@ -118,16 +118,16 @@ function createColumns({
                   content: `确定删除微应用"${row.appName}"吗？`,
                   positiveText: '确定',
                   negativeText: '取消',
-                  onPositiveClick: () => handleDelete([row.id]),
+                  onPositiveClick: () => handleDelete([row.id!]),
                 })
                 break
             }
           },
           options: [
             { label: '查看详情', key: 'view' },
-            { label: '上架', key: 'online' },
-            { label: '下架', key: 'offline' },
-            { label: '删除', key: 'delete' },
+            // { label: '上架', key: 'online' },
+            // { label: '下架', key: 'offline' },
+            // { label: '删除', key: 'delete' },
           ],
         }, { default: () => btn })
       },
@@ -197,7 +197,7 @@ async function fetchList() {
     req.categoryId = categoryFilter.value
 
   try {
-    const { data } = await getList<Common.ListResponse<MicroApp.MicroAppInfo[]>>(req)
+    const { data } = await getList<Common.ListResponse<MicroApp.Info[]>>(req)
     pagination.itemCount = data.count
     dataList.value = data.list || []
   }
@@ -226,7 +226,7 @@ async function handleDelete(ids: number[]) {
 // 修改状态
 async function handleChangeStatus(row: MicroApp.Info, status: number) {
   try {
-    const { code } = await updateStatus({ id: row.id, status })
+    const { code } = await updateStatus({ id: row.id!, status })
     if (code === 0) {
       message.success(status === 1 ? '已通过审核' : '已拒绝/下架')
       fetchList()

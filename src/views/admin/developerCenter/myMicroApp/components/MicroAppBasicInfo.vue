@@ -1,10 +1,8 @@
 <script lang="ts" setup>
-import { NCard, NImage, NImageGroup, NSelect, NTag } from 'naive-ui'
-import { computed, ref } from 'vue'
+import { NImage, NImageGroup } from 'naive-ui'
+import { computed } from 'vue'
 import { microAppChargeTypeMap, microAppStatusMap, microAppThirdChargeTypeMap } from '@/enums/panel'
-import { t } from '@/locales'
 import { timeFormat } from '@/utils/cmn'
-import { getAppDescByLang, getAppNameByLang, getCurrentLang, getLangListFromAppInfo, getLangMapFromAppInfo } from '@/utils/functions'
 
 const props = defineProps<{
   microAppInfo?: MicroApp.BaseInfo
@@ -13,6 +11,8 @@ const props = defineProps<{
   categoryOptions?: Category.Info[]
   langs?: string[]
   showEditButton?: boolean
+  appName: string
+  appDesc: string
 }>()
 
 // 分类名称
@@ -22,44 +22,10 @@ const categoryName = computed(() => {
   const category = props.categoryOptions?.find(c => c.id === props.microAppInfo?.categoryId)
   return category?.name || `-`
 })
-
-// ==================== 多语言处理 ====================
-const baseInfoLang = ref('zh-CN')
-
-// 微应用的多语言列表
-const baseInfoLangList = computed(() => getLangListFromAppInfo(props.microAppInfo))
-
-// 微应用语言 Map
-const baseInfoLangMap = computed(() => getLangMapFromAppInfo(props.microAppInfo))
-
-// 初始化语言
-function initLang() {
-  baseInfoLang.value = getCurrentLang(baseInfoLangList.value)
-}
-
-// 初始化
-initLang()
-
-// 当前语言下的应用名称
-const baseInfoAppName = computed(() => getAppNameByLang(baseInfoLangMap.value, baseInfoLang.value, props.microAppInfo?.appName))
-
-// 当前语言下的应用描述
-const baseInfoAppDesc = computed(() => getAppDescByLang(baseInfoLangMap.value, baseInfoLang.value, props.microAppInfo?.appDesc))
 </script>
 
 <template>
-  <NCard title="基本信息">
-    <template #header>
-      <div class="flex items-center gap-2">
-        基本信息
-        <NSelect
-          v-model:value="baseInfoLang"
-          :options="baseInfoLangList.map((lang: string) => ({ label: lang, value: lang }))"
-          style="width: 140px"
-          size="small"
-        />
-      </div>
-    </template>
+  <div>
     <div v-if="microAppInfo" class="grid grid-cols-2 gap-4">
       <div class="flex items-center gap-4">
         <img v-if="microAppInfo.appIcon" :src="microAppInfo.appIcon" class="w-16 h-16 object-contain rounded">
@@ -68,12 +34,12 @@ const baseInfoAppDesc = computed(() => getAppDescByLang(baseInfoLangMap.value, b
         </div>
         <div class="space-y-2">
           <div class="flex items-baseline gap-2">
-            <span class="text-sm text-gray-500 whitespace-nowrap">MicroAppID:</span>
-            <span class="font-mono text-sm text-gray-700">{{ microAppInfo.microAppId }}</span>
+            <span class="text-sm text-gray-500 whitespace-nowrap">微应用名称:</span>
+            <span class="font-bold text-lg">{{ appName }}</span>
           </div>
           <div class="flex items-baseline gap-2">
-            <span class="text-sm text-gray-500 whitespace-nowrap">微应用名称:</span>
-            <span class="font-bold text-lg">{{ baseInfoAppName || microAppInfo.appName }}</span>
+            <span class="text-sm text-gray-500 whitespace-nowrap">MicroAppID:</span>
+            <span class="font-mono text-sm text-gray-700">{{ microAppInfo.microAppId }}</span>
           </div>
         </div>
       </div>
@@ -112,7 +78,7 @@ const baseInfoAppDesc = computed(() => getAppDescByLang(baseInfoLangMap.value, b
       </div>
       <div class="col-span-2">
         <span class="text-gray-500">应用描述：</span>
-        <span>{{ baseInfoAppDesc || microAppInfo.appDesc || '暂无描述' }}</span>
+        <span>{{ appDesc || '-' }}</span>
       </div>
       <!-- 图集 -->
       <div v-if="microAppInfo.screenshots" class="col-span-2">
@@ -131,5 +97,5 @@ const baseInfoAppDesc = computed(() => getAppDescByLang(baseInfoLangMap.value, b
         </NImageGroup>
       </div>
     </div>
-  </NCard>
+  </div>
 </template>

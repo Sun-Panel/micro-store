@@ -7,6 +7,7 @@ import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { offlineVersion as adminOfflineVersion, cancelReview, getVersionList } from '@/api/admin/microAppVersion'
 import VersionDetailModal from '@/components/common/VersionManagement/VersionDetailModal.vue'
 import { apiRespErrMsg } from '@/utils/cmn'
+import { getAppDescByLang, getAppNameByLang, getCurrentLang, getLangMapFromAppInfo } from '@/utils/functions'
 import MicroAppBasicInfo from '../../developerCenter/myMicroApp/components/MicroAppBasicInfo.vue'
 import MicroAppVersionInfo from '../../developerCenter/myMicroApp/components/MicroAppVersionInfo.vue'
 
@@ -22,6 +23,13 @@ const microAppInfo = ref<MicroApp.Info>()
 const versionList = ref<MicroApp.VersionInfo[]>([])
 const loading = ref(false)
 const versionLoading = ref(false)
+
+// 从 langList 获取当前语言的 appName/appDesc
+const currentLangMap = computed(() => getLangMapFromAppInfo(microAppInfo.value))
+const currentLangList = computed(() => Object.keys(currentLangMap.value))
+const currentLang = computed(() => getCurrentLang(currentLangList.value))
+const appName = computed(() => getAppNameByLang(currentLangMap.value, currentLang.value, microAppInfo.value?.appName))
+const appDesc = computed(() => getAppDescByLang(currentLangMap.value, currentLang.value, microAppInfo.value?.appDesc))
 
 const categoryOptions = ref<Category.Info[]>([])
 
@@ -246,7 +254,7 @@ onMounted(async () => {
           <NButton @click="handleBack">
             返回列表
           </NButton>
-          <span class="text-lg font-bold">{{ microAppInfo?.appName || '微应用详情' }}</span>
+          <span class="text-lg font-bold">{{ appName || '微应用详情' }}</span>
           <!-- 审核状态 -->
           <div v-if="microAppInfo?.reviewStatus && microAppInfo.reviewStatus !== 0" class="flex items-center gap-2">
             <NTag v-if="microAppInfo.reviewStatus === 1" type="warning" size="small">
@@ -298,12 +306,17 @@ onMounted(async () => {
     </NCard>
 
     <!-- 基本信息组件（不显示编辑按钮） -->
-    <MicroAppBasicInfo
-      class="mb-[20px]"
-      :micro-app-info="microAppInfo"
-      :category-options="categoryOptions"
-      :show-edit-button="false"
-    />
+    <NCard title="基本信息" size="small" class="mb-[20px]">
+      <MicroAppBasicInfo
+        :micro-app-info="microAppInfo"
+        :shelves-status="microAppInfo?.status"
+        :create-time="microAppInfo?.createTime"
+        :category-options="categoryOptions"
+        :show-edit-button="false"
+        :app-name="appName"
+        :app-desc="appDesc"
+      />
+    </NCard>
 
     <!-- 版本管理组件（只读，不能添加版本，不能删除，只能查看详情和下架） -->
     <MicroAppVersionInfo
