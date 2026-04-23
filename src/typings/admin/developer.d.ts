@@ -4,6 +4,7 @@ declare namespace Developer {
     id: number
     userId: number
     developerName: string
+    name: string
     contactMail: string
     paymentName: string
     paymentQrcode: string
@@ -24,6 +25,7 @@ declare namespace Developer {
   // 更新请求
   interface UpdateRequest {
     id: number
+    name: string
     developerName: string
     contactMail?: string
     paymentName?: string

@@ -1,7 +1,10 @@
 package panel
 
 import (
+	"errors"
 	"os"
+	"regexp"
+	"strings"
 	"sun-panel/api/api_v1/common/apiReturn"
 	"sun-panel/api/api_v1/common/base"
 	"sun-panel/global"
@@ -11,6 +14,43 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"gorm.io/gorm"
 )
+
+// ValidateDeveloperName 验证开发者标识
+// 返回 error 表示验证失败，nil 表示验证通过
+func ValidateDeveloperName(name string) error {
+	// 验证1: 长度不能小于3
+	if len(name) < 3 {
+		return errors.New("开发者标识长度不能小于3")
+	}
+
+	// 验证2: 不能为 "sun"
+	if name == "sun" {
+		return errors.New("开发者标识不能为 'sun'")
+	}
+
+	// 验证3: 不能含有 "sunpanel"（不区分大小写）
+	if strings.Contains(strings.ToLower(name), "sunpanel") {
+		return errors.New("开发者标识不能包含 'sunpanel'")
+	}
+
+	// 验证4: 只能包含小写英文字母和数字
+	matched, _ := regexp.MatchString("^[a-z0-9]+$", name)
+	if !matched {
+		return errors.New("开发者标识只能包含小写英文字母和数字")
+	}
+
+	// 验证5: 不能以数字开头
+	if name[0] >= '0' && name[0] <= '9' {
+		return errors.New("开发者标识不能以数字开头")
+	}
+
+	// 验证6: 不能以 "official" 开头（不区分大小写）
+	if strings.HasPrefix(strings.ToLower(name), "official") {
+		return errors.New("开发者标识不能以 'official' 开头")
+	}
+
+	return nil
+}
 
 type DeveloperApi struct {
 }
@@ -37,6 +77,12 @@ func (a *DeveloperApi) Register(c *gin.Context) {
 
 	if errMsg, err := base.ValidateInputStruct(param); err != nil {
 		apiReturn.ErrorParamFomat(c, errMsg)
+		return
+	}
+
+	// 验证 DeveloperName
+	if err := ValidateDeveloperName(param.DeveloperName); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
 		return
 	}
 
@@ -92,6 +138,12 @@ func (a *DeveloperApi) Update(c *gin.Context) {
 		return
 	}
 
+	// // 验证 DeveloperName
+	// if err := ValidateDeveloperName(param.DeveloperName); err != nil {
+	// 	apiReturn.ErrorParamFomat(c, err.Error())
+	// 	return
+	// }
+
 	userId, exists := getUserId(c)
 	if !exists {
 		apiReturn.ErrorByCode(c, 1000)
@@ -117,7 +169,14 @@ func (a *DeveloperApi) Update(c *gin.Context) {
 	}
 
 	// 更新信息
-	err = m.UpdateInfo(global.Db, info.ID, param.DeveloperName, param.ContactMail, param.PaymentName, param.PaymentQrcode, param.PaymentMethod, param.Name)
+	err = m.UpdateInfo(global.Db, info.ID, models.DeveloperUpdateFields{
+		DeveloperName: &param.DeveloperName,
+		ContactMail:   &param.ContactMail,
+		PaymentName:   &param.PaymentName,
+		PaymentQrcode: &param.PaymentQrcode,
+		PaymentMethod: &param.PaymentMethod,
+		Name:          &param.Name,
+	})
 	if err != nil {
 		if err == gorm.ErrRegistered {
 			apiReturn.Error(c, "开发者标识已存在")

@@ -80,7 +80,11 @@ func (a *DeveloperApi) Update(c *gin.Context) {
 	}
 
 	m := models.Developer{}
-	err := m.UpdateInfo(global.Db, param.Id, param.DeveloperName, param.ContactMail, param.PaymentName, param.PaymentQrcode, param.PaymentMethod, param.Name)
+	err := m.UpdateInfo(global.Db, param.Id, models.DeveloperUpdateFields{
+		DeveloperName: &param.DeveloperName,
+		ContactMail:   &param.ContactMail,
+		Name:          &param.Name,
+	})
 	if err != nil {
 		if err == gorm.ErrRegistered {
 			apiReturn.Error(c, "开发者标识已存在")

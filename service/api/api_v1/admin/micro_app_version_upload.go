@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"sun-panel/api/api_v1/common/apiReturn"
 	"sun-panel/biz"
+	"sun-panel/global"
 
 	"github.com/gin-gonic/gin"
 )
@@ -60,17 +61,17 @@ func (a *MicroAppVersionUploadApi) Upload(c *gin.Context) {
 		return
 	}
 
-	// microApp, err := biz.MicroApp.GetById(global.Db, uint(appRecordId), "Developer")
-	// if err != nil {
-	// 	apiReturn.Error(c, "not appRecordId")
-	// 	return
-	// }
+	microApp, err := biz.MicroApp.GetById(global.Db, uint(appRecordId), "Developer")
+	if err != nil {
+		apiReturn.Error(c, "not appRecordId")
+		return
+	}
 
 	// 检测基础信息
-	// if err := biz.MicroAppAudit.BasicCheck(microApp, result.Config); err != nil {
-	// 	apiReturn.ErrorByCodeAndMsg(c, -2, err.Error())
-	// 	return
-	// }
+	if err := biz.MicroAppAudit.BasicCheck(microApp, result.Config); err != nil {
+		apiReturn.ErrorByCodeAndMsg(c, -2, err.Error())
+		return
+	}
 
 	// 缓存起来，用户手动点击确定创建的时候读取
 	cacheKey := biz.MicroAppPackage.SetUploadCache(uint(appRecordId), "none", biz.MicroAppPackageUploadCache{

@@ -215,7 +215,7 @@ defineExpose({
         <NInput
           v-model:value="model.developerName"
           :disabled="editMode"
-          placeholder="纯英文，多词用-分割，如：my-team"
+          placeholder="纯英文字母组合，字母需小写"
         />
       </NFormItem>
 

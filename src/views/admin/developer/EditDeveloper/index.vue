@@ -24,8 +24,9 @@ const formInitValue = {
   developerName: '',
   contactMail: '',
   paymentName: '',
-  paymentQrcode: '',
-  paymentMethod: '',
+  name: '',
+  // paymentQrcode: '',
+  // paymentMethod: '',
   status: 1,
 }
 
@@ -52,9 +53,10 @@ watch(show, (newValue) => {
       id: props.developerInfo.id,
       developerName: props.developerInfo.developerName,
       contactMail: props.developerInfo.contactMail || '',
-      paymentName: props.developerInfo.paymentName || '',
-      paymentQrcode: props.developerInfo.paymentQrcode || '',
-      paymentMethod: props.developerInfo.paymentMethod || '',
+      name: props.developerInfo.name || '',
+      // paymentName: props.developerInfo.paymentName || '',
+      // paymentQrcode: props.developerInfo.paymentQrcode || '',
+      // paymentMethod: props.developerInfo.paymentMethod || '',
       status: props.developerInfo.status,
     }
   }
@@ -89,11 +91,15 @@ function handleValidateButtonClick(e: MouseEvent) {
         <NInput v-model:value="model.developerName" placeholder="纯英文，多词用-分割" />
       </NFormItem>
 
+      <NFormItem path="paymentName" label="名字">
+        <NInput v-model:value="model.name" placeholder="作者名字" />
+      </NFormItem>
+
       <NFormItem path="contactMail" label="联系邮箱">
         <NInput v-model:value="model.contactMail" placeholder="请输入联系邮箱" />
       </NFormItem>
 
-      <NFormItem path="paymentName" label="收款人姓名">
+      <!-- <NFormItem path="paymentName" label="收款人姓名">
         <NInput v-model:value="model.paymentName" placeholder="请输入收款人真实姓名" />
       </NFormItem>
 
@@ -103,7 +109,7 @@ function handleValidateButtonClick(e: MouseEvent) {
 
       <NFormItem path="paymentMethod" label="收款方式">
         <NInput v-model:value="model.paymentMethod" placeholder="如：支付宝、微信" />
-      </NFormItem>
+      </NFormItem> -->
 
       <NFormItem path="status" label="状态">
         <NSelect v-model:value="model.status" :options="statusOptions" />

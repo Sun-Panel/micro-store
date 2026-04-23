@@ -31,6 +31,7 @@ function createColumns({
   return [
     { title: 'ID', key: 'id', width: 80 },
     { title: '开发者标识', key: 'developerName' },
+    { title: '作者昵称', key: 'name' },
     { title: '联系邮箱', key: 'contactMail' },
     { title: '收款方式', key: 'paymentMethod' },
     {

@@ -1,6 +1,10 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"slices"
+
+	"gorm.io/gorm"
+)
 
 // 开发者表
 type Developer struct {
@@ -77,8 +81,23 @@ func (m *Developer) Create(db *gorm.DB) error {
 }
 
 // 更新开发者
-func (m *Developer) Update(db *gorm.DB, id uint, updateData map[string]interface{}) error {
-	return db.Model(&Developer{}).Where("id = ?", id).Updates(updateData).Error
+// field 为可选参数，指定要更新的字段名列表
+func (m *Developer) Update(db *gorm.DB, id uint, updateData Developer, field ...string) error {
+	// 如果提供了开发者名称，需要校验唯一性
+	// if len(field) == 0 || containsField(field, "developer_name") {
+	// 	if exist, err := m.CheckNameExist(db, updateData.DeveloperName, id); err != nil {
+	// 		return err
+	// 	} else if exist {
+	// 		return gorm.ErrRegistered
+	// 	}
+	// }
+
+	return db.Model(m).Where("id = ?", id).Select(field).Updates(updateData).Error
+}
+
+// containsField 检查字段列表是否包含指定字段
+func containsField(fields []string, name string) bool {
+	return slices.Contains(fields, name)
 }
 
 // 删除开发者
@@ -145,23 +164,55 @@ func (m *Developer) Register(db *gorm.DB, userId uint, developerName, contactMai
 	return m.ID, nil
 }
 
+// UpdateFields 需要更新的字段列表（指针类型）
+// nil = 不更新该字段，非 nil = 更新为指定值（包括空字符串）
+type DeveloperUpdateFields struct {
+	DeveloperName *string // 开发者标识
+	ContactMail   *string // 联系邮箱
+	PaymentName   *string // 收款人真实姓名
+	PaymentQrcode *string // 收款二维码图片URL
+	PaymentMethod *string // 收款方式描述
+	Name          *string // 开发者名称
+	Status        *int
+}
+
 // UpdateInfo 更新开发者信息（带校验）
-func (m *Developer) UpdateInfo(db *gorm.DB, id uint, developerName, contactMail, paymentName, paymentQrcode, paymentMethod, name string) error {
-	// 检查开发者名称是否存在（排除当前ID）
-	if exist, err := m.CheckNameExist(db, developerName, id); err != nil {
-		return err
-	} else if exist {
-		return gorm.ErrRegistered
+func (m *Developer) UpdateInfo(db *gorm.DB, id uint, updateFields DeveloperUpdateFields) error {
+	// 如果提供了开发者名称，需要校验唯一性
+	if updateFields.DeveloperName != nil {
+		if exist, err := m.CheckNameExist(db, *updateFields.DeveloperName, id); err != nil {
+			return err
+		} else if exist {
+			return gorm.ErrRegistered
+		}
 	}
 
-	updateData := map[string]interface{}{
-		"developer_name": developerName,
-		"contact_mail":   contactMail,
-		"payment_name":   paymentName,
-		"payment_qrcode": paymentQrcode,
-		"payment_method": paymentMethod,
-		"name":           name,
+	updateData := map[string]interface{}{}
+	if updateFields.DeveloperName != nil {
+		updateData["developer_name"] = *updateFields.DeveloperName
+	}
+	if updateFields.ContactMail != nil {
+		updateData["contact_mail"] = *updateFields.ContactMail
+	}
+	if updateFields.PaymentName != nil {
+		updateData["payment_name"] = *updateFields.PaymentName
+	}
+	if updateFields.PaymentQrcode != nil {
+		updateData["payment_qrcode"] = *updateFields.PaymentQrcode
+	}
+	if updateFields.PaymentMethod != nil {
+		updateData["payment_method"] = *updateFields.PaymentMethod
+	}
+	if updateFields.Name != nil {
+		updateData["name"] = *updateFields.Name
+	}
+	if updateFields.Status != nil {
+		updateData["status"] = *updateFields.Status
 	}
 
-	return m.Update(db, id, updateData)
+	if len(updateData) == 0 {
+		return nil // 没有需要更新的字段
+	}
+
+	return db.Model(&Developer{}).Where("id = ?", id).Updates(updateData).Error
 }
