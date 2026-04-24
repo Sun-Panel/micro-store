@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { NButton, NCard, NCollapse, NCollapseItem, NDescriptions, NDescriptionsItem, NDivider, NInput, NModal, NProgress, NSpace, NTag, useMessage } from 'naive-ui'
+import { NButton, NCard, NCollapse, NCollapseItem, NDescriptions, NDescriptionsItem, NDivider, NInput, NModal, NProgress, NSpace, NTag, useDialog, useMessage } from 'naive-ui'
 import { ref, watch } from 'vue'
 import { getDownloadUrl, getLatestOnlineByAppModelId } from '@/api/admin/microAppVersion'
 import { review, triggerSecurityAudit } from '@/api/admin/microAppVersionReview'
@@ -17,6 +17,7 @@ const emit = defineEmits<{
 }>()
 
 const message = useMessage()
+const dialog = useDialog()
 
 // 数据
 const reviewLoading = ref(false)
@@ -89,6 +90,28 @@ async function handleReview() {
     message.error('驳回时必须填写驳回原因')
     return
   }
+
+  // 通过时检查是否有审核报告
+  if (reviewForm.value.status === 1 && !props.versionInfo.codeSecurityAudit) {
+    dialog.warning({
+      title: '确认通过',
+      content: '当前版本没有安全审核报告，如果执意通过后，该版本出现问题将扣除相应的积分，确定要继续通过吗？',
+      positiveText: '确定通过',
+      negativeText: '取消',
+      onPositiveClick: () => {
+        doReview()
+      },
+    })
+    return
+  }
+
+  await doReview()
+}
+
+// 执行审核操作
+async function doReview() {
+  if (!props.versionInfo)
+    return
 
   reviewLoading.value = true
   try {
