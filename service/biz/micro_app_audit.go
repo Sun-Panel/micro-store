@@ -37,16 +37,37 @@ type SecurityAuditConfig struct {
 
 // 默认的安全审核配置
 func (m *microAppAudit) getDefaultConfig() SecurityAuditConfig {
+	timeout := global.Config.GetValueInt("security_audit", "timeout")
+	if timeout <= 0 {
+		timeout = 60
+	}
+	maxFileSize := global.Config.GetValueInt("security_audit", "max_file_size")
+	if maxFileSize <= 0 {
+		maxFileSize = 10485760 // 10MB
+	}
+	allowedExtsStr := global.Config.GetValueString("security_audit", "allowed_file_exts")
+	if allowedExtsStr == "" {
+		allowedExtsStr = ".js"
+	}
+
+	// 解析文件扩展名（逗号分隔）
+	var allowedExts []string
+	for _, ext := range strings.Split(allowedExtsStr, ",") {
+		ext = strings.TrimSpace(ext)
+		if ext != "" {
+			allowedExts = append(allowedExts, ext)
+		}
+	}
+	if len(allowedExts) == 0 {
+		allowedExts = []string{".js"}
+	}
+
 	return SecurityAuditConfig{
-		PlatformURL: global.Config.GetValueString("security_audit", "platform_url"),
-		APISecret:   global.Config.GetValueString("security_audit", "api_secret"),
-		Timeout:     30 * time.Second,
-		MaxFileSize: 10 * 1024 * 1024, // 10MB
-		AllowedFileExts: []string{
-			".js", ".ts", ".jsx", ".tsx",
-			".vue", ".html", ".css",
-			".json",
-		},
+		PlatformURL:     global.Config.GetValueString("security_audit", "platform_url"),
+		APISecret:       global.Config.GetValueString("security_audit", "api_secret"),
+		Timeout:         time.Duration(timeout) * time.Second,
+		MaxFileSize:     int64(maxFileSize),
+		AllowedFileExts: allowedExts,
 	}
 }
 

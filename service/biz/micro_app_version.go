@@ -6,7 +6,6 @@ import (
 	"sun-panel/models"
 	"sun-panel/models/datatype"
 	"sync"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -72,7 +71,8 @@ func (s *MicroAppVersionService) CreateOrUpdateWithCheck(db *gorm.DB, version *m
 	// 9. 异步审核
 	go func() {
 		defer wg.Done() // 完成时通知 WaitGroup
-		s.rebootAudit(db, version, extractPath)
+		securityAuditConfig := MicroAppAudit.GetSecurityAuditConfig()
+		s.rebootAudit(db, securityAuditConfig, version, extractPath)
 	}()
 
 	// 10. 启动清理协程，等待所有操作完成后清理临时目录
@@ -85,24 +85,14 @@ func (s *MicroAppVersionService) CreateOrUpdateWithCheck(db *gorm.DB, version *m
 	return nil
 }
 
-func (s *MicroAppVersionService) rebootAudit(db *gorm.DB, version *models.MicroAppVersion, extractDir string) {
-
-	// 获取默认配置，确保包含允许的文件扩展名
-	defaultConfig := MicroAppAudit.GetSecurityAuditConfig()
-
+func (s *MicroAppVersionService) rebootAudit(db *gorm.DB, securityAuditConfig SecurityAuditConfig, version *models.MicroAppVersion, extractDir string) {
 	// 覆盖自定义配置
-	securityAuditResult, err := MicroAppAudit.CodeSecurityAudit(extractDir, SecurityAuditConfig{
-		PlatformURL:     "http://127.0.0.1:3025",
-		APISecret:       "hYWxxDCCcM5Ma8Mt3h2H0RemTn9bTG6Q",
-		Timeout:         60 * time.Second,
-		MaxFileSize:     defaultConfig.MaxFileSize,
-		AllowedFileExts: []string{".js"},
-	})
+	securityAuditResult, err := MicroAppAudit.CodeSecurityAudit(extractDir, securityAuditConfig)
 	if err != nil {
 		global.Logger.Errorln("安全审核失败:", err)
 		return
 	}
-	version.SecurityAuditReport = (*datatype.SecurityAuditReport)(securityAuditResult)
+	version.CodeSecurityAudit = (*datatype.SecurityAuditReport)(securityAuditResult)
 	if err := version.Update(db); err != nil {
 		global.Logger.Errorln("更新安全审核结果失败:", err)
 		return

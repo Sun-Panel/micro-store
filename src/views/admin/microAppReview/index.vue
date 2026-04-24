@@ -46,7 +46,7 @@ function createColumns(): DataTableColumns<MicroApp.MicroAppReviewInfo> {
     },
     {
       title: '应用名称',
-      key: 'appName',
+      key: 'adminName',
       width: 180,
       ellipsis: {
         tooltip: true,
@@ -57,9 +57,9 @@ function createColumns(): DataTableColumns<MicroApp.MicroAppReviewInfo> {
             src: row.appIcon || '',
             alt: 'icon',
             class: 'w-8 h-8 rounded object-cover',
-            onError: (e: any) => { e.target.style.display = 'none' }
+            onError: (e: any) => { e.target.style.display = 'none' },
           }),
-          h('span', row.appName || '-')
+          h('span', row.adminName || '-'),
         ])
       },
     },

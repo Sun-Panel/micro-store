@@ -57,7 +57,7 @@ function createColumns(): DataTableColumns<MicroApp.VersionInfo> {
             class: 'w-8 h-8 rounded object-cover',
             onError: (e: any) => { e.target.style.display = 'none' },
           }),
-          h('span', row.microApp?.appName || '-'),
+          h('span', row.microApp?.adminName || '-'),
         ])
       },
     },

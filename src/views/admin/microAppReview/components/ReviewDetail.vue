@@ -236,6 +236,7 @@ async function handleReview() {
           <NButton size="small" @click="handleOpenMicroAppPublic">
             查看应用公开页面
           </NButton>
+          <span class="text-gray-400 text-base ml-2">作者：{{ currentAppInfo?.developer?.name }} ({{ currentAppInfo?.developer?.developerName }})</span>
         </div>
       </div>
     </template>
