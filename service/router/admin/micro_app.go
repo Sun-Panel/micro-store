@@ -43,6 +43,7 @@ func InitMicroAppRouter(router *gin.RouterGroup) {
 		auditorRouter.POST("review/approve", apiGroup.MicroAppAuditorApi.ReviewApp)
 
 		auditorRouter.POST("reviewVersion/review", apiGroup.MicroAppVersionAdminApi.Review)
+		auditorRouter.POST("reviewVersion/triggerSecurityAudit", apiGroup.DeveloperVersionApi.TriggerSecurityAudit)
 		// auditorRouter.POST("reviewVersion/offline", middleware.MultiRolesInterceptor(models.ROLE_ADMIN|models.ROLE_AUDITOR), apiGroup.MicroAppVersionAdminApi.Offline)
 
 	}

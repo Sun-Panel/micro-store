@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { DataTableColumns, PaginationProps } from 'naive-ui'
-import { NButton, NCard, NDataTable, NDropdown, NInput, NInputGroup, NSelect, useDialog, useMessage } from 'naive-ui'
+import { NButton, NCard, NDataTable, NDropdown, NEllipsis, NInput, NInputGroup, NSelect, useDialog, useMessage } from 'naive-ui'
 import { h, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { deletes, getList, updateStatus } from '@/api/admin/microApp'
@@ -8,6 +8,7 @@ import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { SvgIcon } from '@/components/common'
 import { microAppChargeTypeMap, microAppStatusMap } from '@/enums/panel'
 import { timeFormat } from '@/utils/cmn'
+import { getAppNameByLang, getCurrentLang, getLangMapFromAppInfo } from '@/utils/functions'
 
 const message = useMessage()
 const router = useRouter()
@@ -54,7 +55,16 @@ function createColumns({
     },
     {
       title: '应用名称',
-      key: 'appName',
+      key: 'adminName',
+      width: 180,
+      ellipsis: { tooltip: true },
+      render(row) {
+        const langMap = getLangMapFromAppInfo(row)
+        const langList = Object.keys(langMap)
+        const currentLang = getCurrentLang(langList)
+        const displayName = getAppNameByLang(langMap, currentLang, row.appName)
+        return h(NEllipsis, { title: displayName, tooltip: true }, { default: () => displayName })
+      },
     },
     {
       title: '应用ID',

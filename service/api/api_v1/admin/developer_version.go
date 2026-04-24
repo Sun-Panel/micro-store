@@ -88,6 +88,7 @@ func (a *DeveloperVersionApi) Create(c *gin.Context) {
 		IconUrl:     cache.PackageResult.IconURL,
 	}
 
+	// 创建或更新版本并进行审核检查
 	if err := biz.MicroAppVersion.CreateOrUpdateWithCheck(global.Db, version, cache.PackageResult.FullFilePath); err != nil {
 		handleBizError(c, err)
 		return
@@ -137,6 +138,22 @@ func (a *DeveloperVersionApi) CancelReview(c *gin.Context) {
 	}
 
 	if err := biz.MicroAppVersion.CancelReview(global.Db, param.VersionId); err != nil {
+		handleBizError(c, err)
+		return
+	}
+
+	apiReturn.Success(c)
+}
+
+// TriggerSecurityAudit 主动触发安全审核
+func (a *DeveloperVersionApi) TriggerSecurityAudit(c *gin.Context) {
+	param := MicroAppVersionTriggerSecurityAuditReq{}
+	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	if err := biz.MicroAppVersion.TriggerSecurityAudit(global.Db, param.VersionId); err != nil {
 		handleBizError(c, err)
 		return
 	}

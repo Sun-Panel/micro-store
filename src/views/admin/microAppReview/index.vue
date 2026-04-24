@@ -1,10 +1,11 @@
 <script lang="ts" setup>
 import type { DataTableColumns } from 'naive-ui'
-import { NButton, NCard, NDataTable, NInput, NInputGroup, NSpace, NTag, useMessage } from 'naive-ui'
+import { NButton, NCard, NDataTable, NEllipsis, NInput, NInputGroup, NSpace, NTag, useMessage } from 'naive-ui'
 import { h, onMounted, ref } from 'vue'
 import { getPendingList } from '@/api/admin/microAppReview'
 import { MicroAppReviewStatus, microAppReviewStatusMap } from '@/enums/panel'
 import { timeFormat } from '@/utils/cmn'
+import { getCurrentLang } from '@/utils/functions'
 import ReviewDetail from './components/ReviewDetail.vue'
 
 const message = useMessage()
@@ -52,6 +53,10 @@ function createColumns(): DataTableColumns<MicroApp.MicroAppReviewInfo> {
         tooltip: true,
       },
       render(row) {
+        const langMap: Record<string, any> = row.langMap || {}
+        const langList = Object.keys(langMap)
+        const currentLang = getCurrentLang(langList)
+        const displayName = langMap[currentLang]?.appName || langMap['zh-CN']?.appName || row.adminName || '-'
         return h('div', { class: 'flex items-center gap-2' }, [
           h('img', {
             src: row.appIcon || '',
@@ -59,7 +64,7 @@ function createColumns(): DataTableColumns<MicroApp.MicroAppReviewInfo> {
             class: 'w-8 h-8 rounded object-cover',
             onError: (e: any) => { e.target.style.display = 'none' },
           }),
-          h('span', row.adminName || '-'),
+          h(NEllipsis, { title: displayName, tooltip: true, style: { maxWidth: '120px' } }, { default: () => displayName }),
         ])
       },
     },

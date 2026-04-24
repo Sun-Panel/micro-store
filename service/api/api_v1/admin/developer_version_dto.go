@@ -47,6 +47,11 @@ type MicroAppVersionCancelReviewReq struct {
 	VersionId uint `json:"versionId" binding:"required"`
 }
 
+// MicroAppVersionTriggerSecurityAuditReq 主动触发安全审核请求
+type MicroAppVersionTriggerSecurityAuditReq struct {
+	VersionId uint `json:"versionId" binding:"required"`
+}
+
 // MicroAppVersionDeleteReq 删除版本请求
 type MicroAppVersionDeleteReq struct {
 	Ids []uint `json:"ids" binding:"required"`

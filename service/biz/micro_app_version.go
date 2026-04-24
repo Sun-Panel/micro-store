@@ -1,6 +1,8 @@
 package biz
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"sun-panel/global"
 	"sun-panel/models"
@@ -260,6 +262,44 @@ func (s *MicroAppVersionService) Review(db *gorm.DB, versionId uint, status int,
 func (s *MicroAppVersionService) GetLatestOnlineByAppModelId(db *gorm.DB, appModelId uint) (models.MicroAppVersion, error) {
 	m := models.MicroAppVersion{}
 	return m.GetLatestOnlineByAppId(db, appModelId)
+}
+
+// TriggerSecurityAudit 主动触发版本安全审核
+func (s *MicroAppVersionService) TriggerSecurityAudit(db *gorm.DB, versionId uint) error {
+	m := models.MicroAppVersion{}
+	version, err := m.GetById(db, versionId)
+	if err != nil {
+		return NewBizError(ErrCodeVersionNotFound)
+	}
+
+	// 通过 PackageSrc 还原完整文件路径
+	configUpload := MicroAppPackage.getSavePath()
+	fullFilePath := fmt.Sprintf("%s/%s", configUpload, version.PackageSrc)
+
+	// 检查文件是否存在
+	if _, err := os.Stat(fullFilePath); os.IsNotExist(err) {
+		global.Logger.Errorln("文件不存在:", err)
+		return errors.New("文件不存在，请检查文件路径: " + fullFilePath)
+	}
+
+	// 解压 zip 文件到临时目录
+	extractPath, err := ExtractMicroAppPackageZipToTemp(fullFilePath)
+	if err != nil {
+		global.Logger.Errorln("解压文件失败:", err)
+		return err
+	}
+
+	// 异步审核
+	go func() {
+		securityAuditConfig := MicroAppAudit.GetSecurityAuditConfig()
+		s.rebootAudit(db, securityAuditConfig, &version, extractPath)
+
+		// 审核完成后清理临时目录
+		os.RemoveAll(extractPath)
+		global.Logger.Infoln("临时目录已清理:", extractPath)
+	}()
+
+	return nil
 }
 
 // 获取指定版本信息

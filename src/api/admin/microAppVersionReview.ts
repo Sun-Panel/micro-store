@@ -62,6 +62,14 @@ export function offlineVersion<T>(data: MicroApp.OfflineVersionRequest) {
   })
 }
 
+// 主动触发安全审核
+export function triggerSecurityAudit<T>(versionId: number) {
+  return post<T>({
+    url: '/admin/reviewVersion/triggerSecurityAudit',
+    data: { versionId },
+  })
+}
+
 // 获取版本列表（管理员专用）
 export function getVersionList<T>(data: MicroApp.GetVersionListRequest) {
   return post<T>({

@@ -2,7 +2,7 @@
 import { NButton, NCard, NCollapse, NCollapseItem, NDescriptions, NDescriptionsItem, NDivider, NInput, NModal, NProgress, NSpace, NTag, useMessage } from 'naive-ui'
 import { ref, watch } from 'vue'
 import { getDownloadUrl, getLatestOnlineByAppModelId } from '@/api/admin/microAppVersion'
-import { review } from '@/api/admin/microAppVersionReview'
+import { review, triggerSecurityAudit } from '@/api/admin/microAppVersionReview'
 import { apiRespErrMsg } from '@/utils/cmn/apiMessage'
 
 const props = defineProps<{
@@ -27,6 +27,7 @@ const reviewForm = ref({
 })
 const iframeModalVisible = ref(false)
 const securityAuditModalVisible = ref(false)
+const triggerAuditLoading = ref(false)
 
 // 获取版本说明（兼容多语言格式）
 function getVersionDescContent(versionDesc: Record<string, { content: string }> | string | undefined): string {
@@ -47,6 +48,14 @@ const severityMap: Record<string, { label: string, color: 'error' | 'warning' | 
   HIGH: { label: '高', color: 'warning', value: 3 },
   MEDIUM: { label: '中', color: 'default', value: 2 },
   LOW: { label: '低', color: 'success', value: 1 },
+  critical: { label: '高危', color: 'error', value: 4 },
+  high: { label: '高', color: 'warning', value: 3 },
+  medium: { label: '中', color: 'default', value: 2 },
+  low: { label: '低', color: 'success', value: 1 },
+}
+
+function getSeverityInfo(severity: string) {
+  return severityMap[severity] || { label: severity, color: 'default' as const, value: 0 }
 }
 
 // 监听弹窗打开，获取已发布版本信息
@@ -125,6 +134,26 @@ function handleOpenMicroAppPublic() {
 // 打开安全审核报告弹窗
 function handleOpenSecurityAudit() {
   securityAuditModalVisible.value = true
+}
+
+// 主动触发安全审核
+async function handleTriggerSecurityAudit() {
+  if (!props.versionInfo)
+    return
+
+  triggerAuditLoading.value = true
+  try {
+    const { code } = await triggerSecurityAudit<any>(props.versionInfo.id)
+    if (code === 0) {
+      message.success('已触发安全审核，请稍后刷新查看结果')
+    }
+  }
+  catch (error: any) {
+    apiRespErrMsg(error)
+  }
+  finally {
+    triggerAuditLoading.value = false
+  }
 }
 
 // 打开外部链接
@@ -226,6 +255,15 @@ function openExternalUrl(url: string) {
             <NDescriptionsItem label="安全审核">
               <NButton size="small" @click="handleOpenSecurityAudit">
                 {{ versionInfo.codeSecurityAudit ? '查看报告' : '无报告' }}
+              </NButton>
+              <NButton
+                size="small"
+                type="warning"
+                style="margin-left: 10px;"
+                :loading="triggerAuditLoading"
+                @click="handleTriggerSecurityAudit"
+              >
+                重新审核
               </NButton>
             </NDescriptionsItem>
           </NDescriptions>
@@ -426,8 +464,8 @@ function openExternalUrl(url: string) {
               >
                 <template #header>
                   <div class="flex items-center gap-2">
-                    <NTag :type="severityMap[vuln.severity].color as any">
-                      {{ severityMap[vuln.severity].label }}
+                    <NTag :type="getSeverityInfo(vuln.severity).color as any">
+                      {{ getSeverityInfo(vuln.severity).label }}
                     </NTag>
                     <span>{{ vuln.title }}</span>
                   </div>
@@ -512,8 +550,8 @@ function openExternalUrl(url: string) {
               >
                 <template #header>
                   <div class="flex items-center gap-2">
-                    <NTag :type="severityMap[vuln.severity].color as any">
-                      {{ severityMap[vuln.severity].label }}
+                    <NTag :type="getSeverityInfo(vuln.severity).color as any">
+                      {{ getSeverityInfo(vuln.severity).label }}
                     </NTag>
                     <span>{{ vuln.title }}</span>
                   </div>

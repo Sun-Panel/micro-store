@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { MarkdownRender } from '@/components/common'
 import { getMultiple } from '@/api/system/systemVariable'
+import { MarkdownRender } from '@/components/common'
 
 interface Props {
   varName: string
