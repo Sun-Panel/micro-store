@@ -267,6 +267,9 @@
     "required": "Required field"
   },
   "goToPay": "Go and pay",
+  "home": {
+    "emptyStateText": "There is currently no micro application, or try again after refreshing."
+  },
   "iconItem": {
     "add": "Add item",
     "currentPageLayerOpen": "Open in current page as layer",

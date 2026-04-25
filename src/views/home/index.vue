@@ -272,7 +272,13 @@ onMounted(() => {
 
 <template>
   <div class="home-container">
-    <div class="grid-layout">
+    <div v-if="list.length === 0" class="empty-state">
+      <img src="@/assets/image_fail.png" alt="empty" class="empty-icon">
+      <p class="empty-text">
+        {{ $t('home.emptyStateText') }}
+      </p>
+    </div>
+    <div v-else class="grid-layout">
       <NCard
         v-for="item in list"
         :key="item.id"
@@ -343,6 +349,26 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+}
+
+.empty-icon {
+  width: 80px;
+  height: 80px;
+  opacity: 0.5;
+  margin-bottom: 16px;
+}
+
+.empty-text {
+  color: #999;
+  font-size: 14px;
 }
 
 /* 响应式：根据容器宽度自动调整 */
