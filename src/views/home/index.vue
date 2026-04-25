@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { NAvatar, NCard } from 'naive-ui'
+import { NCard, NEllipsis } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { getList as getListApi } from '@/api/microApp'
 import { router } from '@/router'
+// eslint-disable-next-line perfectionist/sort-imports
+import defaultAppIcon from '@/assets/image_fail.png'
 
 interface MicroAppListItem extends MicroApp.Info {
   // developerName: string
@@ -66,6 +68,11 @@ function getAppDesc(item: MicroAppListItem): string {
     || langMap['zh-CN']?.appDesc
     || item.appDesc
     || ''
+}
+
+// 获取有效的应用图标，无效时返回默认图标
+function getAppIcon(item: MicroAppListItem): string {
+  return item.appIcon || defaultAppIcon
 }
 
 // 模拟10条数据（当API调用失败时使用）
@@ -275,20 +282,20 @@ onMounted(() => {
         @click="handleCardClick(item)"
       >
         <div class="flex items-center gap-2">
-          <NAvatar
-            :size="50"
-            :style="{
-              backgroundColor: 'transparent',
-            }"
-            :src="item.appIcon || '-'"
-          />
+          <div class="app-icon-wrapper">
+            <img
+              :src="getAppIcon(item)"
+              :alt="getAppName(item)"
+              class="app-icon-img"
+            >
+          </div>
           <div class="flex flex-col">
-            <div class="text-lg font-medium">
+            <NEllipsis class="text-lg font-medium" :line-clamp="1">
               {{ getAppName(item) || 'Unknown' }}
-            </div>
-            <div class="text-sm text-gray-500">
+            </NEllipsis>
+            <NEllipsis class="text-sm text-gray-500" :line-clamp="2">
               作者：{{ item.developer?.name || 'Unknown' }}
-            </div>
+            </NEllipsis>
           </div>
         </div>
         <div class="text-sm mt-2 text-gray-600">
@@ -320,6 +327,22 @@ onMounted(() => {
 
 .app-card:hover {
   transform: translateY(-2px);
+}
+
+.app-icon-wrapper {
+  flex-shrink: 0;
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  overflow: hidden;
+  /* background-color: #f5f5f5; */
+  /* border: 1px solid #eeeeee; */
+}
+
+.app-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* 响应式：根据容器宽度自动调整 */
