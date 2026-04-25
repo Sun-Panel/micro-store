@@ -103,7 +103,7 @@ func (s *MicroAppPackageService) UploadMicroAppPackage(fileData []byte, fileName
 
 	// 先解压文件获取配置
 	// 创建临时解压目录
-	tempDir := filepath.Join(os.TempDir(), "micro_app_extract", fileHash[:16])
+	tempDir := filepath.Join(Config.GetTempPath(), "micro_app_extract", fileHash[:16])
 	if err := os.MkdirAll(tempDir, os.ModePerm); err != nil {
 		return MicroAppPackageResult{}, fmt.Errorf("创建临时目录失败: %w", err)
 	}
@@ -121,7 +121,10 @@ func (s *MicroAppPackageService) UploadMicroAppPackage(fileData []byte, fileName
 	}
 
 	// 查找并解析配置文件
-	config := s.parseAppConfig(tempDir)
+	config, err := s.parseAppConfig(tempDir)
+	if err != nil {
+		return MicroAppPackageResult{}, fmt.Errorf("解析应用配置文件失败: %w", err)
+	}
 
 	// 使用配置信息生成最终文件名：[microappid]_[version]_[hash前16位]
 	fileExt := strings.ToLower(path.Ext(fileName))
@@ -170,50 +173,26 @@ func (s *MicroAppPackageService) calculateFileMD5(filePath string) (string, erro
 }
 
 // parseAppConfig 解析应用配置文件
-func (s *MicroAppPackageService) parseAppConfig(tempDir string) models.MicroAppVersionConfig {
-	// 尝试查找 app.config.js 或 app.config.json
-	configFiles := []string{
-		"app.config.js",
-		"app.config.json",
-		"app.config",
-		"app.json",
+func (s *MicroAppPackageService) parseAppConfig(tempDir string) (models.MicroAppVersionConfig, error) {
+	configPath := filepath.Join(tempDir, "app.json")
+	config, err := s.parseConfigFile(configPath)
+	if err != nil {
+		return models.MicroAppVersionConfig{}, err
 	}
-
-	for _, configFile := range configFiles {
-		configPath := filepath.Join(tempDir, configFile)
-		if _, err := os.Stat(configPath); err == nil {
-			if config := s.parseConfigFile(configPath); config != nil {
-				return *config
-			}
-		}
-	}
-
-	// 尝试在子目录中查找
-	var foundConfig models.MicroAppVersionConfig
-	filepath.Walk(tempDir, func(walkPath string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() && (strings.HasSuffix(info.Name(), "app.config.js") || strings.HasSuffix(info.Name(), "app.config.json") || strings.HasSuffix(info.Name(), ".config.js")) {
-			if config := s.parseConfigFile(walkPath); config != nil {
-				foundConfig = *config
-				return filepath.SkipDir
-			}
-		}
-		return nil
-	})
-
-	return foundConfig
+	return config, nil
 }
 
 // parseConfigFile 解析配置文件
-func (s *MicroAppPackageService) parseConfigFile(configPath string) *models.MicroAppVersionConfig {
+func (s *MicroAppPackageService) parseConfigFile(configPath string) (models.MicroAppVersionConfig, error) {
+	global.Logger.Debugln("parseConfigFile", configPath)
 	content, err := os.ReadFile(configPath)
 	if err != nil {
-		return nil
+		return models.MicroAppVersionConfig{}, err
 	}
 
 	strContent := string(content)
+
+	global.Logger.Debugln("parseConfigFile", strContent)
 
 	// 尝试移除 JavaScript 导出语法
 	strContent = strings.TrimPrefix(strContent, "export default ")
@@ -230,21 +209,21 @@ func (s *MicroAppPackageService) parseConfigFile(configPath string) *models.Micr
 
 	var config models.MicroAppVersionConfig
 	if err := json.Unmarshal([]byte(strContent), &config); err != nil {
-		return nil
+		return models.MicroAppVersionConfig{}, fmt.Errorf("parse config file failed: %w", err)
 	}
 
 	// 检查必要字段
 	if config.MicroAppId == "" {
-		return nil
+		return models.MicroAppVersionConfig{}, fmt.Errorf("no microappid")
 	}
 	if config.Version == "" {
-		return nil
+		return models.MicroAppVersionConfig{}, fmt.Errorf("no version")
 	}
 	// if config.APIVersion == "" {
 	// 	return nil
 	// }
 
-	return &config
+	return config, nil
 }
 
 // removeJSComments 移除 JavaScript 注释

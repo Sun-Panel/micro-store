@@ -67,6 +67,8 @@ func (a *MicroAppVersionUploadApi) Upload(c *gin.Context) {
 		return
 	}
 
+	// global.Logger.Debugln("MicroAppVersionUploadApi", "microApp:", cmn.AnyToJsonStr(microApp), "result:", cmn.AnyToJsonStr(result))
+
 	// 检测基础信息
 	if err := biz.MicroAppAudit.BasicCheck(microApp, result.Config); err != nil {
 		apiReturn.ErrorByCodeAndMsg(c, -2, err.Error())
