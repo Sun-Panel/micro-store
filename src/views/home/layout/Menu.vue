@@ -16,7 +16,10 @@ withDefaults(defineProps<{
 const authStore = useAuthStore()
 
 // 判断是否有开发者权限
-const hasDeveloperPermission = computed(() => hasRole(authStore.userInfo!.role || 0, ROLE_DEVELOPER))
+const hasDeveloperPermission = computed(() => {
+  const role = authStore.userInfo?.role || 0
+  return hasRole(role, ROLE_DEVELOPER)
+})
 
 const devDocLinks = 'https://doc.sun-panel.top/v2/zh_cn/micro_app_dev/'
 

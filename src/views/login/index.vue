@@ -38,12 +38,12 @@ async function loginPost() {
     setTimeout(() => {
       ms.success(`Hi ${res.data.name},${t('login.welcomeMessage')}`)
 
-      router.push('/admin')
-      if (authStore.userInfo?.role === 1)
-        router.push('/admin')
+      router.push('/')
+      // if (authStore.userInfo?.role === 1)
+      //   router.push('/')
 
-      else
-        router.push('/')
+      // else
+      //   router.push('/')
 
       // if (encodeURIComponent(route.query.callback as string))
       //   // location.href = `#/${route.query.callback}` as string
