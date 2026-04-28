@@ -45,18 +45,18 @@ const model = ref<Developer.RegisterRequest>({
 
 const rules: FormRules = {
   developerName: [
-    { required: true, trigger: 'blur', message: '仅支持小写英文字母、“-”（中划线），确定后不可随意修改' },
+    { required: true, trigger: 'blur', message: '必填项' },
     {
-      pattern: /^[a-z][a-z0-9-]*$/,
+      pattern: /^[a-z][a-z0-9-]{2,}$/,
       trigger: 'blur',
-      message: '只能包含小写字母、数字和中划线，且以字母开头',
+      message: '只能包含小写字母、数字和连字符，以小写字母开头，且至少3个字符',
     },
   ],
   name: { required: true, trigger: 'blur', message: '必填项' },
   contactMail: [{ type: 'email', trigger: 'blur', message: '请输入有效的邮箱地址' }],
 }
 
-const cardTitle = computed(() => props.editMode ? '开发者信息' : '成为开发者')
+const cardTitle = computed(() => props.editMode ? '开发者信息' : '注册为开发者')
 const buttonText = computed(() => props.editMode ? '保存修改' : '立即注册')
 
 // 收款方式选项
@@ -215,7 +215,7 @@ defineExpose({
         <NInput
           v-model:value="model.developerName"
           :disabled="editMode"
-          placeholder="纯英文字母组合，字母需小写"
+          placeholder="支持小写字母、数字，至少3个字符且首个字符不能为数字"
         />
       </NFormItem>
 
@@ -225,7 +225,7 @@ defineExpose({
       >
         <NInput
           v-model:value="model.name"
-          placeholder="公开显示的开发者名称"
+          placeholder="公开显示的开发者名称，每月可以修改1次"
         />
       </NFormItem>
 

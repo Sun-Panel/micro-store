@@ -301,16 +301,16 @@
     "welcomeMessage": "Welcome back!"
   },
   "menu": {
-    "becomeDeveloper": "Become developer",
     "community": "Community",
     "console": "Console",
     "demo": "Demo",
     "devDoc": "Dev document",
     "document": "Document",
     "myMessage": "Mmessage",
-    "myMicroApp": "My microapp",
+    "myMicroApp": "Micro-app Console",
     "myOrder": "My Order",
     "prAuthorizeInfo": "PRO authorize information",
+    "publishMicroApp": "Release micro-app",
     "upgradePRO": "Upgrade PRO",
     "userInfo": "Personal information"
   },

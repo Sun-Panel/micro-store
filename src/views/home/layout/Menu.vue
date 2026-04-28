@@ -25,7 +25,7 @@ const devDocLinks = 'https://doc.sun-panel.top/v2/zh_cn/micro_app_dev/'
 
 const activeKey = ref('aaa')
 const becomeDeveloperOption: MenuOption = {
-  label: () => a('/developer/register', t('menu.becomeDeveloper')),
+  label: () => a('/developer/register', t('menu.publishMicroApp')),
   key: 'becomeDeveloper',
 }
 const myMicroAppOption: MenuOption = {

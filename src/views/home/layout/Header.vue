@@ -135,10 +135,11 @@ function handleBackHome() {
   location.href = homeBase.value?.logo_click_to_link as string
 }
 
-function handleGoToPage(option: RouteLocationRaw) {
-  mobileDrawerShow.value = false
-  router.push(option)
-}
+// 前往首页
+// function handleGoToPage(option: RouteLocationRaw) {
+//   mobileDrawerShow.value = false
+//   router.push(option)
+// }
 
 function handleResize() {
   if (window.innerWidth > 800)
@@ -182,10 +183,10 @@ onUnmounted(() => {
               :src="homeBase?.logo_url"
             />
           </div>
-          <div class="flex items-center text-xl font-bold whitespace-nowrap dark:text-white">
+          <a class="flex items-center text-xl font-bold whitespace-nowrap dark:text-white" href="/">
             <!-- {{ homeBase?.logo_text }} -->
             Sun-Panel | {{ t('common.microAppStore') }}
-          </div>
+          </a>
         </div>
 
         <div v-if="!isMobile" class="w-full flex justify-end">

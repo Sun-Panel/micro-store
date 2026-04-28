@@ -302,16 +302,16 @@
     "welcomeMessage": "欢迎回来！"
   },
   "menu": {
-    "becomeDeveloper": "成为开发者",
     "community": "社区/交流",
     "console": "控制台",
     "demo": "演示",
     "devDoc": "开发文档",
     "document": "文档",
     "myMessage": "我的消息",
-    "myMicroApp": "我的微应用",
+    "myMicroApp": "微应用控制台",
     "myOrder": "我的订单",
     "prAuthorizeInfo": "PRO 授权信息",
+    "publishMicroApp": "发布微应用",
     "upgradePRO": "升级PRO",
     "userInfo": "个人信息"
   },
