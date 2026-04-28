@@ -201,14 +201,14 @@ onUnmounted(() => {
                 {{ t('login.register') }}
               </NButton>
             </span> -->
-            <span class="mr-4">
+            <!-- <span class="mr-4">
               <NButton size="small" @click="handleGoToPage({ name: 'login' })">
                 {{ t('login.login') }}
               </NButton>
-            </span>
+            </span> -->
             <span class="mr-4">
               <NButton type="success" size="small" @click="goOAuth2('/')">
-                授权登录
+                {{ t('login.login') }}
               </NButton>
             </span>
           </template>
@@ -248,14 +248,14 @@ onUnmounted(() => {
                   {{ t('login.register') }}
                 </NButton>
               </span> -->
-              <span>
+              <!-- <span>
                 <NButton type="success" size="small" @click="handleGoToPage({ name: 'login' })">
                   {{ t('login.login') }}
                 </NButton>
-              </span>
+              </span> -->
               <span>
-                <NButton type="success" size="small" @click="handleGoToPage({ name: 'login' })">
-                  授权登录
+                <NButton type="success" size="small" @click="goOAuth2('/')">
+                  {{ t('login.login') }}
                 </NButton>
               </span>
             </template>
