@@ -533,26 +533,27 @@ func (m *MicroApp) GetAppListWithLang(db *gorm.DB, opts MicroAppListWithLangQuer
 
 	// ========== 第二步：构建 JOIN 数据查询 ==========
 	// 构建 CASE WHEN 优先级排序：目标语言 > 回退语言 > 任意其他
-	var caseBuilder strings.Builder
-	caseBuilder.WriteString("CASE WHEN lang.lang = '")
-	caseBuilder.WriteString(opts.Lang)
-	caseBuilder.WriteString("' THEN 0 ")
+	// 注意：子查询中用 `lang`（表名），主查询 JOIN 后用 `lang.lang`（别名）
+	var caseBuilderForSubQuery strings.Builder
+	caseBuilderForSubQuery.WriteString("CASE WHEN lang = '")
+	caseBuilderForSubQuery.WriteString(opts.Lang)
+	caseBuilderForSubQuery.WriteString("' THEN 0 ")
 	for i, fl := range opts.FallbackLangs {
-		caseBuilder.WriteString("WHEN lang.lang = '")
-		caseBuilder.WriteString(fl)
-		caseBuilder.WriteString("' THEN ")
-		caseBuilder.WriteString(strconv.Itoa(i + 1))
-		caseBuilder.WriteString(" ")
+		caseBuilderForSubQuery.WriteString("WHEN lang = '")
+		caseBuilderForSubQuery.WriteString(fl)
+		caseBuilderForSubQuery.WriteString("' THEN ")
+		caseBuilderForSubQuery.WriteString(strconv.Itoa(i + 1))
+		caseBuilderForSubQuery.WriteString(" ")
 	}
-	caseBuilder.WriteString("ELSE 100 END")
-	caseExpr := caseBuilder.String()
+	caseBuilderForSubQuery.WriteString("ELSE 100 END")
+	caseExprForSubQuery := caseBuilderForSubQuery.String()
 
 	// 子查询：每个 micro_app_id 只取优先级最高的一条多语言记录
 	langSubQuery := db.Model(&MicroAppLang{}).
 		Select("id").
 		Where("micro_app_id = micro_app.micro_app_id").
 		Where("deleted_at IS NULL").
-		Order(caseExpr).
+		Order(caseExprForSubQuery).
 		Limit(1)
 
 	query := db.Table("micro_app").
