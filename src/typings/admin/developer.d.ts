@@ -1,4 +1,13 @@
 declare namespace Developer {
+  // 用户信息
+  interface UserInfo {
+    id: number
+    username: string
+    name: string
+    headImage: string
+    mail: string
+  }
+
   // 开发者信息
   interface DeveloperInfo {
     id: number
@@ -12,6 +21,7 @@ declare namespace Developer {
     status: number
     createTime: string
     updateTime: string
+    user?: UserInfo
   }
 
   // 获取列表请求

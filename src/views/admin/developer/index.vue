@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { DataTableColumns, PaginationProps } from 'naive-ui'
-import { NButton, NCard, NDataTable, NDropdown, NInput, NInputGroup, NSelect, NSwitch, useDialog, useMessage } from 'naive-ui'
+import { NAvatar, NButton, NCard, NDataTable, NDropdown, NInput, NInputGroup, NSelect, NSwitch, useDialog, useMessage } from 'naive-ui'
 import { h, onMounted, reactive, ref } from 'vue'
 import { deletes, getList, updateStatus } from '@/api/admin/developer'
 import { SvgIcon } from '@/components/common'
@@ -30,6 +30,22 @@ function createColumns({
 }): DataTableColumns<Developer.DeveloperInfo> {
   return [
     { title: 'ID', key: 'id', width: 80 },
+    {
+      title: '用户',
+      key: 'user',
+      width: 200,
+      render(row) {
+        if (!row.user)
+          return '-'
+        return h('div', { class: 'flex items-center gap-2' }, [
+          // h(NAvatar, { size: 'small', src: row.user.headImage, round: true }),
+          h('div', { class: 'flex flex-col' }, [
+            h('span', { class: 'text-sm' }, row.user.name || row.user.username || '-'),
+            h('span', { class: 'text-xs text-gray-400' }, row.user.mail || '-'),
+          ]),
+        ])
+      },
+    },
     { title: '开发者标识', key: 'developerName' },
     { title: '作者昵称', key: 'name' },
     { title: '联系邮箱', key: 'contactMail' },

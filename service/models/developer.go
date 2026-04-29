@@ -25,6 +25,9 @@ type Developer struct {
 	PaymentMethod string     `gorm:"type:varchar(200)" json:"paymentMethod"`                     // 收款方式描述
 	Status        int        `gorm:"type:tinyint(1);default:1" json:"status"`                    // 状态：0-禁用 1-正常
 	NameUpdatedAt *time.Time `gorm:"type:timestamp" json:"nameUpdatedAt"`                        // Name 上次修改时间
+
+	// 关联的用户信息（预加载）
+	User User `json:"user"`
 }
 
 // 表名
@@ -32,7 +35,7 @@ func (Developer) TableName() string {
 	return "developer"
 }
 
-// 获取开发者列表（支持分页和筛选）
+// 获取开发者列表（支持分页和筛选，预加载用户信息）
 func (m *Developer) GetList(db *gorm.DB, page, limit int, status *int, keyWord string) ([]Developer, int64, error) {
 	var list []Developer
 	var total int64
@@ -55,9 +58,9 @@ func (m *Developer) GetList(db *gorm.DB, page, limit int, status *int, keyWord s
 		return nil, 0, err
 	}
 
-	// 分页查询
+	// 分页查询，预加载用户信息
 	offset, limitSize := calcPage(page, limit)
-	err = query.Order("id DESC").Offset(offset).Limit(limitSize).Find(&list).Error
+	err = query.Preload("User").Order("id DESC").Offset(offset).Limit(limitSize).Find(&list).Error
 
 	return list, total, err
 }
