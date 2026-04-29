@@ -30,6 +30,7 @@ func (a *UserApi) GetInfo(c *gin.Context) {
 		"name":           userInfo.Name,
 		"role":           userInfo.Role,
 		"isBindSunStore": isBindSunStore,
+		"username":       userInfo.Username,
 		// "token":     userInfo.Token,
 
 	})

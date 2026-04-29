@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { AdminMenuItem } from '@/utils/role'
 import { NLayout, NLayoutSider, NMenu, NSpace } from 'naive-ui'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAdminStore, useAuthStore } from '@/store'
 import { filterAndConvertMenu, hasRole, ROLE_ADMIN, ROLE_AUDITOR, ROLE_DEVELOPER } from '@/utils/role'
@@ -78,6 +78,12 @@ const menuOptions = computed(() => {
     return ADMIN_MENU_CONFIG
   }
   return filterAndConvertMenu(userRole.value, ADMIN_MENU_CONFIG)
+})
+
+onMounted(() => {
+  if (authStore.userInfo?.id) {
+    authStore.refreshUserInfo()
+  }
 })
 </script>
 

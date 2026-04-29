@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
 import { NLoadingBarProvider } from 'naive-ui'
-import Header from './Header.vue'
+import { onMounted } from 'vue'
 import { useAuthStore } from '@/store'
+import Header from './Header.vue'
 
 const authStore = useAuthStore()
 // const loadingBar = useLoadingBar()
@@ -13,7 +13,7 @@ function isIframe() {
 
 onMounted(() => {
   // loadingBar.start()
-  if (authStore.userInfo?.username)
+  if (authStore.userInfo?.id)
     authStore.refreshUserInfo()
 })
 </script>

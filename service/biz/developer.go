@@ -10,6 +10,17 @@ import (
 // DeveloperService 开发者业务服务
 type DeveloperService struct{}
 
+// RegisterParams 注册开发者参数
+type RegisterParams struct {
+	UserId        uint
+	DeveloperName string
+	ContactMail   string
+	PaymentName   string
+	PaymentQrcode string
+	PaymentMethod string
+	Name          string
+}
+
 // GetByDeveloperName 根据开发者标识获取开发者信息
 func (s *DeveloperService) GetByDeveloperName(db *gorm.DB, developerName string) (models.Developer, error) {
 	m := models.Developer{}
@@ -70,4 +81,26 @@ func (s *DeveloperService) UpdateDeveloperInfo(db *gorm.DB, id uint, updateField
 	// 调用 Model 层执行数据库操作
 	m := models.Developer{}
 	return m.UpdateInfo(db, id, updateFields)
+}
+
+// Register 注册成为开发者（业务层，包含用户权限更新）
+func (s *DeveloperService) Register(db *gorm.DB, p RegisterParams) (uint, error) {
+	m := models.Developer{}
+	id, err := m.Register(db, p.UserId, p.DeveloperName, p.ContactMail, p.PaymentName, p.PaymentQrcode, p.PaymentMethod, p.Name)
+	if err != nil {
+		return 0, err
+	}
+
+	user := models.User{}
+	currentUser, err := user.GetUserInfoByUid(p.UserId)
+	if err != nil {
+		return id, nil
+	}
+
+	newRole := models.AddRole(currentUser.Role, models.ROLE_DEVELOPER)
+	if err := user.UpdateUserInfoByUserId(p.UserId, map[string]interface{}{"role": newRole}); err != nil {
+		return id, err
+	}
+
+	return id, nil
 }

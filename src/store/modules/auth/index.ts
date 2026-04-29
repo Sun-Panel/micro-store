@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
-import { getStorage, removeToken as hRemoveToken, setStorage } from './helper'
-import { VisitMode } from '@/enums/auth'
 import { getInfo } from '@/api/system/user'
+import { VisitMode } from '@/enums/auth'
+import { getStorage, removeToken as hRemoveToken, setStorage } from './helper'
 // interface SessionResponse {
 //   auth: boolean
 // }
@@ -44,9 +44,10 @@ export const useAuthStore = defineStore('auth-store', {
 
     async refreshUserInfo() {
       await getInfo<User.Info>().then((res) => {
-        if (this.userInfo) {
-          this.userInfo.name = res.data.name
-          this.saveStorage()
+        if (this.userInfo?.id) {
+          this.setUserInfo(res.data)
+          // this.userInfo.name = res.data.name
+          // this.saveStorage()
         }
       })
     },

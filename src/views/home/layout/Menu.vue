@@ -24,26 +24,22 @@ const hasDeveloperPermission = computed(() => {
 const devDocLinks = 'https://doc.sun-panel.top/v2/zh_cn/micro_app_dev/'
 
 const activeKey = ref('aaa')
-const becomeDeveloperOption: MenuOption = {
-  label: () => a('/developer/register', t('menu.publishMicroApp')),
-  key: 'becomeDeveloper',
-}
-const myMicroAppOption: MenuOption = {
-  label: () => a('/admin/developerCenter/myMicroApp', t('menu.myMicroApp')),
-  key: 'appManagement',
-}
+
+const publishMicroAppOption = computed<MenuOption>(() => ({
+  label: () => a(
+    hasDeveloperPermission.value
+      ? '/admin/developerCenter/myMicroApp'
+      : '/developer/register',
+    t('menu.publishMicroApp'),
+  ),
+  key: 'publishMicroApp',
+}))
 
 const menuOptions = computed<MenuOption[]>(() => {
   const options: MenuOption[] = []
 
-  if (hasDeveloperPermission.value) {
-    // 有开发者权限：显示"我的微应用"
-    options.push(myMicroAppOption)
-  }
-  else {
-    // 没有开发者权限：显示"成为开发者"
-    options.push(becomeDeveloperOption)
-  }
+  // 始终显示"发布微应用"按钮，根据权限跳转不同页面
+  options.push(publishMicroAppOption.value)
 
   options.push({
     label: () => aBlank(devDocLinks, t('menu.devDoc')),

@@ -3,7 +3,7 @@ import type { DropdownOption } from 'naive-ui'
 import type { RouteLocationRaw } from 'vue-router'
 import { NBadge, NButton, NDrawer, NDrawerContent, NDropdown, NImage, useMessage } from 'naive-ui'
 
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { logout } from '@/api'
 import { getHomeBase, getLoginConfig } from '@/api/openness'
 import { SvgIconOnline } from '@/components/common'
@@ -15,6 +15,12 @@ import Menu from './Menu.vue'
 const userStore = useUserStore()
 const authStore = useAuthStore()
 const appStore = useAppStore()
+
+const showConsole = computed(() => {
+  const role = authStore.userInfo?.role
+  // 普通用户以上权限才显示控制台按钮（仅普通用户role=1不显示）
+  return !!role && role !== 1
+})
 
 const ms = useMessage()
 const isShowRegister = ref(false)
@@ -32,10 +38,10 @@ const options = [
   //   type: 'render',
   //   render: myMessageRender,
   // },
-  {
-    key: 'header-divider',
-    type: 'divider',
-  },
+  // {
+  //   key: 'header-divider',
+  //   type: 'divider',
+  // },
   // {
   //   label: t('menu.userInfo'),
   //   key: 'PlatformUserInfo',
@@ -44,10 +50,10 @@ const options = [
   //   label: t('menu.prAuthorizeInfo'),
   //   key: 'PlatformProAuthorize',
   // },
-  {
-    label: t('menu.console'),
-    key: 'console',
-  },
+  // {
+  //   label: t('menu.console'),
+  //   key: 'console',
+  // },
   {
     label: t('common.logout'),
     key: 'logout',
@@ -135,6 +141,10 @@ function handleBackHome() {
   location.href = homeBase.value?.logo_click_to_link as string
 }
 
+function goToConsole() {
+  window.open('/admin')
+}
+
 // 前往首页
 // function handleGoToPage(option: RouteLocationRaw) {
 //   mobileDrawerShow.value = false
@@ -195,8 +205,8 @@ onUnmounted(() => {
           </span>
         </div>
 
-        <div v-if="!isMobile" class="min-w-[150px] mx-5">
-          <template v-if="!authStore.userInfo?.token">
+        <div v-if="!isMobile" class=" mx-5">
+          <template v-if="!authStore.userInfo?.id">
             <!-- <span v-if="isShowRegister" class="mr-4">
               <NButton type="info" size="small" ghost @click="handleGoToPage({ name: 'register' })">
                 {{ t('login.register') }}
@@ -214,7 +224,10 @@ onUnmounted(() => {
             </span>
           </template>
           <template v-else>
-            <div class="flex justify-end">
+            <div class="flex justify-end items-center gap-5">
+              <NButton v-if="showConsole" type="warning" size="small" class="" @click="goToConsole">
+                {{ t('menu.console') }}
+              </NButton>
               <NDropdown :options="options" @select="handleSelect">
                 <NBadge :value="unReadCount" :max="99">
                   <NButton type="info" size="small" ghost>
@@ -222,10 +235,6 @@ onUnmounted(() => {
                   </NButton>
                 </NBadge>
               </NDropdown>
-
-              <!-- <NButton v-if="authStore.userInfo?.role === 1" type="info" size="small" class="!mx-5" @click="handleGoToPage('/admin')">
-                后台管理
-              </NButton> -->
             </div>
           </template>
         </div>

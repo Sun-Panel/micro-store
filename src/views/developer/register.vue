@@ -3,6 +3,8 @@ import { useMessage } from 'naive-ui'
 import { onMounted, ref } from 'vue'
 import { checkIsDeveloper, getInfo, register, updateMyInfo } from '@/api/developer'
 import { DeveloperInfoForm } from '@/components/common'
+import { router } from '@/router'
+import { useAuthStore } from '@/store'
 
 const message = useMessage()
 const formRef = ref<InstanceType<typeof DeveloperInfoForm> | null>(null)
@@ -54,6 +56,9 @@ async function handleSubmit(data: Developer.RegisterRequest, editMode: boolean) 
       message.success('注册成功')
       isDeveloper.value = true
       isEdit.value = true
+      // 更新一下用户信息及权限信息
+      await useAuthStore().refreshUserInfo()
+      router.push({ name: 'AdminMyMicroApp' })
     }
   }
   catch (error: any) {

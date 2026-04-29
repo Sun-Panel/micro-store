@@ -94,8 +94,15 @@ func (a *DeveloperApi) Register(c *gin.Context) {
 		return
 	}
 
-	m := models.Developer{}
-	id, err := m.Register(global.Db, userId, param.DeveloperName, param.ContactMail, param.PaymentName, param.PaymentQrcode, param.PaymentMethod, param.Name)
+	id, err := biz.Developer.Register(global.Db, biz.RegisterParams{
+		UserId:        userId,
+		DeveloperName: param.DeveloperName,
+		ContactMail:   param.ContactMail,
+		PaymentName:   param.PaymentName,
+		PaymentQrcode: param.PaymentQrcode,
+		PaymentMethod: param.PaymentMethod,
+		Name:          param.Name,
+	})
 	if err != nil {
 		if err == gorm.ErrRegistered {
 			apiReturn.Error(c, "您已是开发者或开发者标识已存在")
