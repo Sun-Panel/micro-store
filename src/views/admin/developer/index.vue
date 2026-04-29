@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { DataTableColumns, PaginationProps } from 'naive-ui'
-import { NAvatar, NButton, NCard, NDataTable, NDropdown, NInput, NInputGroup, NSelect, NSwitch, useDialog, useMessage } from 'naive-ui'
+import { NButton, NCard, NDataTable, NDropdown, NInput, NInputGroup, NSelect, NSwitch, useDialog, useMessage } from 'naive-ui'
 import { h, onMounted, reactive, ref } from 'vue'
 import { deletes, getList, updateStatus } from '@/api/admin/developer'
 import { SvgIcon } from '@/components/common'

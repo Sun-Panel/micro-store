@@ -2,7 +2,6 @@
 import type { FormInst, FormRules } from 'naive-ui'
 import { NButton, NDivider, NForm, NFormItem, NImage, NInput, NSelect, NSpace, NTooltip, NUpload, useMessage } from 'naive-ui'
 import { computed, ref, watch } from 'vue'
-import { SvgIcon } from '@/components/common'
 import { useAuthStore } from '@/store/modules/auth'
 
 interface Props {

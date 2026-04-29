@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { DropdownOption } from 'naive-ui'
-import type { RouteLocationRaw } from 'vue-router'
 import { NBadge, NButton, NDrawer, NDrawerContent, NDropdown, NImage, useMessage } from 'naive-ui'
 
 import { computed, onMounted, onUnmounted, ref } from 'vue'
