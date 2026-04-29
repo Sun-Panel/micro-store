@@ -97,7 +97,7 @@ func (l *RegisterApi) Commit(c *gin.Context) {
 		Username: req.UserName,
 		Password: cmn.PasswordEncryption(req.Password),
 		Status:   1,
-		Role:     2,
+		Role:     models.ROLE_USER,
 	}
 	_, err = user.CreateOne()
 	if err != nil {

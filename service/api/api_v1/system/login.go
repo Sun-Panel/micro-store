@@ -137,14 +137,15 @@ func (l LoginApi) Login(c *gin.Context) {
 
 // 授权登录端点
 // 警告：此接口为半公开模式，获取登录信息请一定判断是否为登录状态
-// 
-// 使用新的 OAuth2 模块示例：
-// 1. 替换 sunapi := sunStore.NewSunStoreApi(apiHost, clientId, clientSecret)
-//    为: oauthClient, err := biz.SunStore.GetOAuth2Client()
 //
-// 2. 替换 sunapi.GetAccessToken(sunStore.AccessTokenResquest{Code: req.Code})
-//    为: tokenResp, err := biz.SunStore.GetAccessTokenByCode(req.Code)
-//    然后使用 tokenResp.AccessToken
+// 使用新的 OAuth2 模块示例：
+//
+//  1. 替换 sunapi := sunStore.NewSunStoreApi(apiHost, clientId, clientSecret)
+//     为: oauthClient, err := biz.SunStore.GetOAuth2Client()
+//
+//  2. 替换 sunapi.GetAccessToken(sunStore.AccessTokenResquest{Code: req.Code})
+//     为: tokenResp, err := biz.SunStore.GetAccessTokenByCode(req.Code)
+//     然后使用 tokenResp.AccessToken
 func (l *LoginApi) OAuth2CodeLogin(c *gin.Context) {
 	req := OAuth2CodeLoginReq{}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -410,7 +411,7 @@ func (l *LoginApi) oAuth2CodeNoLoggedAuthProcess(apiHost string, accessToken sun
 		userInfo.Username = openUser.Username
 		userInfo.Mail = openUser.Mail
 		userInfo.Name = openUser.Name
-		userInfo.Role = 2
+		userInfo.Role = models.ROLE_USER
 		userInfo.Status = 1
 		userInfo.StoreEmail = openUser.Mail
 		userInfo.Lang = openUser.Lang
