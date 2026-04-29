@@ -90,6 +90,11 @@ func Error(ctx *gin.Context, errMsg string) {
 	ErrorCode(ctx, -1, errMsg, nil)
 }
 
+// 返回错误 带错误码和数据（用于业务错误，如冷却期等）
+func ErrorWithData(ctx *gin.Context, errCode string, data interface{}) {
+	ApiReturn(ctx, -1, errCode, data)
+}
+
 // 返回错误 需要个性化定义的错误|带返回数据的错误
 func ErrorNoAccess(ctx *gin.Context) {
 	ErrorCode(ctx, 1005, global.Lang.Get("common.no_access"), nil)

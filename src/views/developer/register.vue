@@ -9,6 +9,7 @@ const formRef = ref<InstanceType<typeof DeveloperInfoForm> | null>(null)
 const isDeveloper = ref(false)
 const isEdit = ref(false)
 const initialData = ref<Partial<Developer.RegisterRequest>>({})
+const nameUpdatedAt = ref<string>('')
 
 async function checkDeveloperStatus() {
   try {
@@ -26,6 +27,7 @@ async function checkDeveloperStatus() {
           paymentMethod: devRes.data.paymentMethod || '',
           name: devRes.data.name,
         }
+        nameUpdatedAt.value = devRes.data.nameUpdatedAt || ''
         isEdit.value = true
       }
     }
@@ -41,6 +43,11 @@ async function handleSubmit(data: Developer.RegisterRequest, editMode: boolean) 
     if (editMode) {
       await updateMyInfo(data)
       message.success('更新成功')
+      // 重新获取信息更新 nameUpdatedAt
+      const devRes = await getInfo<any>()
+      if (devRes.data?.nameUpdatedAt) {
+        nameUpdatedAt.value = devRes.data.nameUpdatedAt
+      }
     }
     else {
       await register(data)
@@ -69,6 +76,7 @@ onMounted(() => {
       :edit-mode="isEdit"
       :is-developer="isDeveloper"
       :initial-data="initialData"
+      :name-updated-at="nameUpdatedAt"
       @submit="handleSubmit"
     />
   </div>

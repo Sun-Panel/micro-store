@@ -2,21 +2,29 @@ package models
 
 import (
 	"slices"
+	"time"
 
 	"gorm.io/gorm"
+)
+
+// 业务错误码定义
+const (
+	ErrCodeDeveloperNameExists   = "E_DEVELOPER_NAME_EXISTS"
+	ErrCodeDeveloperNameCooldown = "E_DEVELOPER_NAME_COOLDOWN"
 )
 
 // 开发者表
 type Developer struct {
 	BaseModel
-	UserId        uint   `gorm:"type:int(11);not null;uniqueIndex" json:"userId"`            // 用户ID
-	DeveloperName string `gorm:"type:varchar(50);not null;uniqueIndex" json:"developerName"` // 开发者标识（纯英文，多词用-分割）
-	Name          string `gorm:"type:varchar(50)" json:"name"`                               // 开发者名称
-	ContactMail   string `gorm:"type:varchar(50)" json:"contactMail"`                        // 联系邮箱
-	PaymentName   string `gorm:"type:varchar(50)" json:"paymentName"`                        // 收款人真实姓名
-	PaymentQrcode string `gorm:"type:varchar(500)" json:"paymentQrcode"`                     // 收款二维码图片URL
-	PaymentMethod string `gorm:"type:varchar(200)" json:"paymentMethod"`                     // 收款方式描述
-	Status        int    `gorm:"type:tinyint(1);default:1" json:"status"`                    // 状态：0-禁用 1-正常
+	UserId        uint       `gorm:"type:int(11);not null;uniqueIndex" json:"userId"`            // 用户ID
+	DeveloperName string     `gorm:"type:varchar(50);not null;uniqueIndex" json:"developerName"` // 开发者标识（纯英文，多词用-分割）
+	Name          string     `gorm:"type:varchar(50)" json:"name"`                               // 开发者名称
+	ContactMail   string     `gorm:"type:varchar(50)" json:"contactMail"`                        // 联系邮箱
+	PaymentName   string     `gorm:"type:varchar(50)" json:"paymentName"`                        // 收款人真实姓名
+	PaymentQrcode string     `gorm:"type:varchar(500)" json:"paymentQrcode"`                     // 收款二维码图片URL
+	PaymentMethod string     `gorm:"type:varchar(200)" json:"paymentMethod"`                     // 收款方式描述
+	Status        int        `gorm:"type:tinyint(1);default:1" json:"status"`                    // 状态：0-禁用 1-正常
+	NameUpdatedAt *time.Time `gorm:"type:timestamp" json:"nameUpdatedAt"`                        // Name 上次修改时间
 }
 
 // 表名
@@ -176,14 +184,14 @@ type DeveloperUpdateFields struct {
 	Status        *int
 }
 
-// UpdateInfo 更新开发者信息（带校验）
+// UpdateInfo 更新开发者信息（仅数据库操作，业务校验由 biz 层负责）
 func (m *Developer) UpdateInfo(db *gorm.DB, id uint, updateFields DeveloperUpdateFields) error {
 	// 如果提供了开发者名称，需要校验唯一性
 	if updateFields.DeveloperName != nil {
 		if exist, err := m.CheckNameExist(db, *updateFields.DeveloperName, id); err != nil {
 			return err
 		} else if exist {
-			return gorm.ErrRegistered
+			return NewModelError("E_DEVELOPER_NAME_EXISTS")
 		}
 	}
 
@@ -205,6 +213,8 @@ func (m *Developer) UpdateInfo(db *gorm.DB, id uint, updateFields DeveloperUpdat
 	}
 	if updateFields.Name != nil {
 		updateData["name"] = *updateFields.Name
+		now := time.Now()
+		updateData["name_updated_at"] = &now
 	}
 	if updateFields.Status != nil {
 		updateData["status"] = *updateFields.Status

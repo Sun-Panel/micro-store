@@ -1,6 +1,8 @@
 package admin
 
 import (
+	"errors"
+
 	"sun-panel/api/api_v1/common/apiReturn"
 	"sun-panel/api/api_v1/common/base"
 	"sun-panel/biz"
@@ -86,6 +88,11 @@ func (a *DeveloperApi) Update(c *gin.Context) {
 		Name:          &param.Name,
 	})
 	if err != nil {
+		var bizErr models.ModelErrorWithData
+		if errors.As(err, &bizErr) {
+			apiReturn.ErrorWithData(c, bizErr.ErrCode, bizErr.GetData())
+			return
+		}
 		if err == gorm.ErrRegistered {
 			apiReturn.Error(c, "开发者标识已存在")
 			return

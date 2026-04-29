@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { FormInst, FormRules } from 'naive-ui'
-import { NButton, NCard, NDivider, NForm, NFormItem, NImage, NInput, NSelect, NSpace, NUpload, useMessage } from 'naive-ui'
+import { NButton, NCard, NDivider, NForm, NFormItem, NImage, NInput, NSelect, NSpace, NTooltip, NUpload, useMessage } from 'naive-ui'
 import { computed, ref, watch } from 'vue'
 import { SvgIcon } from '@/components/common'
 import { useAuthStore } from '@/store/modules/auth'
@@ -12,6 +12,8 @@ interface Props {
   isDeveloper?: boolean
   /** 初始数据 */
   initialData?: Partial<Developer.RegisterRequest>
+  /** Name 上次修改时间 */
+  nameUpdatedAt?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -58,6 +60,23 @@ const rules: FormRules = {
 
 const cardTitle = computed(() => props.editMode ? '开发者信息' : '注册为开发者')
 const buttonText = computed(() => props.editMode ? '保存修改' : '立即注册')
+
+// Name 编辑冷却期判断（180天）
+const isNameCooldown = computed(() => {
+  if (!props.nameUpdatedAt) return false
+  const updatedTime = new Date(props.nameUpdatedAt).getTime()
+  const daysDiff = (Date.now() - updatedTime) / (1000 * 60 * 60 * 24)
+  return daysDiff < 180
+})
+
+// Name 禁用提示
+const nameDisabledTip = computed(() => {
+  if (!props.nameUpdatedAt) return ''
+  const updatedTime = new Date(props.nameUpdatedAt)
+  const nextUpdateTime = new Date(updatedTime.getTime() + 180 * 24 * 60 * 60 * 1000)
+  const daysRemaining = Math.ceil((nextUpdateTime.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  return `距离下次可修改还需 ${daysRemaining} 天（${nextUpdateTime.toLocaleDateString()}）`
+})
 
 // 收款方式选项
 const paymentMethodOptions = [
@@ -223,9 +242,25 @@ defineExpose({
         path="name"
         label="开发者名称"
       >
+        <NTooltip
+          v-if="isNameCooldown"
+          trigger="hover"
+        >
+          <template #trigger>
+            <div class="w-full">
+              <NInput
+                v-model:value="model.name"
+                :disabled="true"
+                placeholder="公开显示的开发者名称，每180天可以修改1次"
+              />
+            </div>
+          </template>
+          {{ nameDisabledTip }}
+        </NTooltip>
         <NInput
+          v-else
           v-model:value="model.name"
-          placeholder="公开显示的开发者名称，每月可以修改1次"
+          placeholder="公开显示的开发者名称，每180天可以修改1次"
         />
       </NFormItem>
 

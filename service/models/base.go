@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -18,9 +19,9 @@ const (
 )
 
 type BaseModel struct {
-	ID        uint `gorm:"primarykey" json:"id"`
-	CreatedAt time.Time `json:"createTime"`
-	UpdatedAt time.Time `json:"updateTime"`
+	ID        uint           `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time      `json:"createTime"`
+	UpdatedAt time.Time      `json:"updateTime"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt,omitempty"`
 }
 
@@ -81,6 +82,52 @@ func GetDb() (*gorm.DB, error) {
 
 	Db = db
 	return Db, err
+}
+
+type ModelErrorWithData struct {
+	ErrCode string         // 错误码
+	Err     error          // 原始错误
+	Data    map[string]any // 附加数据
+}
+
+func NewModelErrorWithData(code string, data map[string]any) ModelErrorWithData {
+	return ModelErrorWithData{
+		ErrCode: code,
+		Err:     errors.New(code),
+		Data:    data,
+	}
+}
+
+func NewModelError(code string) ModelErrorWithData {
+	return ModelErrorWithData{
+		ErrCode: code,
+		Err:     errors.New(code),
+	}
+}
+
+// 实现 error 接口
+func (e ModelErrorWithData) Error() string {
+	return e.ErrCode
+}
+
+// Is 用于 errors.Is() 判断
+func (e ModelErrorWithData) Is(target error) bool {
+	if t, ok := target.(ModelErrorWithData); ok {
+		return e.ErrCode == t.ErrCode
+	}
+	return e.Err.Error() == target.Error()
+}
+
+// GetData 获取附加数据
+func (e ModelErrorWithData) GetData() map[string]any {
+	return e.Data
+}
+
+func (e ModelErrorWithData) GetDataByKey(key string) any {
+	if e.Data == nil {
+		return nil
+	}
+	return e.Data[key]
 }
 
 // // 日志

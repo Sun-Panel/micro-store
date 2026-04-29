@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sun-panel/api/api_v1/common/apiReturn"
 	"sun-panel/api/api_v1/common/base"
+	"sun-panel/biz"
 	"sun-panel/global"
 	"sun-panel/models"
 
@@ -169,7 +170,8 @@ func (a *DeveloperApi) Update(c *gin.Context) {
 	}
 
 	// 更新信息
-	err = m.UpdateInfo(global.Db, info.ID, models.DeveloperUpdateFields{
+	bizService := biz.DeveloperService{}
+	err = bizService.UpdateDeveloperInfo(global.Db, info.ID, models.DeveloperUpdateFields{
 		DeveloperName: &param.DeveloperName,
 		ContactMail:   &param.ContactMail,
 		PaymentName:   &param.PaymentName,
@@ -178,6 +180,11 @@ func (a *DeveloperApi) Update(c *gin.Context) {
 		Name:          &param.Name,
 	})
 	if err != nil {
+		var bizErr models.ModelErrorWithData
+		if errors.As(err, &bizErr) {
+			apiReturn.ErrorWithData(c, bizErr.ErrCode, bizErr.GetData())
+			return
+		}
 		if err == gorm.ErrRegistered {
 			apiReturn.Error(c, "开发者标识已存在")
 			return
