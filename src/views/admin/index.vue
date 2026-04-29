@@ -21,7 +21,7 @@ const ADMIN_MENU_CONFIG: AdminMenuItem[] = [
   {
     label: '仪表盘',
     key: 'Dashboard',
-    roles: ROLE_ADMIN,
+    roles: ROLE_ADMIN | ROLE_AUDITOR | ROLE_DEVELOPER,
   },
   {
     label: '用户管理',
