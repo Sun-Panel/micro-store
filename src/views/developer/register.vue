@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { useMessage } from 'naive-ui'
+import { NCard, useMessage } from 'naive-ui'
 import { onMounted, ref } from 'vue'
 import { checkIsDeveloper, getInfo, register, updateMyInfo } from '@/api/developer'
 import { DeveloperInfoForm } from '@/components/common'
@@ -76,13 +76,18 @@ onMounted(() => {
 
 <template>
   <div class="min-h-[calc(100vh-120px)] flex items-center justify-center p-4">
-    <DeveloperInfoForm
-      ref="formRef"
-      :edit-mode="isEdit"
-      :is-developer="isDeveloper"
-      :initial-data="initialData"
-      :name-updated-at="nameUpdatedAt"
-      @submit="handleSubmit"
-    />
+    <NCard
+      :title="isEdit ? '开发者信息' : '注册为开发者'"
+      style="max-width: 600px;"
+    >
+      <DeveloperInfoForm
+        ref="formRef"
+        :edit-mode="isEdit"
+        :is-developer="isDeveloper"
+        :initial-data="initialData"
+        :name-updated-at="nameUpdatedAt"
+        @submit="handleSubmit"
+      />
+    </NCard>
   </div>
 </template>

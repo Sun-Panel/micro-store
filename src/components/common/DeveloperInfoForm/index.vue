@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { FormInst, FormRules } from 'naive-ui'
-import { NButton, NCard, NDivider, NForm, NFormItem, NImage, NInput, NSelect, NSpace, NTooltip, NUpload, useMessage } from 'naive-ui'
+import { NButton, NDivider, NForm, NFormItem, NImage, NInput, NSelect, NSpace, NTooltip, NUpload, useMessage } from 'naive-ui'
 import { computed, ref, watch } from 'vue'
 import { SvgIcon } from '@/components/common'
 import { useAuthStore } from '@/store/modules/auth'
@@ -58,7 +58,6 @@ const rules: FormRules = {
   contactMail: [{ type: 'email', trigger: 'blur', message: '请输入有效的邮箱地址' }],
 }
 
-const cardTitle = computed(() => props.editMode ? '开发者信息' : '注册为开发者')
 const buttonText = computed(() => props.editMode ? '保存修改' : '立即注册')
 
 // Name 编辑冷却期判断（180天）
@@ -198,24 +197,19 @@ defineExpose({
 </script>
 
 <template>
-  <NCard
-    :title="cardTitle"
-    style="max-width: 600px;"
-  >
-    <template #header-extra>
-      <NSpace align="center">
-        <span
-          v-if="isDeveloper"
-          class="text-green-500 text-sm"
-        >
-          <SvgIcon
-            icon="mdi:check-circle"
-            class="mr-1"
-          />
-          已认证为开发者
-        </span>
-      </NSpace>
-    </template>
+  <div>
+    <!-- <div class="mb-3">
+      <span
+        v-if="isDeveloper"
+        class="text-green-500 text-sm"
+      >
+        <SvgIcon
+          icon="mdi:check-circle"
+          class="mr-1"
+        />
+        已认证为开发者
+      </span>
+    </div> -->
 
     <NForm
       ref="formRef"
@@ -350,16 +344,14 @@ defineExpose({
       </NFormItem>
     </NForm>
 
-    <template #footer>
-      <NSpace justify="end">
-        <NButton
-          type="primary"
-          :loading="loading"
-          @click="handleSubmit"
-        >
-          {{ buttonText }}
-        </NButton>
-      </NSpace>
-    </template>
-  </NCard>
+    <NSpace justify="end">
+      <NButton
+        type="primary"
+        :loading="loading"
+        @click="handleSubmit"
+      >
+        {{ buttonText }}
+      </NButton>
+    </NSpace>
+  </div>
 </template>
