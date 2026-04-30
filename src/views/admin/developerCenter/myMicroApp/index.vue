@@ -145,9 +145,14 @@ onMounted(async () => {
             查询
           </NButton>
         </NInputGroup> -->
-        <span class="flex">
-          <NButton type="primary" ghost @click="handleAdd">创建微应用</NButton>
-        </span>
+        <div class="space-y-4">
+          <NButton type="primary" @click="handleAdd">
+            创建微应用
+          </NButton>
+          <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700">
+            <span class="font-medium">提示：</span>目前微应用商店平台刚成立期间，部分功能还在开发，如果你是开发者请添加项目作者微信（95302870）备注：微应用，拉你进入开发交流群，及时了解最新信息或反馈平台BUG。如果你提交的微应用长时间未审核，请在群里@红烧猎人
+          </div>
+        </div>
       </div>
     </NCard>
 
