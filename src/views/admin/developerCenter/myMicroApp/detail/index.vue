@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { NButton, NCard, NModal, NPopconfirm, NPopover, NSpace, NTag, useMessage } from 'naive-ui'
-import { computed, onMounted, ref } from 'vue'
+import { NButton, NCard, NModal, NPopconfirm, NPopover, NSpace, NTag, useDialog, useMessage } from 'naive-ui'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { cancelReview, deletes, getMicroInfoAndReviewInfoByMicroAppModelId, offline, submitReview } from '@/api/admin/microAppDeveloper'
@@ -19,6 +19,7 @@ import EditMicroApp from '../EditMicroApp/index.vue'
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
+const dialog = useDialog()
 
 // 微应用ID
 const microAppId = computed(() => Number(route.params.id))
@@ -331,6 +332,36 @@ function handleEditDone() {
 //   reviewHistoryShow.value = true
 // }
 
+// 打开添加版本弹窗前检查应用是否下架
+function handleAddVersion() {
+  if (reviewResponse.value?.microApp?.status === 0) {
+    message.warning('应用已下架，请先提交基础信息去审核')
+    return
+  }
+  // 检查是否有草稿未提交审核
+  if (reviewResponse.value?.microAppReview?.status === -1) {
+    dialog.warning({
+      title: '提示',
+      content: '当前基础信息有草稿还未提交审核，是否直接提交审核？',
+      positiveText: '提交审核',
+      negativeText: '不提交继续添加版本',
+      onPositiveClick: async () => {
+        await handleSubmitReview()
+        nextTick(() => {
+          addVersionShow.value = true
+        })
+      },
+      onNegativeClick: () => {
+        nextTick(() => {
+          addVersionShow.value = true
+        })
+      },
+    })
+    return
+  }
+  addVersionShow.value = true
+}
+
 // 返回列表
 function handleBack() {
   router.push({ name: 'AdminMyMicroApp' })
@@ -440,7 +471,15 @@ onMounted(async () => {
           <NButton :disabled="reviewResponse?.microApp?.status === 0" @click="handlePreview">
             查看公开页面
           </NButton>
-          <NButton type="primary" @click="addVersionShow = true">
+          <NPopover v-if="reviewResponse?.microApp?.status === 0" trigger="hover">
+            <template #trigger>
+              <NButton type="primary" disabled>
+                添加版本
+              </NButton>
+            </template>
+            应用为已下架状态，请先提交基础信息再去审核
+          </NPopover>
+          <NButton v-else type="primary" @click="handleAddVersion">
             添加版本
           </NButton>
           <!-- 数据加载中 -->
@@ -506,7 +545,7 @@ onMounted(async () => {
       :can-delete-version="true"
       :can-submit-review="true"
       :can-offline-version="true"
-      @add-version="addVersionShow = true"
+      @add-version="handleAddVersion"
       @view-detail="openVersionDetail"
       @submit-review="handleVersionSubmitReview"
       @cancel-review="handleVersionCancelReview"
