@@ -36,6 +36,7 @@ type OAuth2CodeLoginReq struct {
 }
 
 type OAuth2CodeLoginResq struct {
+	ID        uint   `json:"id"`
 	Token     string `json:"token"`
 	Username  string `json:"username"`
 	Name      string `json:"name"`
@@ -240,6 +241,7 @@ func (l *LoginApi) OAuth2CodeLogin(c *gin.Context) {
 	global.CUserAccessTokenApiToken.SetDefault(accessToken.AccessToken, cToken)
 
 	apiReturn.SuccessData(c, OAuth2CodeLoginResq{
+		ID:       userInfo.ID,
 		Token:    cToken,
 		Username: userInfo.Username,
 		Name:     userInfo.Name,
