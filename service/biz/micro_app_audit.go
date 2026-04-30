@@ -78,8 +78,13 @@ func (m *microAppAudit) BasicCheck(microApp models.MicroApp, config models.Micro
 	if microApp.MicroAppId != config.MicroAppId {
 		return errors.New("MicroAppId mismatch")
 	}
+	// 验证包配置文件microAppId是否与微应用的MicroAppId匹配
 	if !strings.HasPrefix(config.MicroAppId, microApp.Developer.DeveloperName) {
 		return errors.New("MicroAppId does not contain developerName")
+	}
+	// 验证包配置文件microAppId是否包含作者id信息
+	if !strings.HasPrefix(config.MicroAppId, config.Author) {
+		return errors.New("MicroAppId does not contain authorId")
 	}
 	return nil
 }

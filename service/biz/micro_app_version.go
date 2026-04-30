@@ -6,7 +6,6 @@ import (
 	"os"
 	"sun-panel/global"
 	"sun-panel/models"
-	"sun-panel/models/datatype"
 	"sync"
 
 	"gorm.io/gorm"
@@ -94,8 +93,11 @@ func (s *MicroAppVersionService) rebootAudit(db *gorm.DB, securityAuditConfig Se
 		global.Logger.Errorln("安全审核失败:", err)
 		return
 	}
-	version.CodeSecurityAudit = (*datatype.SecurityAuditReport)(securityAuditResult)
-	if err := version.Update(db); err != nil {
+
+	// 只更新安全审核相关字段，避免覆盖其他字段（如 status）
+	if err := db.Model(&models.MicroAppVersion{}).Where("id = ?", version.ID).Updates(map[string]interface{}{
+		"code_security_audit": securityAuditResult,
+	}).Error; err != nil {
 		global.Logger.Errorln("更新安全审核结果失败:", err)
 		return
 	}
@@ -153,7 +155,7 @@ func (s *MicroAppVersionService) GetPendingListWithAppInfo(db *gorm.DB, page, li
 // SubmitReview 提交审核
 func (s *MicroAppVersionService) SubmitReview(db *gorm.DB, versionId uint) error {
 	m := models.MicroAppVersion{}
-	version, err := m.GetById(db, versionId)
+	version, err := m.GetById(db.Debug(), versionId)
 	if err != nil {
 		return NewBizError(ErrCodeVersionNotFound)
 	}
@@ -164,7 +166,7 @@ func (s *MicroAppVersionService) SubmitReview(db *gorm.DB, versionId uint) error
 	}
 
 	version.Status = 0
-	if err := version.Update(db); err != nil {
+	if err := version.Update(db.Debug()); err != nil {
 		return err // 数据库错误，直接返回
 	}
 
