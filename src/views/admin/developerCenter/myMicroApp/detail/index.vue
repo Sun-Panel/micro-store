@@ -334,7 +334,8 @@ function handleEditDone() {
 
 // 打开添加版本弹窗前检查应用是否下架
 function handleAddVersion() {
-  if (reviewResponse.value?.microApp?.status === 0) {
+  // 下架状态且不在审核中时，不允许添加版本
+  if (reviewResponse.value?.microApp?.status === 0 && reviewResponse.value?.microAppReview?.status !== 0) {
     message.warning('应用已下架，请先提交基础信息去审核')
     return
   }
@@ -471,7 +472,7 @@ onMounted(async () => {
           <NButton :disabled="reviewResponse?.microApp?.status === 0" @click="handlePreview">
             查看公开页面
           </NButton>
-          <NPopover v-if="reviewResponse?.microApp?.status === 0" trigger="hover">
+          <NPopover v-if="reviewResponse?.microApp?.status === 0 && reviewResponse?.microAppReview?.status !== 0" trigger="hover">
             <template #trigger>
               <NButton type="primary" disabled>
                 添加版本
