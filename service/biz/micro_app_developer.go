@@ -387,44 +387,44 @@ func (s *MicroAppDeveloperService) UpdateDraftApp(db *gorm.DB, opts DeveloperApp
 		}
 
 		// 更新多语言信息到 micro_app_lang 表（所有版本共享）
-		for lang, langInfo := range opts.LangMap {
-			// langInfo 的类型是 interface{}，需要类型断言
-			infoMap, ok := langInfo.(map[string]interface{})
-			if !ok {
-				continue
-			}
-			appName, _ := infoMap["appName"].(string)
-			appDesc, _ := infoMap["appDesc"].(string)
+		// for lang, langInfo := range opts.LangMap {
+		// 	// langInfo 的类型是 interface{}，需要类型断言
+		// 	infoMap, ok := langInfo.(map[string]interface{})
+		// 	if !ok {
+		// 		continue
+		// 	}
+		// 	appName, _ := infoMap["appName"].(string)
+		// 	appDesc, _ := infoMap["appDesc"].(string)
 
-			// 查找是否已存在该语言的记录
-			var existLang models.MicroAppLang
-			err := tx.Where("micro_app_id = ? AND lang = ?", draft.MicroAppId, lang).First(&existLang).Error
+		// 	// 查找是否已存在该语言的记录
+		// 	var existLang models.MicroAppLang
+		// 	err := tx.Where("micro_app_id = ? AND lang = ?", draft.MicroAppId, lang).First(&existLang).Error
 
-			if err == gorm.ErrRecordNotFound {
-				// 创建新的语言记录
-				if appName != "" || appDesc != "" {
-					langModel := models.MicroAppLang{
-						MicroAppId: draft.MicroAppId,
-						Lang:       lang,
-						AppName:    appName,
-						AppDesc:    appDesc,
-					}
-					if err := tx.Create(&langModel).Error; err != nil {
-						return err
-					}
-				}
-			} else if err == nil {
-				// 更新已有的语言记录
-				if err := tx.Model(&models.MicroAppLang{}).Where("id = ?", existLang.ID).Updates(map[string]interface{}{
-					"app_name": appName,
-					"app_desc": appDesc,
-				}).Error; err != nil {
-					return err
-				}
-			} else {
-				return err
-			}
-		}
+		// 	if err == gorm.ErrRecordNotFound {
+		// 		// 创建新的语言记录
+		// 		if appName != "" || appDesc != "" {
+		// 			langModel := models.MicroAppLang{
+		// 				MicroAppId: draft.MicroAppId,
+		// 				Lang:       lang,
+		// 				AppName:    appName,
+		// 				AppDesc:    appDesc,
+		// 			}
+		// 			if err := tx.Create(&langModel).Error; err != nil {
+		// 				return err
+		// 			}
+		// 		}
+		// 	} else if err == nil {
+		// 		// 更新已有的语言记录
+		// 		if err := tx.Model(&models.MicroAppLang{}).Where("id = ?", existLang.ID).Updates(map[string]interface{}{
+		// 			"app_name": appName,
+		// 			"app_desc": appDesc,
+		// 		}).Error; err != nil {
+		// 			return err
+		// 		}
+		// 	} else {
+		// 		return err
+		// 	}
+		// }
 
 		return nil
 	})
