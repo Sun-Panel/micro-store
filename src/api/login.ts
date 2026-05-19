@@ -29,3 +29,10 @@ export function oAuth2CodeBind<T>(code: string) {
     data: { code },
   })
 }
+
+export function iframeCaptchaLogin<T>(captcha: string) {
+  return post<T>({
+    url: '/iframeCaptchaLogin',
+    data: { captcha },
+  })
+}

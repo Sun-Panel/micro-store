@@ -2,9 +2,11 @@
 import { NLoadingBarProvider } from 'naive-ui'
 import { onMounted } from 'vue'
 import { useAuthStore } from '@/store'
+import { useIframe } from '../composables/useIframe'
 import Header from './Header.vue'
 
 const authStore = useAuthStore()
+const { sendLoginEvent } = useIframe()
 // const loadingBar = useLoadingBar()
 
 function isIframe() {
@@ -15,12 +17,16 @@ onMounted(() => {
   // loadingBar.start()
   if (authStore.userInfo?.id)
     authStore.refreshUserInfo()
+
+  // 在 iframe 中发送登录事件
+  if (isIframe())
+    sendLoginEvent()
 })
 </script>
 
 <template>
   <div>
-    <div v-show="!isIframe()" class="fixed top-0 w-full z-10 bg-slate-100">
+    <div class="fixed top-0 w-full z-10 bg-slate-100">
       <Header />
     </div>
     <NLoadingBarProvider>

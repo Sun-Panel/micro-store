@@ -20,5 +20,6 @@ func InitLogin(router *gin.RouterGroup) {
 	// 公开模式
 	router.POST("/web/login", loginApi.Login)
 	router.POST("/ssoLogoutWebhook", loginApi.SSOLogoutWebhook)
+	router.POST("/iframeCaptchaLogin", loginApi.IframeCaptchaLogin)
 
 }

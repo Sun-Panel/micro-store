@@ -103,7 +103,7 @@ func (a *MicroAppApi) GetVersionList(c *gin.Context) {
 
 	m := models.MicroAppVersion{}
 	status := 1
-	list, total, err := m.GetList(global.Db.Debug(), req.Page, req.Limit, &req.AppRecordId, &status)
+	list, total, err := m.GetList(global.Db, req.Page, req.Limit, &req.AppRecordId, &status)
 	if err != nil {
 		apiReturn.ErrorDatabase(c, err.Error())
 		return

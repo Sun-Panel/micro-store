@@ -45,6 +45,10 @@ type OAuth2CodeLoginResq struct {
 	Mail      string `json:"mail"`
 }
 
+type IframeCaptchaLoginReq struct {
+	Captcha string `json:"captcha"`
+}
+
 var (
 	ErrOAuth2CodeNeedLogout = errors.New("need to withdraw from the main platform to log in")
 	ErrOAuth2CodeRetry      = errors.New("need to Retry")
@@ -361,6 +365,53 @@ func (l *LoginApi) SSOLogoutWebhook(c *gin.Context) {
 	global.CUserAccessTokenApiToken.Delete(req.AccessToken)
 	global.CUserApiTokenAccessToken.Delete(apitoken)
 	global.CUserToken.Delete(apitoken)
+}
+
+// Iframe 验证码登录
+func (l *LoginApi) IframeCaptchaLogin(c *gin.Context) {
+	req := IframeCaptchaLoginReq{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	user, err := biz.SunPanelAuth.CaptchaLogin(req.Captcha)
+	if err != nil {
+		apiReturn.Error(c, err.Error())
+		return
+	}
+
+	// 停用或未激活
+	if user.Status != 1 {
+		apiReturn.ErrorByCode(c, 1004)
+		return
+	}
+
+	bToken := user.Token
+	if user.Token == "" {
+		// 生成token
+		buildTokenOver := false
+		for !buildTokenOver {
+			bToken = cmn.BuildRandCode(32, cmn.RAND_CODE_MODE2)
+			if _, err := (&models.User{}).GetUserInfoByToken(bToken); err != nil {
+				// 保存token
+				(&models.User{}).UpdateUserInfoByUserId(user.ID, map[string]interface{}{
+					"token": bToken,
+				})
+				buildTokenOver = true
+			}
+		}
+		user.Token = bToken
+	}
+	user.Password = ""
+
+	cToken := uuid.NewString() + "-" + cmn.Md5(cmn.Md5("userId"+strconv.Itoa(int(user.ID))))
+	global.CUserToken.SetDefault(cToken, bToken)
+
+	// 设置当前用户信息
+	c.Set("userInfo", user)
+	user.Token = cToken // 重要 采用cToken,隐藏真实token
+	apiReturn.SuccessData(c, user)
 }
 
 // 已经登录的授权流程

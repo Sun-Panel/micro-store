@@ -1,8 +1,6 @@
 module sun-panel
 
-go 1.21
-
-toolchain go1.22.10
+go 1.22.10
 
 // 开发阶段：使用本地 oauth2 模块进行调试
 // 发布后删除此 replace 指令，使用 go get cnb.cool/hslr-s/go-pkg/oauth2-go@v1.0.0
@@ -37,6 +35,7 @@ require (
 )
 
 require (
+	cnb.cool/hslr-s/go-pkg/sun-api v0.0.0-20251119031617-225df4a33aef // indirect
 	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/bytedance/sonic v1.9.1 // indirect
