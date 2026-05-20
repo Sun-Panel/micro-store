@@ -6,7 +6,7 @@ import { useIframe } from '../composables/useIframe'
 import Header from './Header.vue'
 
 const authStore = useAuthStore()
-const { sendLoginEvent } = useIframe()
+const { sendLoginEvent, sendGetInstalledApps } = useIframe()
 // const loadingBar = useLoadingBar()
 
 function isIframe() {
@@ -19,8 +19,10 @@ onMounted(() => {
     authStore.refreshUserInfo()
 
   // 在 iframe 中发送登录事件
-  if (isIframe())
+  if (isIframe()) {
+    sendGetInstalledApps()
     sendLoginEvent()
+  }
 })
 </script>
 

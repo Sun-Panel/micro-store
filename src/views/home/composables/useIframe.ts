@@ -5,10 +5,11 @@
  */
 
 import type { UseIframeCommunicationReturn } from './useIframeCommunication'
+import type { AppInfo } from '@/store/modules/localApp/helper'
 import { logout } from '@/api'
-import { iframeCaptchaLogin } from '@/api/login'
 
-import { useAuthStore } from '@/store'
+import { iframeCaptchaLogin } from '@/api/login'
+import { useAuthStore, useLocalAppStore } from '@/store'
 import { debug } from '@/utils/logger'
 import { MICRO_APP_EVENTS, MICRO_APP_STORE_EVENTS } from './iframeEvents'
 import { getIframeAllUrlParam } from './useGetIframeUrlParam'
@@ -37,6 +38,7 @@ export interface UseIframeConfig {
 export interface UseIframeReturn extends UseIframeCommunicationReturn {
   /** 发送登录事件，根据当前登录状态自动填充账号信息 */
   sendLoginEvent: () => void
+  sendGetInstalledApps: () => void
 }
 
 /**
@@ -46,6 +48,8 @@ export interface UseIframeReturn extends UseIframeCommunicationReturn {
 export function useIframe(config: UseIframeConfig = {}): UseIframeReturn {
   const urlParam = getIframeAllUrlParam()
   const authStore = useAuthStore()
+  const localAppStore = useLocalAppStore()
+
   let loginIn = false // 本次是否已登录
 
   const communication = useIframeCommunication({
@@ -77,6 +81,19 @@ export function useIframe(config: UseIframeConfig = {}): UseIframeReturn {
     debug(`触发事件:${MICRO_APP_EVENTS.COMMUNICATION_READY}`, 'authStore:', authStore)
     const loggedIn = isLoggedIn()
     communication.sendMessage('main', MICRO_APP_EVENTS.COMMUNICATION_READY, {
+      loggedIn,
+      account: loggedIn ? (authStore.userInfo?.username || authStore.userInfo?.name || '') : '',
+    })
+  }
+
+  /**
+   * 获取已经安装的微应用
+   * 已登录时传递用户账号信息，未登录时账号为空
+   */
+  function sendGetInstalledApps() {
+    debug(`触发事件:${MICRO_APP_EVENTS.GET_INSTALLED_APPS}`)
+    const loggedIn = isLoggedIn()
+    communication.sendMessage('main', MICRO_APP_EVENTS.GET_INSTALLED_APPS, {
       loggedIn,
       account: loggedIn ? (authStore.userInfo?.username || authStore.userInfo?.name || '') : '',
     })
@@ -115,8 +132,39 @@ export function useIframe(config: UseIframeConfig = {}): UseIframeReturn {
     authStore.removeToken()
   })
 
+  // 监听主面板发送的获取已安装应用事件
+  communication.on(MICRO_APP_STORE_EVENTS.INSTALLED_APPS, async (data: { list: AppInfo[] }) => {
+    debug(`监听事件:${MICRO_APP_STORE_EVENTS.INSTALLED_APPS}`, data)
+    const apps = data?.list || []
+
+    // 直接构建新的对象，避免操作现有 state 对象
+    const newInstalledApps: Record<string, AppInfo> = {}
+
+    // 将数组转换为对象，key 为 microAppId，过滤掉 runPath 是 http(s) 地址的项目
+    apps.forEach((app) => {
+      if (app?.microAppId) {
+        // 过滤条件：runPath 是 http 或 https 开头的地址则跳过
+        if (!app.runPath || (app.runPath.startsWith('http://') || app.runPath.startsWith('https://'))) {
+          return
+        }
+
+        newInstalledApps[app.microAppId] = {
+          ...app,
+          appJson: app.appJson || {},
+          appInfo: app.appInfo || {},
+        }
+      }
+    })
+
+    // 一次性更新 store
+    localAppStore.setInstalledApps(newInstalledApps)
+
+    debug('INSTALLED_APPS', '已安装应用列表:', newInstalledApps)
+  })
+
   return {
     ...communication,
     sendLoginEvent,
+    sendGetInstalledApps,
   }
 }

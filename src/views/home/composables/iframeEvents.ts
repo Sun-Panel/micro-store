@@ -20,6 +20,8 @@ export const MICRO_APP_STORE_EVENTS = {
   // 登录事件（主面板通知微应用登录状态变化）
   LOGIN: 'microAppStore:login',
   LOGOUT: 'microAppStore:logout',
+  // 获取已安装应用列表
+  INSTALLED_APPS: 'microAppStore:installedApps',
 } as const
 
 // 微应用事件（从微应用商店发送到主面板）
@@ -38,6 +40,8 @@ export const MICRO_APP_EVENTS = {
   USER_INFO_DATA: 'microApp:userInfoData',
   // 通信就绪事件
   COMMUNICATION_READY: 'microApp:communicationReady',
+  // 获取已安装应用列表
+  GET_INSTALLED_APPS: 'microApp:getInstalledApps',
 } as const
 
 // 事件类型联合类型
