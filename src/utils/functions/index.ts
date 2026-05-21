@@ -7,3 +7,4 @@ export function getCurrentDate() {
 }
 
 export * from './lang'
+export * from './version'

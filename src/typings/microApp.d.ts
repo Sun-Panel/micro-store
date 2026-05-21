@@ -99,6 +99,8 @@ declare namespace MicroApp {
     defaultLangInfo?: LangInfo // 默认语言信息
     developer?: DeveloperInfo // 开发者详细信息
     createTime?: string // 创建时间
+    // 版本信息
+    latestVersion?: string // 最新审核通过的版本号（列表接口返回）
   }
 
   // 带语言信息的微应用信息（用于前端展示）

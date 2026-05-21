@@ -1,15 +1,21 @@
 <script setup lang="ts">
-import { NCard, NEllipsis } from 'naive-ui'
+import { NButton, NCard, NEllipsis } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { getList as getListApi } from '@/api/microApp'
-import { router } from '@/router'
-// eslint-disable-next-line perfectionist/sort-imports
 import defaultAppIcon from '@/assets/image_fail.png'
+
+import { SvgIconOnline } from '@/components/common'
+import { router } from '@/router'
+import { useLocalAppStore } from '@/store'
+
+import { isIframe } from '@/utils/cmn'
 
 interface MicroAppListItem extends MicroApp.Info {
   // developerName: string
   developer: MicroApp.DeveloperInfo
 }
+
+const localAppStore = useLocalAppStore()
 
 const list = ref<MicroAppListItem[]>([])
 const req = ref<MicroApp.GetListRequest>({
@@ -73,6 +79,16 @@ function getAppDesc(item: MicroAppListItem): string {
 // 获取有效的应用图标，无效时返回默认图标
 function getAppIcon(item: MicroAppListItem): string {
   return item.appIcon || defaultAppIcon
+}
+
+// 安装/打开按钮点击事件（占位函数）
+function handleInstall(_item: MicroAppListItem) {
+  // TODO: 实现安装/打开逻辑
+}
+
+// 购买/卸载按钮点击事件（占位函数）
+function handleAction(_item: MicroAppListItem) {
+  // TODO: 实现购买/卸载逻辑
 }
 
 // 模拟10条数据（当API调用失败时使用）
@@ -275,7 +291,7 @@ onMounted(() => {
     <div v-if="list.length === 0" class="empty-state">
       <img src="@/assets/image_fail.png" alt="empty" class="empty-icon">
       <p class="empty-text">
-        {{ $t('home.emptyStateText') }}
+        {{ $t('home.emptyStateText') || '暂无应用' }}
       </p>
     </div>
     <div v-else class="grid-layout">
@@ -287,25 +303,52 @@ onMounted(() => {
         hoverable
         @click="handleCardClick(item)"
       >
-        <div class="flex items-center gap-2">
-          <div class="app-icon-wrapper">
-            <img
-              :src="getAppIcon(item)"
-              :alt="getAppName(item)"
-              class="app-icon-img"
+        <div class="card-content">
+          <div class="app-main">
+            <div class="app-icon-wrapper">
+              <img
+                :src="getAppIcon(item)"
+                :alt="getAppName(item)"
+                class="app-icon-img"
+              >
+              <div class="app-stats">
+                <span class="stat-item" :title="$t('common.downloadCount')">
+                  <SvgIconOnline icon="grommet-icons:download" />
+                  <span class="stat-value">{{ item.downloadCount || 0 }}</span>
+                </span>
+                <!-- <span class="stat-item" :title="$t('common.installCount')">
+                  <SvgIconOnline icon="grommet-icons:install" />
+                  <span class="stat-value">{{ item.installCount || 0 }}</span>
+                </span> -->
+              </div>
+            </div>
+            <div class="app-info">
+              <NEllipsis class="app-name" :line-clamp="1">
+                {{ getAppName(item) || 'Unknown' }}
+              </NEllipsis>
+              <p class="app-desc">
+                {{ getAppDesc(item) || '暂无描述' }}
+              </p>
+            </div>
+          </div>
+          <div v-if="isIframe()" class="card-actions">
+            <NButton
+              size="tiny"
+              :type="localAppStore.isInstalled(item.microAppId) ? 'default' : 'primary'"
+              class="btn-install"
+              @click.stop="handleInstall(item)"
             >
+              {{ localAppStore.isInstalled(item.microAppId) ? '已安装' : '安装' }}
+            </NButton>
+            <!-- <NButton
+              size="tiny"
+              type="default"
+              class="btn-action"
+              @click.stop="handleAction(item)"
+            >
+              {{ localAppStore.isInstalled(item.microAppId) ? '卸载' : '详情' }}
+            </NButton> -->
           </div>
-          <div class="flex flex-col">
-            <NEllipsis class="text-lg font-medium" :line-clamp="1">
-              {{ getAppName(item) || 'Unknown' }}
-            </NEllipsis>
-            <NEllipsis class="text-sm text-gray-500" :line-clamp="2">
-              作者：{{ item.developer?.name || 'Unknown' }}
-            </NEllipsis>
-          </div>
-        </div>
-        <div class="text-sm mt-2 text-gray-600">
-          {{ getAppDesc(item) || '-' }}
         </div>
       </NCard>
     </div>
@@ -318,37 +361,109 @@ onMounted(() => {
 }
 
 .grid-layout {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  justify-content: flex-start;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
 }
 
 .app-card {
-  flex: 0 0 auto;
-  width: 280px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: box-shadow 0.2s ease;
 }
 
 .app-card:hover {
-  transform: translateY(-2px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.card-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
 }
 
 .app-icon-wrapper {
   flex-shrink: 0;
-  width: 50px;
-  height: 50px;
-  border-radius: 8px;
-  overflow: hidden;
-  /* background-color: #f5f5f5; */
-  /* border: 1px solid #eeeeee; */
+  width: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
 }
 
 .app-icon-img {
-  width: 100%;
-  height: 100%;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
   object-fit: cover;
+}
+
+.app-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.app-desc {
+  font-size: 12px;
+  color: #999;
+  line-height: 1.4;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.app-stats {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  font-size: 10px;
+  color: #666;
+  width: 100%;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.stat-icon {
+  font-size: 10px;
+  color: #999;
+}
+
+.stat-value {
+  font-weight: 500;
+}
+
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.btn-install,
+.btn-action {
+  width: 60px;
 }
 
 .empty-state {
@@ -360,9 +475,9 @@ onMounted(() => {
 }
 
 .empty-icon {
-  width: 80px;
-  height: 80px;
-  opacity: 0.5;
+  width: 64px;
+  height: 64px;
+  opacity: 0.4;
   margin-bottom: 16px;
 }
 
@@ -371,28 +486,9 @@ onMounted(() => {
   font-size: 14px;
 }
 
-/* 响应式：根据容器宽度自动调整 */
-@media (min-width: 1200px) {
-  .app-card {
-    width: calc((100% - 48px) / 4); /* 4列 */
-  }
-}
-
-@media (min-width: 900px) and (max-width: 1199px) {
-  .app-card {
-    width: calc((100% - 32px) / 3); /* 3列 */
-  }
-}
-
-@media (min-width: 600px) and (max-width: 899px) {
-  .app-card {
-    width: calc((100% - 16px) / 2); /* 2列 */
-  }
-}
-
-@media (max-width: 599px) {
-  .app-card {
-    width: 100%; /* 1列 */
+@media (max-width: 600px) {
+  .grid-layout {
+    grid-template-columns: 1fr;
   }
 }
 </style>

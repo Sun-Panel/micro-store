@@ -2,16 +2,13 @@
 import { NLoadingBarProvider } from 'naive-ui'
 import { onMounted } from 'vue'
 import { useAuthStore } from '@/store'
+import { isIframe } from '@/utils/cmn'
 import { useIframe } from '../composables/useIframe'
 import Header from './Header.vue'
 
 const authStore = useAuthStore()
 const { sendLoginEvent, sendGetInstalledApps } = useIframe()
 // const loadingBar = useLoadingBar()
-
-function isIframe() {
-  return window !== window.top
-}
 
 onMounted(() => {
   // loadingBar.start()
@@ -28,7 +25,7 @@ onMounted(() => {
 
 <template>
   <div>
-    <div class="fixed top-0 w-full z-10 bg-slate-100">
+    <div v-show="!isIframe()" class="fixed top-0 w-full z-10 bg-slate-100">
       <Header />
     </div>
     <NLoadingBarProvider>

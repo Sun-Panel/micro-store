@@ -5,6 +5,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { getDownloadUrl, getInfo, getVersionList } from '@/api/microApp'
+import { SvgIconOnline } from '@/components/common'
 import { microAppChargeTypeMap, microAppThirdChargeTypeMap, MicroAppVersionStatus } from '@/enums/panel'
 import 'moment/dist/locale/zh-cn'
 
@@ -233,7 +234,7 @@ onMounted(async () => {
       <NCard class="mb-6" :bordered="false" shadow="hover">
         <div class="flex flex-col md:flex-row gap-6">
           <!-- 应用图标 -->
-          <div class="flex-shrink-0">
+          <div class="flex-shrink-0 flex flex-col items-center gap-3">
             <img
               v-if="microAppInfo.appIcon"
               :src="microAppInfo.appIcon"
@@ -241,6 +242,17 @@ onMounted(async () => {
             >
             <div v-else class="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
               暂无图标
+            </div>
+            <!-- 下载次数和安装次数 -->
+            <div class="app-stats">
+              <span class="stat-item" :title="$t('common.downloadCount')">
+                <SvgIconOnline icon="grommet-icons:download" />
+                <span class="stat-value">{{ microAppInfo.downloadCount || 0 }}</span>
+              </span>
+              <span class="stat-item" :title="$t('common.installCount')">
+                <SvgIconOnline icon="grommet-icons:install" />
+                <span class="stat-value">{{ microAppInfo.installCount || 0 }}</span>
+              </span>
             </div>
           </div>
 
@@ -419,3 +431,23 @@ onMounted(async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.app-stats {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #666;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.stat-value {
+  font-weight: 500;
+}
+</style>

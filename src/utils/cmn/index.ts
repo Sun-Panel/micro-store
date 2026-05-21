@@ -1,17 +1,13 @@
-import moment from 'moment'
-import { h } from 'vue'
 import type { NotificationReactive } from 'naive-ui'
-import { NButton, createDiscreteApi } from 'naive-ui'
-import { apiRespErrMsg as apiRespErrMsgApiMessage } from './apiMessage'
-import { useAuthStore, useNoticeStore, useUserStore } from '@/store'
-import { getAuthInfo } from '@/api/system/user'
 import type { VisitMode } from '@/enums/auth'
+import moment from 'moment'
+import { createDiscreteApi, NButton } from 'naive-ui'
+import { h } from 'vue'
 import { getListByDisplayType as getListByDisplayTypeApi } from '@/api/notice'
+import { getAuthInfo } from '@/api/system/user'
 import { OrderStatus, PayPlatform } from '@/enums/goodsOrder'
-
-const noticeStore = useNoticeStore()
-const userStore = useUserStore()
-const authStore = useAuthStore()
+import { useAuthStore, useNoticeStore, useUserStore } from '@/store'
+import { apiRespErrMsg as apiRespErrMsgApiMessage } from './apiMessage'
 
 const { notification } = createDiscreteApi(['notification'])
 /**
@@ -52,6 +48,9 @@ export function getCurrencySymbol(currencyCode: string): string | null {
  * @param timeString
  */
 export function noticeCreate(info: Notice.NoticeInfo) {
+  const noticeStore = useNoticeStore()
+  const userStore = useUserStore()
+
   const option: any = {
     title: info.title,
     content: info.content,
@@ -122,6 +121,9 @@ export function getTitle(titile: string) {
 
 //
 export async function updateLocalUserInfo() {
+  const userStore = useUserStore()
+  const authStore = useAuthStore()
+
   interface Req {
     user: User.Info
     visitMode: VisitMode
@@ -134,6 +136,9 @@ export async function updateLocalUserInfo() {
 }
 
 export async function getNotice(displayType: number | number[]) {
+  const noticeStore = useNoticeStore()
+  const userStore = useUserStore()
+
   let param: number[]
   if (typeof displayType === 'number')
     param = [displayType]
@@ -160,14 +165,11 @@ export function getFaviconUrl(url: string): string {
 /**
  * @description: 获取随机码
  * @param {number} size
- * @param {array} seed ["a","b"m"c]
+ * @param {Array} seed ["a","b"m"c]
  * @return {string}
  */
 export function randomCode(size: number, seed?: Array<string>) {
-  seed = seed || ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'm', 'n', 'p', 'Q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-    '2', '3', '4', '5', '6', '7', '8', '9',
-  ]// 数组
+  seed = seed || ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'm', 'n', 'p', 'Q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '2', '3', '4', '5', '6', '7', '8', '9']// 数组
   const seedlength = seed.length// 数组长度
   let createPassword = ''
   for (let i = 0; i < size; i++) {
@@ -215,7 +217,7 @@ export function bytesToSize(bytes: number) {
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB']
   if (bytes === 0)
     return '0B'
-  const i = parseInt(String(Math.floor(Math.log(bytes) / Math.log(1024))))
+  const i = Number.parseInt(String(Math.floor(Math.log(bytes) / Math.log(1024))))
   return `${(bytes / 1024 ** i).toFixed(1)} ${sizes[i]}`
 }
 
@@ -280,6 +282,10 @@ export function formatAmount(amount: number): string {
   formattedAmount += suffixes[suffixIndex]
 
   return formattedAmount
+}
+
+export function isIframe() {
+  return window !== window.top
 }
 
 export const apiRespErrMsg = apiRespErrMsgApiMessage
