@@ -7,6 +7,8 @@ import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { getDownloadUrl, getInfo, getVersionList } from '@/api/microApp'
 import { SvgIconOnline } from '@/components/common'
 import { microAppChargeTypeMap, microAppThirdChargeTypeMap, MicroAppVersionStatus } from '@/enums/panel'
+import { isIframe } from '@/utils/cmn'
+import { useIframe } from '../composables/useIframe'
 import 'moment/dist/locale/zh-cn'
 
 // 只显示日期，不显示时间
@@ -17,6 +19,7 @@ function dateFormat(timeString?: string) {
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
+const { sendInstallApp } = useIframe()
 
 // 微应用ID
 const appRecordId = computed(() => Number(route.params.id))
@@ -200,7 +203,15 @@ async function handleDownloadByVersionId(version?: string) {
 
 // 安装版本
 function handleInstall() {
-  message.info('安装功能开发中，敬请期待')
+  if (microAppInfo.value?.microAppId) {
+    if (isIframe()) {
+      // 在 iframe 中，发送安装消息给父窗口
+      sendInstallApp({ microAppId: microAppInfo.value.microAppId, authCode: '66666' })
+    }
+    else {
+      message.info('请在私有部署项目中打开微应用商店安装')
+    }
+  }
 }
 
 onMounted(async () => {
@@ -334,10 +345,10 @@ onMounted(async () => {
 
       <!-- 下载及安装按钮 -->
       <div v-if="latestApprovedVersion" class="flex items-center justify-center gap-3 mb-5">
-        <NButton type="primary" @click="handleDownloadByVersionId">
+        <NButton v-if="!isIframe()" type="primary" @click="handleDownloadByVersionId">
           下载
         </NButton>
-        <NButton @click="handleInstall">
+        <NButton :type="isIframe() ? 'success' : 'default'" @click="handleInstall">
           安装
         </NButton>
       </div>

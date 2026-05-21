@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NButton, NCard, NEllipsis } from 'naive-ui'
+import { NButton, NCard, NEllipsis, useMessage } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { getList as getListApi } from '@/api/microApp'
 import defaultAppIcon from '@/assets/image_fail.png'
@@ -7,8 +7,8 @@ import defaultAppIcon from '@/assets/image_fail.png'
 import { SvgIconOnline } from '@/components/common'
 import { router } from '@/router'
 import { useLocalAppStore } from '@/store'
-
 import { isIframe } from '@/utils/cmn'
+import { useIframe } from './composables/useIframe'
 
 interface MicroAppListItem extends MicroApp.Info {
   // developerName: string
@@ -16,6 +16,8 @@ interface MicroAppListItem extends MicroApp.Info {
 }
 
 const localAppStore = useLocalAppStore()
+const message = useMessage()
+const { sendInstallApp } = useIframe()
 
 const list = ref<MicroAppListItem[]>([])
 const req = ref<MicroApp.GetListRequest>({
@@ -81,9 +83,16 @@ function getAppIcon(item: MicroAppListItem): string {
   return item.appIcon || defaultAppIcon
 }
 
-// 安装/打开按钮点击事件（占位函数）
-function handleInstall(_item: MicroAppListItem) {
-  // TODO: 实现安装/打开逻辑
+// 安装/打开按钮点击事件
+function handleInstall(item: MicroAppListItem) {
+  if (isIframe()) {
+    // 在 iframe 中，发送安装消息给父窗口
+    sendInstallApp({ microAppId: item.microAppId, authCode: '5555' })
+  }
+  else {
+    // 非 iframe 环境，显示提示
+    message.info('请在私有部署项目中打开微应用商店安装')
+  }
 }
 
 // 购买/卸载按钮点击事件（占位函数）
@@ -287,10 +296,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="home-container">
-    <div v-if="list.length === 0" class="empty-state">
-      <img src="@/assets/image_fail.png" alt="empty" class="empty-icon">
-      <p class="empty-text">
+  <div class="p-4">
+    <div v-if="list.length === 0" class="flex flex-col items-center justify-center py-15 px-5">
+      <img src="@/assets/image_fail.png" alt="empty" class="w-16 h-16 opacity-40 mb-4">
+      <p class="text-gray-400 text-sm">
         {{ $t('home.emptyStateText') || '暂无应用' }}
       </p>
     </div>
@@ -299,43 +308,47 @@ onMounted(() => {
         v-for="item in list"
         :key="item.id"
         size="small"
-        class="app-card"
+        class="!rounded-lg cursor-pointer transition-shadow duration-200 hover:shadow-md"
         hoverable
         @click="handleCardClick(item)"
       >
-        <div class="card-content">
-          <div class="app-main">
-            <div class="app-icon-wrapper">
+        <div class="flex items-center gap-3">
+          <div class="flex items-start gap-2.5 flex-1 min-w-0">
+            <div class="flex-shrink-0 w-10 flex flex-col items-center gap-1">
               <img
                 :src="getAppIcon(item)"
                 :alt="getAppName(item)"
-                class="app-icon-img"
+                class="w-10 h-10 rounded-lg object-cover"
               >
-              <div class="app-stats">
-                <span class="stat-item" :title="$t('common.downloadCount')">
+              <div class="flex justify-center gap-2 text-[10px] text-gray-500 w-full">
+                <span class="flex items-center gap-[3px]" :title="$t('common.downloadCount')">
                   <SvgIconOnline icon="grommet-icons:download" />
-                  <span class="stat-value">{{ item.downloadCount || 0 }}</span>
+                  <span class="font-medium">{{ item.downloadCount || 0 }}</span>
                 </span>
-                <!-- <span class="stat-item" :title="$t('common.installCount')">
+                <!-- <span class="flex items-center gap-[3px]" :title="$t('common.installCount')">
                   <SvgIconOnline icon="grommet-icons:install" />
-                  <span class="stat-value">{{ item.installCount || 0 }}</span>
+                  <span class="font-medium">{{ item.installCount || 0 }}</span>
                 </span> -->
               </div>
             </div>
-            <div class="app-info">
-              <NEllipsis class="app-name" :line-clamp="1">
+            <div class="flex-1 min-w-0">
+              <div class="text-base font-bold m-0 leading-[1.4] truncate block w-full" :title="getAppName(item)">
                 {{ getAppName(item) || 'Unknown' }}
-              </NEllipsis>
-              <p class="app-desc">
+              </div>
+              <div class="flex items-center gap-1 text-[11px] text-gray-500">
+                <SvgIconOnline icon="boxicons:user" class="w-[15px] h-[15px]" />
+                <span class="truncate">{{ item.developer?.name || item.developer?.developerName || '未知' }}</span>
+              </div>
+              <p class="text-xs text-gray-400 leading-[1.4] m-0 line-clamp-2">
                 {{ getAppDesc(item) || '暂无描述' }}
               </p>
             </div>
           </div>
-          <div v-if="isIframe()" class="card-actions">
+          <div v-if="isIframe()" class="flex flex-col gap-1 flex-shrink-0">
             <NButton
               size="tiny"
               :type="localAppStore.isInstalled(item.microAppId) ? 'default' : 'primary'"
-              class="btn-install"
+              class="w-[60px]"
               @click.stop="handleInstall(item)"
             >
               {{ localAppStore.isInstalled(item.microAppId) ? '已安装' : '安装' }}
@@ -343,7 +356,7 @@ onMounted(() => {
             <!-- <NButton
               size="tiny"
               type="default"
-              class="btn-action"
+              class="w-[60px]"
               @click.stop="handleAction(item)"
             >
               {{ localAppStore.isInstalled(item.microAppId) ? '卸载' : '详情' }}
@@ -356,134 +369,10 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.home-container {
-  padding: 16px;
-}
-
 .grid-layout {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 12px;
-}
-
-.app-card {
-  border-radius: 8px;
-  cursor: pointer;
-  transition: box-shadow 0.2s ease;
-}
-
-.app-card:hover {
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-}
-
-.card-content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.app-main {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  flex: 1;
-  min-width: 0;
-}
-
-.app-icon-wrapper {
-  flex-shrink: 0;
-  width: 40px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.app-icon-img {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  object-fit: cover;
-}
-
-.app-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.app-name {
-  font-size: 15px;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 4px;
-}
-
-.app-desc {
-  font-size: 12px;
-  color: #999;
-  line-height: 1.4;
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.app-stats {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  font-size: 10px;
-  color: #666;
-  width: 100%;
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.stat-icon {
-  font-size: 10px;
-  color: #999;
-}
-
-.stat-value {
-  font-weight: 500;
-}
-
-.card-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.btn-install,
-.btn-action {
-  width: 60px;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-}
-
-.empty-icon {
-  width: 64px;
-  height: 64px;
-  opacity: 0.4;
-  margin-bottom: 16px;
-}
-
-.empty-text {
-  color: #999;
-  font-size: 14px;
 }
 
 @media (max-width: 600px) {

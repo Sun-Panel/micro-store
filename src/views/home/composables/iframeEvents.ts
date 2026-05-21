@@ -42,6 +42,8 @@ export const MICRO_APP_EVENTS = {
   COMMUNICATION_READY: 'microApp:communicationReady',
   // 获取已安装应用列表
   GET_INSTALLED_APPS: 'microApp:getInstalledApps',
+  // 触发安装应用
+  INSTALL_APP: 'microApp:installApp',
 } as const
 
 // 事件类型联合类型

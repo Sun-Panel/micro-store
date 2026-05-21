@@ -35,10 +35,17 @@ export interface UseIframeConfig {
   debug?: boolean
 }
 
+export interface InstallApp {
+  microAppId: string
+  authCode: string
+}
+
 export interface UseIframeReturn extends UseIframeCommunicationReturn {
   /** 发送登录事件，根据当前登录状态自动填充账号信息 */
   sendLoginEvent: () => void
   sendGetInstalledApps: () => void
+  /** 发送安装应用事件 */
+  sendInstallApp: (data: InstallApp) => void
 }
 
 /**
@@ -94,6 +101,20 @@ export function useIframe(config: UseIframeConfig = {}): UseIframeReturn {
     debug(`触发事件:${MICRO_APP_EVENTS.GET_INSTALLED_APPS}`)
     const loggedIn = isLoggedIn()
     communication.sendMessage('main', MICRO_APP_EVENTS.GET_INSTALLED_APPS, {
+      loggedIn,
+      account: loggedIn ? (authStore.userInfo?.username || authStore.userInfo?.name || '') : '',
+    })
+  }
+
+  /**
+   * 发送安装应用事件
+   * @param microAppId - 要安装的微应用 ID
+   */
+  function sendInstallApp(data: InstallApp) {
+    debug(`触发事件:${MICRO_APP_EVENTS.INSTALL_APP}`, { data })
+    const loggedIn = isLoggedIn()
+    communication.sendMessage('main', MICRO_APP_EVENTS.INSTALL_APP, {
+      microAppId: data.microAppId,
       loggedIn,
       account: loggedIn ? (authStore.userInfo?.username || authStore.userInfo?.name || '') : '',
     })
@@ -166,5 +187,6 @@ export function useIframe(config: UseIframeConfig = {}): UseIframeReturn {
     ...communication,
     sendLoginEvent,
     sendGetInstalledApps,
+    sendInstallApp,
   }
 }
