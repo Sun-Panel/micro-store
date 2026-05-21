@@ -396,11 +396,13 @@ type MicroAppListWithLangQueryOpts struct {
 // MicroAppListItem 应用列表项
 // 嵌入 MicroApp，继承其 LangList/Developer/DefaultLangInfo 关联字段，支持 Preload
 // 额外的 AppName/AppDesc/LangLabel 由 GetAppListWithLang 的 JOIN 填充
+// LatestVersion 由 GetAppListWithLang 的子查询填充（最新审核通过的版本号）
 type MicroAppListItem struct {
 	MicroApp
-	AppName   string `json:"appName"`             // 当前语言的应用名称（GetAppListWithLang JOIN 填充）
-	AppDesc   string `json:"appDesc"`             // 当前语言的应用简介（GetAppListWithLang JOIN 填充）
-	LangLabel string `json:"langLabel,omitempty"` // 实际命中的语言代码（GetAppListWithLang JOIN 填充）
+	AppName       string `json:"appName"`                  // 当前语言的应用名称（GetAppListWithLang JOIN 填充）
+	AppDesc       string `json:"appDesc"`                  // 当前语言的应用简介（GetAppListWithLang JOIN 填充）
+	LangLabel     string `json:"langLabel,omitempty"`      // 实际命中的语言代码（GetAppListWithLang JOIN 填充）
+	LatestVersion string `json:"latestVersion,omitempty"`  // 最新审核通过的版本号（子查询填充）
 }
 
 // GetAppList 获取应用列表（基于 gorm 原生查询）
@@ -556,11 +558,20 @@ func (m *MicroApp) GetAppListWithLang(db *gorm.DB, opts MicroAppListWithLangQuer
 		Order(caseExprForSubQuery).
 		Limit(1)
 
+	// 子查询：获取最新审核通过的版本号
+	latestVersionSubQuery := db.Model(&MicroAppVersion{}).
+		Select("version").
+		Where("app_record_id = micro_app.id").
+		Where("status = ? AND offline_type = ? AND deleted_at IS NULL", 1, 0).
+		Order("created_at DESC").
+		Limit(1)
+
 	query := db.Table("micro_app").
 		Select(`micro_app.*,
 			COALESCE(lang.app_name, '') as app_name,
 			COALESCE(lang.app_desc, '') as app_desc,
-			COALESCE(lang.lang, '') as lang_label`).
+			COALESCE(lang.lang, '') as lang_label,
+			COALESCE((?), '') as latest_version`, latestVersionSubQuery).
 		Joins("LEFT JOIN micro_app_lang lang ON lang.id = (?)", langSubQuery).
 		Where("micro_app.deleted_at IS NULL")
 
