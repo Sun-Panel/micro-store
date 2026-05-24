@@ -13,6 +13,7 @@ func InitMicroAppRouter(router *gin.RouterGroup) {
 	// ==================== 公开接口（微应用） ====================
 	router.POST("microApp/getList", microAppApi.GetList)
 	router.POST("microApp/getInfo", microAppApi.GetInfo)
+	router.POST("microApp/getInfoByMicroAppId", microAppApi.GetInfoByMicroAppId) // 根据 microAppId 获取详情
 	router.POST("microApp/version/getList", microAppApi.GetVersionList)
 
 	router.POST("microApp/download/getUrl", downloadApi.GetUrl) // 获取下载链接

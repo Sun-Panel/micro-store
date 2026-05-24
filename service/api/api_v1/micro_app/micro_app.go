@@ -42,6 +42,38 @@ func (a *MicroAppApi) GetInfo(c *gin.Context) {
 	apiReturn.SuccessData(c, info)
 }
 
+// GetInfoByMicroAppId 根据 microAppId 获取微应用详情
+func (a *MicroAppApi) GetInfoByMicroAppId(c *gin.Context) {
+	req := GetInfoByMicroAppIdReq{}
+	if err := c.ShouldBindBodyWith(&req, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	lang := base.GetCurrentUserLang(c)
+
+	// 先通过 microAppId 获取基本信息
+	info, err := biz.MicroApp.GetInfo(global.Db, req.MicroAppId)
+	if err != nil {
+		base.HandleBizErrorAndReturn(c, err)
+		return
+	}
+
+	if info.Status == 0 {
+		apiReturn.ErrorByCode(c, apiReturn.ErrCodeAppNotFound)
+		return
+	}
+
+	// 获取带语言信息的详情
+	infoWithLang, err := biz.MicroApp.GetByIdWithLang(global.Db, info.ID, lang, "Developer")
+	if err != nil {
+		base.HandleBizErrorAndReturn(c, err)
+		return
+	}
+
+	apiReturn.SuccessData(c, infoWithLang)
+}
+
 // 获取微应用列表
 func (a *MicroAppApi) GetList(c *gin.Context) {
 	req := MicroAppVersionGetListReq{}

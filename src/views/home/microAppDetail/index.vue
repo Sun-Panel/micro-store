@@ -4,11 +4,13 @@ import { NButton, NCard, NImage, NImageGroup, NTag, useMessage } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
-import { getDownloadUrl, getInfo, getVersionList } from '@/api/microApp'
+import { getInfo, getInfoByMicroAppId, getVersionList } from '@/api/microApp'
 import { SvgIconOnline } from '@/components/common'
 import { microAppChargeTypeMap, microAppThirdChargeTypeMap, MicroAppVersionStatus } from '@/enums/panel'
 import { isIframe } from '@/utils/cmn'
+import { getDownloadUrl } from '../composables/useDownload'
 import { useIframe } from '../composables/useIframe'
+import { useRouterHelper } from '../composables/useRouterHelper'
 import 'moment/dist/locale/zh-cn'
 
 // 只显示日期，不显示时间
@@ -20,9 +22,19 @@ const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 const { sendInstallApp } = useIframe()
+const { getHomePath } = useRouterHelper('v1')
 
-// 微应用ID
-const appRecordId = computed(() => Number(route.params.id))
+// 路由参数
+const routeId = computed(() => route.params.id as string)
+
+// 判断是否为数字 ID
+const isNumericId = computed(() => /^\d+$/.test(routeId.value))
+
+// 微应用 ID（数字）
+const appRecordId = computed(() => Number(routeId.value))
+
+// 微应用 ID（字符串）
+const microAppId = computed(() => routeId.value)
 
 // 数据
 const microAppInfo = ref<MicroApp.Info>()
@@ -137,8 +149,16 @@ function getVersionDescContent(versionDesc: Record<string, { content: string }> 
 async function fetchMicroAppInfo() {
   loading.value = true
   try {
-    const { data } = await getInfo<MicroApp.Info>(appRecordId.value)
-    microAppInfo.value = data
+    if (isNumericId.value) {
+      // 数字 ID，使用原有接口
+      const { data } = await getInfo<MicroApp.Info>(appRecordId.value)
+      microAppInfo.value = data
+    }
+    else {
+      // 字符串 ID，使用新接口
+      const { data } = await getInfoByMicroAppId<MicroApp.Info>(microAppId.value)
+      microAppInfo.value = data
+    }
   }
   catch (error) {
     console.error('获取微应用详情失败:', error)
@@ -165,9 +185,11 @@ async function fetchCategoryOptions() {
 
 // 获取版本列表
 async function fetchVersionList() {
+  if (!microAppInfo.value?.id) return
+  
   try {
     const { data } = await getVersionList<Common.ListResponse<MicroApp.VersionInfo[]>>({
-      appRecordId: appRecordId.value,
+      appRecordId: microAppInfo.value.id,
       page: 1,
       limit: 100,
     })
@@ -180,7 +202,7 @@ async function fetchVersionList() {
 
 // 返回首页
 function handleBack() {
-  router.push('/')
+  router.push(getHomePath())
 }
 
 // // 下载版本
@@ -193,20 +215,19 @@ function handleBack() {
 // 下载版本包
 async function handleDownloadByVersionId(version?: string) {
   if (microAppInfo.value?.microAppId) {
-    await getDownloadUrl<string>(microAppInfo.value?.microAppId).then(({ data }) => {
+    await getDownloadUrl(microAppInfo.value?.microAppId, version).then((data) => {
       window.open(data, '_blank')
-    }).catch((res) => {
-      console.error(`get url error${res.msg}`)
     })
   }
 }
 
 // 安装版本
-function handleInstall() {
+async function handleInstall() {
   if (microAppInfo.value?.microAppId) {
     if (isIframe()) {
+      const url = await getDownloadUrl(microAppInfo.value?.microAppId)
       // 在 iframe 中，发送安装消息给父窗口
-      sendInstallApp({ microAppId: microAppInfo.value.microAppId, authCode: '66666' })
+      sendInstallApp({ microAppId: microAppInfo.value.microAppId, url })
     }
     else {
       message.info('请在私有部署项目中打开微应用商店安装')
@@ -216,10 +237,8 @@ function handleInstall() {
 
 onMounted(async () => {
   await fetchCategoryOptions()
-  await Promise.all([
-    fetchMicroAppInfo(),
-    fetchVersionList(),
-  ])
+  await fetchMicroAppInfo()
+  await fetchVersionList()
 })
 </script>
 

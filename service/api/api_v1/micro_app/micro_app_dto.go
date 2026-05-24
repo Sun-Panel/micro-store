@@ -16,3 +16,8 @@ type MicroAppVersionGetListReq struct {
 	CategoryId uint   `json:"categoryId"`
 	Keyword    string `json:"keyword"`
 }
+
+// GetInfoByMicroAppIdReq 根据 microAppId 获取详情的请求
+type GetInfoByMicroAppIdReq struct {
+	MicroAppId string `json:"microAppId" binding:"required"`
+}

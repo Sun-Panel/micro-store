@@ -16,17 +16,17 @@ export function validateMessageOrigin(
   allowedOrigins: string[] | string,
 ): boolean {
   const { origin } = event
-  
+
   // 如果允许所有origin
   if (allowedOrigins === '*') {
     return true
   }
-  
+
   // 如果是数组，检查是否在允许列表中
   if (Array.isArray(allowedOrigins)) {
     return allowedOrigins.includes(origin)
   }
-  
+
   // 如果是字符串，直接比较
   return origin === allowedOrigins
 }
@@ -40,7 +40,7 @@ export function validateMessageFormat(data: any): data is IframeMessage {
   if (!data || typeof data !== 'object') {
     return false
   }
-  
+
   // 检查必需字段
   const requiredFields = ['id', 'type', 'event', 'source', 'timestamp']
   for (const field of requiredFields) {
@@ -48,35 +48,35 @@ export function validateMessageFormat(data: any): data is IframeMessage {
       return false
     }
   }
-  
+
   // 检查字段类型
   if (typeof data.id !== 'string' || data.id.length === 0) {
     return false
   }
-  
+
   if (!['event', 'request', 'response', 'error'].includes(data.type)) {
     return false
   }
-  
+
   if (typeof data.event !== 'string' || data.event.length === 0) {
     return false
   }
-  
+
   if (typeof data.source !== 'string') {
     return false
   }
-  
+
   if (typeof data.timestamp !== 'number') {
     return false
   }
-  
+
   // 检查时间戳合理性（不超过1小时）
   const now = Date.now()
   const oneHour = 60 * 60 * 1000
   if (Math.abs(now - data.timestamp) > oneHour) {
     return false
   }
-  
+
   return true
 }
 
@@ -107,13 +107,13 @@ export function sanitizeString(input: string): string {
   if (typeof input !== 'string') {
     return ''
   }
-  
+
+  // 只转义 HTML 特殊字符，不转义斜杠（避免破坏 URL）
   return input
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#x27;')
-    .replace(/\//g, '&#x2F;')
 }
 
 /**
@@ -125,22 +125,24 @@ export function sanitizeObject<T>(obj: T): T {
   if (typeof obj !== 'object' || obj === null) {
     return obj
   }
-  
+
   if (Array.isArray(obj)) {
     return obj.map(item => sanitizeObject(item)) as T
   }
-  
+
   const sanitized: any = {}
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value === 'string') {
       sanitized[key] = sanitizeString(value)
-    } else if (typeof value === 'object' && value !== null) {
+    }
+    else if (typeof value === 'object' && value !== null) {
       sanitized[key] = sanitizeObject(value)
-    } else {
+    }
+    else {
       sanitized[key] = value
     }
   }
-  
+
   return sanitized as T
 }
 
@@ -165,7 +167,7 @@ export function validateMessageSecurity(
       error: `Invalid origin: ${event.origin}`,
     }
   }
-  
+
   // 验证消息格式
   if (!validateMessageFormat(event.data)) {
     return {
@@ -173,10 +175,10 @@ export function validateMessageSecurity(
       error: 'Invalid message format',
     }
   }
-  
+
   // 清理消息数据（防止XSS）
   const message = sanitizeObject(event.data) as IframeMessage
-  
+
   return {
     valid: true,
     message,

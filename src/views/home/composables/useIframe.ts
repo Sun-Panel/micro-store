@@ -37,7 +37,7 @@ export interface UseIframeConfig {
 
 export interface InstallApp {
   microAppId: string
-  authCode: string
+  url: string
 }
 
 export interface UseIframeReturn extends UseIframeCommunicationReturn {
@@ -112,12 +112,7 @@ export function useIframe(config: UseIframeConfig = {}): UseIframeReturn {
    */
   function sendInstallApp(data: InstallApp) {
     debug(`触发事件:${MICRO_APP_EVENTS.INSTALL_APP}`, { data })
-    const loggedIn = isLoggedIn()
-    communication.sendMessage('main', MICRO_APP_EVENTS.INSTALL_APP, {
-      microAppId: data.microAppId,
-      loggedIn,
-      account: loggedIn ? (authStore.userInfo?.username || authStore.userInfo?.name || '') : '',
-    })
+    communication.sendMessage('main', MICRO_APP_EVENTS.INSTALL_APP, data)
   }
 
   // 监听主面板发送的登录事件，自动同步登录状态

@@ -26,6 +26,14 @@ export function getVersionList<T>(data: MicroApp.GetVersionListRequest) {
   })
 }
 
+// 根据 microAppId 获取微应用详情（公开接口）
+export function getInfoByMicroAppId<T>(microAppId: string) {
+  return post<T>({
+    url: '/microApp/getInfoByMicroAppId',
+    data: { microAppId },
+  })
+}
+
 export function getDownloadUrl<T>(microAppId: string, version?: string) {
   return post<T>({
     url: '/microApp/download/getUrl/',

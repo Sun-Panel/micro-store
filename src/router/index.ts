@@ -245,6 +245,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/home/index.vue'),
       },
       {
+        path: '/microApp/:id',
+        name: 'MicroAppDetail',
+        component: () => import('@/views/home/microAppDetail/index.vue'),
+      },
+      {
         path: '/developer/register',
         name: 'DeveloperRegister',
         component: () => import('@/views/developer/register.vue'),
@@ -255,14 +260,28 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/home/pro.vue'),
       },
       {
-        path: '/microApp/:id',
-        name: 'MicroAppDetail',
-        component: () => import('@/views/home/microAppDetail/index.vue'),
-      },
-      {
         path: '/platformLogin',
         name: 'platformLogin',
         children: platformLogin,
+      },
+    ],
+  },
+
+  // iframe 页面版本号
+  {
+    path: '/iframe/v1',
+    name: 'IframeHomeLayout',
+    component: HomeLayout,
+    children: [
+      {
+        path: '/iframe/v1/',
+        name: 'IframeHome',
+        component: () => import('@/views/home/index.vue'),
+      },
+      {
+        path: '/iframe/v1/microApp/:id',
+        name: 'IframeMicroAppDetail',
+        component: () => import('@/views/home/microAppDetail/index.vue'),
       },
     ],
   },

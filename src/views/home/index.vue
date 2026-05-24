@@ -8,7 +8,9 @@ import { SvgIconOnline } from '@/components/common'
 import { router } from '@/router'
 import { useLocalAppStore } from '@/store'
 import { isIframe } from '@/utils/cmn'
+import { getDownloadUrl } from './composables/useDownload'
 import { useIframe } from './composables/useIframe'
+import { useRouterHelper } from './composables/useRouterHelper'
 
 interface MicroAppListItem extends MicroApp.Info {
   // developerName: string
@@ -18,6 +20,7 @@ interface MicroAppListItem extends MicroApp.Info {
 const localAppStore = useLocalAppStore()
 const message = useMessage()
 const { sendInstallApp } = useIframe()
+const { getDetailPath } = useRouterHelper('v1')
 
 const list = ref<MicroAppListItem[]>([])
 const req = ref<MicroApp.GetListRequest>({
@@ -84,10 +87,12 @@ function getAppIcon(item: MicroAppListItem): string {
 }
 
 // 安装/打开按钮点击事件
-function handleInstall(item: MicroAppListItem) {
+async function handleInstall(item: MicroAppListItem) {
   if (isIframe()) {
-    // 在 iframe 中，发送安装消息给父窗口
-    sendInstallApp({ microAppId: item.microAppId, authCode: '5555' })
+    // 在 iframe 中，先获取下载地址再发送安装消息给父窗口
+    const url = await getDownloadUrl(item.microAppId)
+    console.log('uuuuurl', url)
+    sendInstallApp({ microAppId: item.microAppId, url })
   }
   else {
     // 非 iframe 环境，显示提示
@@ -284,9 +289,7 @@ function getList() {
 }
 
 function handleCardClick(item: MicroAppListItem) {
-  // console.log('item', item)
-  // 可以在这里添加跳转逻辑
-  router.push(`/microApp/${item.id}`)
+  router.push(getDetailPath(item.id))
 }
 
 onMounted(() => {
