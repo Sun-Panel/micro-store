@@ -133,13 +133,14 @@ func (s *microApp) BuildDownloadUrl(microAppId string, version ...string) string
 
 // GetListOptions 微应用列表查询选项
 type GetListOptions struct {
-	Page       int    `json:"page"`       // 页码
-	Limit      int    `json:"limit"`      // 每页数量
-	Order      string `json:"order"`      // 排序（如 "download_count desc"）
-	CategoryId uint   `json:"categoryId"` // 分类ID（0表示不筛选）
-	Keyword    string `json:"keyword"`    // 关键词搜索
-	Status     *int   `json:"status"`     // 状态（可选，默认为1-上架）
-	Lang       string `json:"lang"`       // 语言（可选，暂不支持）
+	Page            int    `json:"page"`            // 页码
+	Limit           int    `json:"limit"`           // 每页数量
+	Order           string `json:"order"`           // 排序（如 "download_count desc"）
+	CategoryId      uint   `json:"categoryId"`      // 分类ID（0表示不筛选）
+	Keyword         string `json:"keyword"`         // 关键词搜索
+	Status          *int   `json:"status"`          // 状态（可选，默认为1-上架）
+	Lang            string `json:"lang"`            // 语言（可选，暂不支持）
+	OnlyWithVersion bool   `json:"onlyWithVersion"` // 是否只返回有最新审核通过版本的应用
 }
 
 // GetList 获取微应用列表（公开接口）
@@ -195,6 +196,7 @@ func (s *microApp) GetList(db *gorm.DB, opts GetListOptions) ([]models.MicroAppL
 			SortBy:           sortBy,
 			SortOrder:        sortOrder,
 			IncludeDeveloper: true, // 包含开发者信息
+			OnlyWithVersion:  opts.OnlyWithVersion,
 		},
 		Lang:          opts.Lang,
 		FallbackLangs: fallbackLangs,

@@ -367,11 +367,12 @@ func (m *MicroApp) GetListWithAllLangs(db *gorm.DB, opts MicroAppQueryOptions) (
 // MicroAppListQueryOpts 应用列表查询选项（基础）
 type MicroAppListQueryOpts struct {
 	// 查询条件
-	Status      *int   // 状态筛选
-	OfflineType *int   // 下架类型筛选
-	CategoryId  *int   // 分类筛选
-	DeveloperId *uint  // 开发者筛选
-	KeyWord     string // 关键字搜索（搜索多语言表的 app_name 和 app_desc）
+	Status         *int   // 状态筛选
+	OfflineType    *int   // 下架类型筛选
+	CategoryId     *int   // 分类筛选
+	DeveloperId    *uint  // 开发者筛选
+	KeyWord        string // 关键字搜索（搜索多语言表的 app_name 和 app_desc）
+	OnlyWithVersion bool  // 是否只返回有最新审核通过版本的应用
 
 	// 分页
 	Page  int // 页码
@@ -528,6 +529,16 @@ func (m *MicroApp) GetAppListWithLang(db *gorm.DB, opts MicroAppListWithLangQuer
 		countQuery = countQuery.Where("micro_app.micro_app_id LIKE ? OR micro_app.micro_app_id IN (?)", like, subQuery)
 	}
 
+	// 是否只返回有最新审核通过版本的应用
+	if opts.OnlyWithVersion {
+		versionSubQuery := db.Model(&MicroAppVersion{}).
+			Select("1").
+			Where("app_record_id = micro_app.id").
+			Where("status = ? AND offline_type = ? AND deleted_at IS NULL", 1, 0).
+			Limit(1)
+		countQuery = countQuery.Where("EXISTS (?)", versionSubQuery)
+	}
+
 	// 获取总数（不走 JOIN）
 	if err := countQuery.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -594,6 +605,16 @@ func (m *MicroApp) GetAppListWithLang(db *gorm.DB, opts MicroAppListWithLangQuer
 			Select("DISTINCT micro_app_id").
 			Where("app_name LIKE ? OR app_desc LIKE ?", like, like)
 		query = query.Where("micro_app.micro_app_id LIKE ? OR micro_app.micro_app_id IN (?)", like, subQuery)
+	}
+
+	// 是否只返回有最新审核通过版本的应用
+	if opts.OnlyWithVersion {
+		versionSubQuery := db.Model(&MicroAppVersion{}).
+			Select("1").
+			Where("app_record_id = micro_app.id").
+			Where("status = ? AND offline_type = ? AND deleted_at IS NULL", 1, 0).
+			Limit(1)
+		query = query.Where("EXISTS (?)", versionSubQuery)
 	}
 
 	// 排序

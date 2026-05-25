@@ -242,6 +242,7 @@ declare namespace MicroApp {
     authorId?: number // 开发者ID筛选
     lang?: string // 可选，用于多语言查询
     includeDeveloper?: boolean // 是否包含开发者信息
+    onlyWithVersion?: boolean // 是否只返回有最新审核通过版本的应用
     sortBy?: string // 排序字段：id, download_count, install_count
     sortOrder?: string // 排序方式：asc, desc
   }

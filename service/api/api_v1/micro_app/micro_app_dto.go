@@ -10,11 +10,12 @@ type MicroAppVersionGetVersionListReq struct {
 }
 
 type MicroAppVersionGetListReq struct {
-	Page       int    `json:"page"`
-	Limit      int    `json:"limit"`
-	Order      string `json:"order"`
-	CategoryId uint   `json:"categoryId"`
-	Keyword    string `json:"keyword"`
+	Page            int    `json:"page"`
+	Limit           int    `json:"limit"`
+	Order           string `json:"order"`
+	CategoryId      uint   `json:"categoryId"`
+	Keyword         string `json:"keyword"`
+	OnlyWithVersion bool   `json:"onlyWithVersion"`
 }
 
 // GetInfoByMicroAppIdReq 根据 microAppId 获取详情的请求

@@ -26,6 +26,7 @@ const list = ref<MicroAppListItem[]>([])
 const req = ref<MicroApp.GetListRequest>({
   page: 1,
   limit: 10,
+  onlyWithVersion: true,
 })
 
 // ==================== 多语言处理 ====================

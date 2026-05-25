@@ -103,12 +103,13 @@ func (a *MicroAppApi) GetList(c *gin.Context) {
 
 	// 调用业务层获取列表
 	list, total, err := biz.MicroApp.GetList(global.Db, biz.GetListOptions{
-		Page:       req.Page,
-		Limit:      req.Limit,
-		Order:      req.Order,
-		CategoryId: req.CategoryId,
-		Keyword:    req.Keyword,
-		Lang:       lang,
+		Page:            req.Page,
+		Limit:           req.Limit,
+		Order:           req.Order,
+		CategoryId:      req.CategoryId,
+		Keyword:         req.Keyword,
+		Lang:            lang,
+		OnlyWithVersion: req.OnlyWithVersion,
 	})
 	if err != nil {
 		apiReturn.ErrorDatabase(c, err.Error())
