@@ -8,6 +8,7 @@ import { getInfo, getInfoByMicroAppId, getVersionList } from '@/api/microApp'
 import { SvgIconOnline } from '@/components/common'
 import { microAppChargeTypeMap, microAppThirdChargeTypeMap, MicroAppVersionStatus } from '@/enums/panel'
 import { isIframe } from '@/utils/cmn'
+import { useAppInstallStatus } from '../composables/useAppInstallStatus'
 import { getDownloadUrl } from '../composables/useDownload'
 import { useIframe } from '../composables/useIframe'
 import { useRouterHelper } from '../composables/useRouterHelper'
@@ -23,6 +24,7 @@ const router = useRouter()
 const message = useMessage()
 const { sendInstallApp } = useIframe()
 const { getHomePath } = useRouterHelper('v1')
+const { getAppButtonStatus } = useAppInstallStatus()
 
 // 路由参数
 const routeId = computed(() => route.params.id as string)
@@ -129,6 +131,11 @@ const latestApprovedVersion = computed(() => {
     const timeB = new Date(b.createTime ?? 0).getTime()
     return timeB - timeA
   })[0]
+})
+
+// 获取应用状态信息
+const appStatusInfo = computed(() => {
+  return getAppButtonStatus(microAppInfo.value?.microAppId, latestApprovedVersion.value?.version)
 })
 
 // 获取版本说明（兼容多语言格式）
@@ -367,8 +374,20 @@ onMounted(async () => {
         <NButton v-if="!isIframe()" type="primary" @click="handleDownloadByVersionId">
           下载
         </NButton>
-        <NButton :type="isIframe() ? 'success' : 'default'" @click="handleInstall">
-          安装
+        <NButton
+          :type="appStatusInfo.type"
+          :disabled="appStatusInfo.disabled"
+          @click="handleInstall"
+        >
+          {{ appStatusInfo.text }}
+        </NButton>
+        <!-- 覆盖安装按钮：仅在已安装且是最新版本时显示 -->
+        <NButton
+          v-if="appStatusInfo.isInstalled && !appStatusInfo.hasUpdate"
+          type="warning"
+          @click="handleInstall"
+        >
+          覆盖安装
         </NButton>
       </div>
 

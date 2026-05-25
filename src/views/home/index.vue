@@ -6,8 +6,8 @@ import defaultAppIcon from '@/assets/image_fail.png'
 
 import { SvgIconOnline } from '@/components/common'
 import { router } from '@/router'
-import { useLocalAppStore } from '@/store'
 import { isIframe } from '@/utils/cmn'
+import { useAppInstallStatus } from './composables/useAppInstallStatus'
 import { getDownloadUrl } from './composables/useDownload'
 import { useIframe } from './composables/useIframe'
 import { useRouterHelper } from './composables/useRouterHelper'
@@ -17,10 +17,10 @@ interface MicroAppListItem extends MicroApp.Info {
   developer: MicroApp.DeveloperInfo
 }
 
-const localAppStore = useLocalAppStore()
 const message = useMessage()
 const { sendInstallApp } = useIframe()
 const { getDetailPath } = useRouterHelper('v1')
+const { getAppButtonStatus } = useAppInstallStatus()
 
 const list = ref<MicroAppListItem[]>([])
 const req = ref<MicroApp.GetListRequest>({
@@ -350,11 +350,12 @@ onMounted(() => {
           <div v-if="isIframe()" class="flex flex-col gap-1 flex-shrink-0">
             <NButton
               size="tiny"
-              :type="localAppStore.isInstalled(item.microAppId) ? 'default' : 'primary'"
+              :type="getAppButtonStatus(item.microAppId, item.latestVersion).type"
+              :disabled="getAppButtonStatus(item.microAppId, item.latestVersion).disabled"
               class="w-[60px]"
               @click.stop="handleInstall(item)"
             >
-              {{ localAppStore.isInstalled(item.microAppId) ? '已安装' : '安装' }}
+              {{ getAppButtonStatus(item.microAppId, item.latestVersion).text }}
             </NButton>
             <!-- <NButton
               size="tiny"
