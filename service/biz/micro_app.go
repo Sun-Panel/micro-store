@@ -3,14 +3,41 @@ package biz
 import (
 	"fmt"
 	"strings"
+	"sun-panel/global"
+	"sun-panel/lib/cache"
 	"sun-panel/models"
+	"time"
 
 	"gorm.io/gorm"
 )
 
+// MicroAppInfoCache 微应用信息缓存结构（对外暴露的精简信息）
+type MicroAppInfoCache struct {
+	MicroAppId     string `json:"microAppId"`
+	AppIcon        string `json:"appIcon"`
+	ChargeType     int    `json:"chargeType"`
+	Points         int    `json:"points"`
+	DeveloperId    uint   `json:"developerId"`
+	DeveloperName  string `json:"developerName"`  // 开发者名称
+	DeveloperName2 string `json:"developerName2"` // 开发者标识
+}
+
 // microApp 微应用业务层
 type microApp struct {
-	// GetListCache
+	// 微应用信息缓存，key: microAppId，value: MicroAppInfoCache
+	InfoCache cache.Cacher[MicroAppInfoCache]
+}
+
+// Init 初始化微应用服务（含缓存）
+func (s *microApp) Init() {
+	s.InfoCache = global.NewCache[MicroAppInfoCache](30*time.Minute, 10*time.Minute, "MicroAppInfoCache")
+}
+
+// invalidateCache 清除指定 microAppId 的缓存
+func (s *microApp) invalidateCache(microAppId string) {
+	if s.InfoCache != nil {
+		s.InfoCache.Delete(microAppId)
+	}
 }
 
 // func (s *microApp) Init() ([]models.MicroAppWithLang, int64, error) {
@@ -203,4 +230,93 @@ func (s *microApp) GetList(db *gorm.DB, opts GetListOptions) ([]models.MicroAppL
 	}
 
 	return m.GetAppListWithLang(db, queryOpts)
+}
+
+// BatchGetMicroAppInfo 批量获取微应用信息（带缓存）
+// 1. 先从缓存获取已有的
+// 2. 未命中的再批量查库（包括开发者信息）
+// 3. 查库结果写入缓存
+func (s *microApp) BatchGetMicroAppInfo(db *gorm.DB, microAppIds []string) (map[string]MicroAppInfoCache, error) {
+	result := make(map[string]MicroAppInfoCache, len(microAppIds))
+
+	if s.InfoCache == nil {
+		// 缓存未初始化，降级为直接查库
+		return s.batchGetFromDB(db, microAppIds)
+	}
+
+	// 1. 读缓存
+	var missIds []string
+	for _, id := range microAppIds {
+		if info, ok := s.InfoCache.Get(id); ok {
+			result[id] = info
+		} else {
+			missIds = append(missIds, id)
+		}
+	}
+
+	// 2. 缓存未命中，批量查库
+	if len(missIds) > 0 {
+		dbResults, err := s.batchGetFromDB(db, missIds)
+		if err != nil {
+			return nil, err
+		}
+		for id, info := range dbResults {
+			result[id] = info
+			s.InfoCache.SetDefault(id, info) // 写入缓存
+		}
+	}
+
+	return result, nil
+}
+
+// batchGetFromDB 从数据库批量获取微应用信息（含开发者信息）
+func (s *microApp) batchGetFromDB(db *gorm.DB, microAppIds []string) (map[string]MicroAppInfoCache, error) {
+	result := make(map[string]MicroAppInfoCache, len(microAppIds))
+
+	// 批量查询微应用
+	var apps []models.MicroApp
+	if err := db.Where("micro_app_id IN ?", microAppIds).Find(&apps).Error; err != nil {
+		return nil, err
+	}
+
+	if len(apps) == 0 {
+		return result, nil
+	}
+
+	// 收集开发者ID，批量查询开发者信息
+	developerIdSet := make(map[uint]bool)
+	for _, app := range apps {
+		developerIdSet[app.DeveloperId] = true
+	}
+	developerIds := make([]uint, 0, len(developerIdSet))
+	for id := range developerIdSet {
+		developerIds = append(developerIds, id)
+	}
+
+	var developers []models.Developer
+	if err := db.Where("id IN ?", developerIds).Find(&developers).Error; err != nil {
+		return nil, err
+	}
+
+	// 构建开发者信息map
+	developerMap := make(map[uint]models.Developer, len(developers))
+	for _, dev := range developers {
+		developerMap[dev.ID] = dev
+	}
+
+	// 组装结果
+	for _, app := range apps {
+		dev := developerMap[app.DeveloperId]
+		result[app.MicroAppId] = MicroAppInfoCache{
+			MicroAppId:     app.MicroAppId,
+			AppIcon:        app.AppIcon,
+			ChargeType:     app.ChargeType,
+			Points:         app.Points,
+			DeveloperId:    app.DeveloperId,
+			DeveloperName:  dev.Name,
+			DeveloperName2: dev.DeveloperName,
+		}
+	}
+
+	return result, nil
 }

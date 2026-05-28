@@ -1,6 +1,8 @@
 package biz
 
 import (
+	"sun-panel/global"
+	"sun-panel/lib/cache"
 	"sun-panel/models"
 	"time"
 
@@ -8,7 +10,22 @@ import (
 )
 
 // DeveloperService 开发者业务服务
-type DeveloperService struct{}
+type DeveloperService struct {
+	// 开发者信息缓存，key: developerName，value: models.Developer
+	InfoCache cache.Cacher[models.Developer]
+}
+
+// Init 初始化开发者服务（含缓存）
+func (s *DeveloperService) Init() {
+	s.InfoCache = global.NewCache[models.Developer](1*time.Hour, 10*time.Minute, "DeveloperInfoCache")
+}
+
+// invalidateCache 清除指定 developerName 的缓存
+func (s *DeveloperService) invalidateCache(developerName string) {
+	if s.InfoCache != nil {
+		s.InfoCache.Delete(developerName)
+	}
+}
 
 // RegisterParams 注册开发者参数
 type RegisterParams struct {
@@ -57,32 +74,6 @@ func (s *DeveloperService) GetDeveloperList(db *gorm.DB, page, limit int, status
 	return m.GetList(db, page, limit, status, keyWord)
 }
 
-// UpdateDeveloperInfo 更新开发者信息（业务层，包含业务规则校验）
-func (s *DeveloperService) UpdateDeveloperInfo(db *gorm.DB, id uint, updateFields models.DeveloperUpdateFields) error {
-	// 如果要修改 Name，检查冷却期（180天）
-	if updateFields.Name != nil {
-		developer, err := s.GetDeveloperInfo(db, id)
-		if err != nil {
-			return err
-		}
-
-		// 如果有上次更新时间，检查是否满180天
-		if developer.NameUpdatedAt != nil {
-			daysSinceUpdate := time.Since(*developer.NameUpdatedAt).Hours() / 24
-			if daysSinceUpdate < 180 {
-				daysRemaining := 180 - int(daysSinceUpdate)
-				return models.NewModelErrorWithData("E_DEVELOPER_NAME_COOLDOWN", map[string]any{
-					"daysRemaining": daysRemaining,
-				})
-			}
-		}
-	}
-
-	// 调用 Model 层执行数据库操作
-	m := models.Developer{}
-	return m.UpdateInfo(db, id, updateFields)
-}
-
 // Register 注册成为开发者（业务层，包含用户权限更新）
 func (s *DeveloperService) Register(db *gorm.DB, p RegisterParams) (uint, error) {
 	m := models.Developer{}
@@ -103,4 +94,77 @@ func (s *DeveloperService) Register(db *gorm.DB, p RegisterParams) (uint, error)
 	}
 
 	return id, nil
+}
+
+// BatchGetByDeveloperNames 批量获取开发者信息（带缓存）
+// 1. 先从缓存获取已有的
+// 2. 未命中的再批量查库
+// 3. 查库结果写入缓存
+func (s *DeveloperService) BatchGetByDeveloperNames(db *gorm.DB, developerNames []string) (map[string]models.Developer, error) {
+	result := make(map[string]models.Developer, len(developerNames))
+
+	if s.InfoCache == nil {
+		// 缓存未初始化，降级为直接查库
+		var developers []models.Developer
+		if err := db.Where("developer_name IN ?", developerNames).Find(&developers).Error; err != nil {
+			return nil, err
+		}
+		for _, dev := range developers {
+			result[dev.DeveloperName] = dev
+		}
+		return result, nil
+	}
+
+	// 1. 读缓存
+	var missNames []string
+	for _, name := range developerNames {
+		if dev, ok := s.InfoCache.Get(name); ok {
+			result[name] = dev
+		} else {
+			missNames = append(missNames, name)
+		}
+	}
+
+	// 2. 缓存未命中，批量查库
+	if len(missNames) > 0 {
+		var developers []models.Developer
+		if err := db.Where("developer_name IN ?", missNames).Find(&developers).Error; err != nil {
+			return nil, err
+		}
+		for _, dev := range developers {
+			result[dev.DeveloperName] = dev
+			s.InfoCache.SetDefault(dev.DeveloperName, dev) // 写入缓存
+		}
+	}
+
+	return result, nil
+}
+
+// UpdateDeveloperInfo 更新开发者信息（业务层，包含业务规则校验）
+func (s *DeveloperService) UpdateDeveloperInfo(db *gorm.DB, id uint, updateFields models.DeveloperUpdateFields) error {
+	// 如果要修改 Name，检查冷却期（180天）
+	if updateFields.Name != nil {
+		developer, err := s.GetDeveloperInfo(db, id)
+		if err != nil {
+			return err
+		}
+
+		// 如果有上次更新时间，检查是否满180天
+		if developer.NameUpdatedAt != nil {
+			daysSinceUpdate := time.Since(*developer.NameUpdatedAt).Hours() / 24
+			if daysSinceUpdate < 180 {
+				daysRemaining := 180 - int(daysSinceUpdate)
+				return models.NewModelErrorWithData("E_DEVELOPER_NAME_COOLDOWN", map[string]any{
+					"daysRemaining": daysRemaining,
+				})
+			}
+		}
+
+		// 更新后清除缓存
+		defer s.invalidateCache(developer.DeveloperName)
+	}
+
+	// 调用 Model 层执行数据库操作
+	m := models.Developer{}
+	return m.UpdateInfo(db, id, updateFields)
 }

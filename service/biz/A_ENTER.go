@@ -17,6 +17,7 @@ var (
 	SunPanelAuth       = new(SunPanelAuthType)
 	ClientCache        = new(clientCache.ClientCacheType)
 	RedeemCode         = new(RedeemCodeType)
+	User               = new(userType)
 	Developer          = new(DeveloperService)
 	MicroAppDeveloper  = new(MicroAppDeveloperService)
 	MicroApp           = new(microApp)
@@ -44,6 +45,9 @@ func InitBIZ(redisClient *redis.Client) {
 	MicroAppStatistics.Init(redisClient)
 	MicroAppDownload.Init()
 	SunPanelAuth.Init()
+	Developer.Init()
+	MicroApp.Init()
+	User.Init()
 	LdWrap = debugWrap.NewDebugLogger(global.RUNCODE == "debug") // 仅在debug模式下生效
 	LogWrap = debugWrap.NewDebugLogger(true)                     // 任意模式下都进行解析
 }

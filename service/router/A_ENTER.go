@@ -4,6 +4,7 @@ import (
 	"sun-panel/global"
 
 	"sun-panel/router/admin"
+	"sun-panel/router/apiClientApp"
 	microApp "sun-panel/router/micro_app"
 	"sun-panel/router/oauth2"
 	"sun-panel/router/openness"
@@ -27,6 +28,7 @@ func InitRouters(addr string) error {
 	microApp.Init(routerGroup)
 	openness.Init(routerGroup)
 	oauth2.Init(routerGroup)
+	apiClientApp.Init(routerGroup)
 
 	// SunStore
 	sunStoreRouterGroup := rootRouter.Group("sunStore/api")
