@@ -55,6 +55,7 @@ func LoginInterceptor(c *gin.Context) {
 		global.UserToken.SetDefault(info.Token, info)
 		global.CUserToken.SetDefault(cToken, token)
 		c.Set("userInfo", info)
+		return
 	}
 
 }

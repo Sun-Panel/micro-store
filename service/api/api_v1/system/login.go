@@ -495,6 +495,8 @@ func (l *LoginApi) oAuth2CodeNoLoggedAuthProcess(apiHost string, accessToken sun
 func (l *LoginApi) Logout(c *gin.Context) {
 	// userInfo, _ := base.GetCurrentUserInfo(c)
 	cToken := c.GetHeader("token")
-	global.CUserToken.Delete(cToken)
+	if cToken != "" {
+		global.CUserToken.Delete(cToken)
+	}
 	apiReturn.Success(c)
 }

@@ -108,9 +108,9 @@ export function useIframe(config: UseIframeConfig = {}): UseIframeReturn {
 
   /**
    * 发送安装应用事件
-   * @param microAppId - 要安装的微应用 ID
+   * @param data InstallApp
    */
-  function sendInstallApp(data: InstallApp) {
+  function sendInstallApp(data: InstallApp): void {
     debug(`触发事件:${MICRO_APP_EVENTS.INSTALL_APP}`, { data })
     communication.sendMessage('main', MICRO_APP_EVENTS.INSTALL_APP, data)
   }
@@ -143,7 +143,9 @@ export function useIframe(config: UseIframeConfig = {}): UseIframeReturn {
   // 监听主面板发送的登出事件
   communication.on(MICRO_APP_STORE_EVENTS.LOGOUT, async () => {
     debug(`监听事件:${MICRO_APP_STORE_EVENTS.LOGOUT}`)
-    await logout()
+    if (isLoggedIn()) {
+      await logout()
+    }
     // userStore.resetUserInfo()
     authStore.removeToken()
   })

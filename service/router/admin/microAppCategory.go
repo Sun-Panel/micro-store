@@ -21,9 +21,6 @@ func InitMicroAppCategoryRouter(router *gin.RouterGroup) {
 		r.POST("microAppCategory/updateStatus", categoryApi.UpdateStatus)
 	}
 
-	// 只需要登录权限的接口（开发者页面使用）
-	rNoAdmin := router.Group("", middleware.LoginInterceptor)
-	{
-		rNoAdmin.POST("microAppCategory/getEnabledList", categoryApi.GetEnabledList)
-	}
+	// 公开接口（微应用详情页使用，无需登录）
+	router.POST("microAppCategory/getEnabledList", categoryApi.GetEnabledList)
 }

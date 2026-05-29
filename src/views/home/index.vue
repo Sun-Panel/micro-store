@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NButton, NCard, NEllipsis, useMessage } from 'naive-ui'
+import { NButton, NCard, useMessage } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { getList as getListApi } from '@/api/microApp'
 import defaultAppIcon from '@/assets/image_fail.png'
@@ -92,7 +92,7 @@ async function handleInstall(item: MicroAppListItem) {
   if (isIframe()) {
     // 在 iframe 中，先获取下载地址再发送安装消息给父窗口
     const url = await getDownloadUrl(item.microAppId)
-    console.log('uuuuurl', url)
+    // console.log('uuuuurl', url)
     sendInstallApp({ microAppId: item.microAppId, url })
   }
   else {
@@ -101,10 +101,10 @@ async function handleInstall(item: MicroAppListItem) {
   }
 }
 
-// 购买/卸载按钮点击事件（占位函数）
-function handleAction(_item: MicroAppListItem) {
-  // TODO: 实现购买/卸载逻辑
-}
+// // 购买/卸载按钮点击事件（占位函数）
+// function handleAction(_item: MicroAppListItem) {
+//   // TODO: 实现购买/卸载逻辑
+// }
 
 // 模拟10条数据（当API调用失败时使用）
 // const mockData: MicroApp.Info[] = [
