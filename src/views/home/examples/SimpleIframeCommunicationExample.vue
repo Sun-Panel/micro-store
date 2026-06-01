@@ -5,8 +5,8 @@
  */
 
 import { onMounted, ref } from 'vue'
-import { useIframeCommunication } from '../composables/useIframeCommunication'
 import { MICRO_APP_EVENTS, MICRO_APP_STORE_EVENTS } from '../composables/iframeEvents'
+import { useIframeCommunication } from '../composables/useIframeCommunication'
 
 const communicationStatus = ref('未连接')
 const lastMessage = ref<any>(null)
@@ -17,25 +17,25 @@ const { on, once, onQuickRequest, sendMessage, sendRequest, reinit, destroy } = 
   sourceId: 'microAppStore',
   isIframe: true,
   debug: true,
-  autoDestroy: true,/
+  autoDestroy: true,
 })
 
 // 监听主面板发送的应用安装事件
 on(MICRO_APP_STORE_EVENTS.INSTALL_APP, (data) => {
   communicationStatus.value = '已连接'
   lastMessage.value = { type: 'install', data }
-  console.log('收到安装应用事件:', data)
+  // console.log('收到安装应用事件:', data)
 })
 
 // 监听一次性的通信就绪事件
 once(MICRO_APP_EVENTS.COMMUNICATION_READY, () => {
   communicationStatus.value = '通信就绪'
-  console.log('通信已就绪')
+  // console.log('通信已就绪')
 })
 
 // 注册快捷回复处理器
 onQuickRequest(MICRO_APP_STORE_EVENTS.GET_APP_LIST, (data, ctx) => {
-  console.log('收到获取应用列表请求:', data)
+  // console.log('收到获取应用列表请求:', data)
   // 这里可以调用本地 API 获取应用列表
   ctx.reply({
     list: [
@@ -53,9 +53,10 @@ onMounted(() => {
 // 发送请求示例
 async function requestUserInfo() {
   try {
-    const userInfo = await sendRequest('main', 'getUserInfo', { userId: 123 })
-    console.log('获取用户信息成功:', userInfo)
-  } catch (error) {
+    await sendRequest('main', 'getUserInfo', { userId: 123 })
+    // console.log('获取用户信息成功:', userInfo)
+  }
+  catch (error) {
     console.error('获取用户信息失败:', error)
   }
 }
