@@ -13,7 +13,7 @@ import (
 
 // 解析版本和秘钥
 func ParseVersionWithSecretKey(c *gin.Context) {
-	token, err := sunApi.ExtractTokenFromRequest(c.Request)
+	token, err := sunApi.ExtractToken(c.Request)
 	if err != nil {
 		apiReturn.ErrorUnauthorized(c)
 		global.Logger.Warnln("token error:", err)
@@ -43,7 +43,7 @@ func ParseVersionWithSecretKey(c *gin.Context) {
 	claims := base.Claims{}
 
 	// 使用获取到的密钥验证JWT
-	if err := sunApi.ParseJWTHS256(token, secretKey, &claims); err != nil {
+	if err := sunApi.ParseTokenHS256(token, secretKey, &claims); err != nil {
 		// 判断是否为token过期
 		if strings.Contains(err.Error(), "token is expired") {
 			apiReturn.ErrorTokenExpires(c)

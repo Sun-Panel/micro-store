@@ -72,10 +72,10 @@ func (c *Client) getToken() (string, error) {
 		return c.cachedToken, nil
 	}
 
-	claims := sun_api.NewMapClaims("sun-panel-auth", 24*time.Hour)
+	claims := sun_api.NewClaims("sun-panel-auth", 24*time.Hour)
 	claims.Issuer = "sun-panel-auth"
 
-	token, err := sun_api.GetJwtTokenHS256(c.SecretKey, claims)
+	token, err := sun_api.GenerateTokenHS256(c.SecretKey, claims)
 	if err != nil {
 		return "", fmt.Errorf("generate jwt token: %w", err)
 	}
