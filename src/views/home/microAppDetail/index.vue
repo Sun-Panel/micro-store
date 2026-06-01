@@ -192,8 +192,9 @@ async function fetchCategoryOptions() {
 
 // 获取版本列表
 async function fetchVersionList() {
-  if (!microAppInfo.value?.id) return
-  
+  if (!microAppInfo.value?.id)
+    return
+
   try {
     const { data } = await getVersionList<Common.ListResponse<MicroApp.VersionInfo[]>>({
       appRecordId: microAppInfo.value.id,
@@ -371,7 +372,7 @@ onMounted(async () => {
 
       <!-- 下载及安装按钮 -->
       <div v-if="latestApprovedVersion" class="flex items-center justify-center gap-3 mb-5">
-        <NButton v-if="!isIframe()" type="primary" @click="handleDownloadByVersionId">
+        <NButton v-if="!isIframe()" type="primary" @click="handleDownloadByVersionId()">
           下载
         </NButton>
         <NButton
@@ -432,7 +433,7 @@ onMounted(async () => {
             <div class="text-sm text-gray-400 mr-2">
               发布时间: {{ timeFormat(String(latestApprovedVersion.createTime)) }}
             </div>
-            <NButton type="primary" @click="handleDownloadByVersionId">
+            <NButton type="primary" @click="handleDownloadByVersionId()">
               下载
             </NButton>
             <NButton @click="handleInstall">

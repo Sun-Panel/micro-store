@@ -11,7 +11,7 @@ export async function getDownloadUrl(microAppId: string, version?: string): Prom
   await getDownloadUrlApi<string>(microAppId, version).then(({ data }) => {
     url = data
   }).catch((res) => {
-    console.error(`get url error: ${res.msg}`)
+    console.error(`get url error: ${res}`)
   })
   // 如果是相对路径，拼接当前域名
   if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
