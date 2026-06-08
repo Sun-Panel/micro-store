@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NButton, NCard, useMessage } from 'naive-ui'
+import { NAlert, NButton, NCard, useMessage } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { getList as getListApi } from '@/api/microApp'
 import defaultAppIcon from '@/assets/image_fail.png'
@@ -300,7 +300,20 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4">
+  <div class="p-2">
+    <NAlert type="info" :show-icon="false" class="mb-4 !rounded-lg">
+      📣 感谢各位小伙伴一直以来的支持和关注，现官方版v2已经加入微应用框架，目前还在开发测试期间，每位开发者都可以开发应用提交供大家使用。待v2正式版上线应用商店将会有奖励机制，但暂未完全确定奖励形式。
+      <span v-if="isIframe()" style="display: inline">
+        <NButton tag="a" href="https://doc.sun-panel.top/v2/zh_cn/micro_app_dev" style="margin-left: 5px;font-weight: 900;" type="primary" target="_blank" text>
+          官方微应用开发文档
+        </NButton>
+
+        <NButton tag="a" href="/" type="primary" target="_blank" text style="margin-left: 15px;font-weight: 900;">
+          发布微应用
+        </NButton>
+      </span>
+    </NAlert>
+
     <div v-if="list.length === 0" class="flex flex-col items-center justify-center py-15 px-5">
       <img src="@/assets/image_fail.png" alt="empty" class="w-16 h-16 opacity-40 mb-4">
       <p class="text-gray-400 text-sm">
