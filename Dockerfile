@@ -34,6 +34,7 @@ RUN sed -i "s@dl-cdn.alpinelinux.org@mirrors.aliyun.com@g" /etc/apk/repositories
 RUN apk add --no-cache bash curl gcc git musl-dev
 
 RUN go env -w GO111MODULE=on \
+    && go mod tidy \
     && export PATH=$PATH:/go/bin \
     && go install -a -v github.com/go-bindata/go-bindata/...@latest \
     && go install -a -v github.com/elazarl/go-bindata-assetfs/...@latest \
@@ -44,7 +45,7 @@ RUN go env -w GO111MODULE=on \
 
 
 # run_image
-FROM alpine
+FROM alpine:latest
 
 WORKDIR /app
 
@@ -60,4 +61,4 @@ EXPOSE 3002
 RUN apk add --no-cache bash ca-certificates su-exec tzdata \
     && chmod +x ./sun-panel-auth-server
 
-CMD ./sun-panel-auth-server
+CMD ["./sun-panel-auth-server"]

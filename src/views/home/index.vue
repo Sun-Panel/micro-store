@@ -329,56 +329,43 @@ onMounted(() => {
         hoverable
         @click="handleCardClick(item)"
       >
-        <div class="flex items-center gap-3">
-          <div class="flex items-start gap-2.5 flex-1 min-w-0">
-            <div class="flex-shrink-0 w-10 flex flex-col items-center gap-1">
-              <img
-                :src="getAppIcon(item)"
-                :alt="getAppName(item)"
-                class="w-10 h-10 rounded-lg object-cover"
-              >
-              <div class="flex justify-center gap-2 text-[10px] text-gray-500 w-full">
-                <span class="flex items-center gap-[3px]" :title="$t('common.downloadCount')">
-                  <SvgIconOnline icon="grommet-icons:download" />
-                  <span class="font-medium">{{ item.downloadCount || 0 }}</span>
-                </span>
-                <!-- <span class="flex items-center gap-[3px]" :title="$t('common.installCount')">
-                  <SvgIconOnline icon="grommet-icons:install" />
-                  <span class="font-medium">{{ item.installCount || 0 }}</span>
-                </span> -->
-              </div>
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="text-base font-bold m-0 leading-[1.4] truncate block w-full" :title="getAppName(item)">
-                {{ getAppName(item) || 'Unknown' }}
-              </div>
-              <div class="flex items-center gap-1 text-[11px] text-gray-500">
-                <SvgIconOnline icon="boxicons:user" class="w-[15px] h-[15px]" />
-                <span class="truncate">{{ item.developer?.name || item.developer?.developerName || '未知' }}</span>
-              </div>
-              <p class="text-xs text-gray-400 leading-[1.4] m-0 line-clamp-2">
-                {{ getAppDesc(item) || '暂无描述' }}
-              </p>
+        <div class="flex items-start gap-3">
+          <div class="flex-shrink-0 w-10 flex flex-col items-center gap-1">
+            <img
+              :src="getAppIcon(item)"
+              :alt="getAppName(item)"
+              class="w-10 h-10 rounded-lg object-cover"
+            >
+            <div class="flex justify-center gap-2 text-[10px] text-gray-500 w-full">
+              <span class="flex items-center gap-[3px]" :title="$t('common.downloadCount')">
+                <SvgIconOnline icon="grommet-icons:download" />
+                <span class="font-medium">{{ item.downloadCount || 0 }}</span>
+              </span>
             </div>
           </div>
-          <div v-if="isIframe()" class="flex flex-col gap-1 flex-shrink-0">
-            <NButton
-              size="tiny"
-              :type="getAppButtonStatus(item.microAppId, item.latestVersion).type"
-              :disabled="getAppButtonStatus(item.microAppId, item.latestVersion).disabled"
-              class="w-[60px]"
-              @click.stop="handleInstall(item)"
-            >
-              {{ getAppButtonStatus(item.microAppId, item.latestVersion).text }}
-            </NButton>
-            <!-- <NButton
-              size="tiny"
-              type="default"
-              class="w-[60px]"
-              @click.stop="handleAction(item)"
-            >
-              {{ localAppStore.isInstalled(item.microAppId) ? '卸载' : '详情' }}
-            </NButton> -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <div class="font-bold m-0 leading-[1.4] truncate flex-1 min-w-0" :title="getAppName(item)">
+                {{ getAppName(item) || 'Unknown' }}
+              </div>
+              <NButton
+                v-if="isIframe()"
+                size="tiny"
+                :type="getAppButtonStatus(item.microAppId, item.latestVersion).type"
+                :disabled="getAppButtonStatus(item.microAppId, item.latestVersion).disabled"
+                class="w-[60px] !h-[24px] flex-shrink-0"
+                @click.stop="handleInstall(item)"
+              >
+                {{ getAppButtonStatus(item.microAppId, item.latestVersion).text }}
+              </NButton>
+            </div>
+            <div class="flex items-center gap-1 text-[11px] text-gray-500">
+              <SvgIconOnline icon="boxicons:user" class="w-[15px] h-[15px]" />
+              <span class="truncate">{{ item.developer?.name || item.developer?.developerName || '未知' }}</span>
+            </div>
+            <p class="text-xs text-gray-400 leading-[1.4] m-0 description-clamp" :title="getAppDesc(item)">
+              {{ getAppDesc(item) || '-' }}
+            </p>
           </div>
         </div>
       </NCard>
@@ -391,6 +378,14 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 12px;
+}
+
+.description-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 @media (max-width: 600px) {

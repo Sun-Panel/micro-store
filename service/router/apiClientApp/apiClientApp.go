@@ -15,8 +15,8 @@ func Init(routerGroup *gin.RouterGroup) {
 func InitApiRouter(router *gin.RouterGroup) {
 	api := v1.ApiGroupApp.Api
 
-	// 客户端API路由 中间件：生成responseId并记录错误日志，解析版本和秘钥，尝试解析用户信息，但不拦截
-	r := router.Group("clientApp", middleware.ResponseLogger, middleware.ParseVersionWithSecretKey)
+	// 客户端API路由 中间件：生成responseId并记录错误日志，（解析版本和秘钥）括号内容将原中间件ParseVersionWithSecretKey改为ParseData （2026-06-29），尝试解析用户信息，但不拦截
+	r := router.Group("clientApp", middleware.ResponseLogger, middleware.ParseData)
 	{
 		// ==========================
 		// 公开接口（尝试解析用户信息，但不拦截）
