@@ -22,6 +22,7 @@ type MicroAppPackageResult struct {
 	Src          string                       `json:"src"`          // 文件源路径
 	Hash         string                       `json:"hash"`         // 文件 MD5
 	Config       models.MicroAppVersionConfig `json:"config"`       // 解析的配置
+	AppJson      string                       `json:"appJson"`      // 原始 app.json 内容
 	FileName     string                       `json:"fileName"`     // 文件名
 	FileSize     int64                        `json:"fileSize"`     // 文件大小
 	FullFilePath string                       `json:"fullFilePath"` // 完整的文件路径
@@ -121,7 +122,7 @@ func (s *MicroAppPackageService) UploadMicroAppPackage(fileData []byte, fileName
 	}
 
 	// 查找并解析配置文件
-	config, err := s.parseAppConfig(tempDir)
+	config, rawAppJson, err := s.parseAppConfig(tempDir)
 	if err != nil {
 		return MicroAppPackageResult{}, fmt.Errorf("解析应用配置文件失败: %w", err)
 	}
@@ -149,6 +150,7 @@ func (s *MicroAppPackageService) UploadMicroAppPackage(fileData []byte, fileName
 		Src:          filePath,
 		Hash:         fileHash,
 		Config:       config,
+		AppJson:      rawAppJson,
 		FileName:     newFileName,
 		FileSize:     int64(len(fileData)),
 		FullFilePath: fullFilePath,
@@ -173,21 +175,27 @@ func (s *MicroAppPackageService) calculateFileMD5(filePath string) (string, erro
 }
 
 // parseAppConfig 解析应用配置文件
-func (s *MicroAppPackageService) parseAppConfig(tempDir string) (models.MicroAppVersionConfig, error) {
+func (s *MicroAppPackageService) parseAppConfig(tempDir string) (models.MicroAppVersionConfig, string, error) {
 	configPath := filepath.Join(tempDir, "app.json")
-	config, err := s.parseConfigFile(configPath)
+	config, rawJson, err := s.parseConfigFile(configPath)
 	if err != nil {
-		return models.MicroAppVersionConfig{}, err
+		return models.MicroAppVersionConfig{}, "", err
 	}
-	return config, nil
+
+	// 处理 v1.1 语言包替换
+	if err := s.processV1_1Locales(&config, tempDir); err != nil {
+		return models.MicroAppVersionConfig{}, "", fmt.Errorf("处理 v1.1 语言包失败: %w", err)
+	}
+
+	return config, rawJson, nil
 }
 
 // parseConfigFile 解析配置文件
-func (s *MicroAppPackageService) parseConfigFile(configPath string) (models.MicroAppVersionConfig, error) {
+func (s *MicroAppPackageService) parseConfigFile(configPath string) (models.MicroAppVersionConfig, string, error) {
 	global.Logger.Debugln("parseConfigFile", configPath)
 	content, err := os.ReadFile(configPath)
 	if err != nil {
-		return models.MicroAppVersionConfig{}, err
+		return models.MicroAppVersionConfig{}, "", err
 	}
 
 	strContent := string(content)
@@ -207,23 +215,247 @@ func (s *MicroAppPackageService) parseConfigFile(configPath string) (models.Micr
 	// 移除 JavaScript 注释
 	strContent = s.removeJSComments(strContent)
 
+	// 保存处理后的原始 JSON 内容
+	rawJson := strContent
+
 	var config models.MicroAppVersionConfig
 	if err := json.Unmarshal([]byte(strContent), &config); err != nil {
-		return models.MicroAppVersionConfig{}, fmt.Errorf("parse config file failed: %w", err)
+		return models.MicroAppVersionConfig{}, "", fmt.Errorf("parse config file failed: %w", err)
 	}
 
 	// 检查必要字段
 	if config.MicroAppId == "" {
-		return models.MicroAppVersionConfig{}, fmt.Errorf("no microappid")
+		return models.MicroAppVersionConfig{}, "", fmt.Errorf("no microappid")
 	}
 	if config.Version == "" {
-		return models.MicroAppVersionConfig{}, fmt.Errorf("no version")
+		return models.MicroAppVersionConfig{}, "", fmt.Errorf("no version")
 	}
 	// if config.APIVersion == "" {
 	// 	return nil
 	// }
 
-	return config, nil
+	return config, rawJson, nil
+}
+
+// processV1_1Locales 处理 v1.1 语言包替换
+func (s *MicroAppPackageService) processV1_1Locales(config *models.MicroAppVersionConfig, tempDir string) error {
+	// 只处理 v1.1 版本
+	if config.AppJsonVersion != "1.1" {
+		return nil
+	}
+
+	// 检查 Locales 映射是否存在
+	if len(config.Locales) == 0 {
+		return nil
+	}
+
+	// 获取默认语言，未设置时默认为 en-US
+	defaultLocale := config.DefaultLocale
+	if defaultLocale == "" {
+		defaultLocale = "en-US"
+	}
+
+	// 检查 AppInfo 是否包含模板变量
+	// UnmarshalJSON 已将 v1.1 扁平格式包装为 {"default": {...}}
+	if !s.appInfoContainsTemplateVars(config.AppInfo) {
+		// 不包含模板变量，直接存入 default
+		if len(config.AppInfo.LangMap) > 0 {
+			for _, appInfo := range config.AppInfo.LangMap {
+				config.AppInfo.LangMap = map[string]models.AppInfo{
+					"default": appInfo,
+				}
+				break
+			}
+		}
+		// 清除临时字段
+		config.Locales = nil
+		config.DefaultLocale = ""
+		return nil
+	}
+
+	// 包含模板变量，读取语言包并替换
+	localesDir := filepath.Join(tempDir, "locales")
+	localesData := make(map[string]map[string]string)
+
+	// 读取每个语言文件
+	for lang, fileName := range config.Locales {
+		filePath := filepath.Join(localesDir, fileName)
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			global.Logger.Warnf("读取语言文件失败: %s, 错误: %v", filePath, err)
+			continue
+		}
+
+		var translations map[string]string
+		if err := json.Unmarshal(data, &translations); err != nil {
+			global.Logger.Warnf("解析语言文件失败: %s, 错误: %v", filePath, err)
+			continue
+		}
+
+		localesData[lang] = translations
+	}
+
+	// 预加载短语言码的翻译数据（如 zh-CN → zh）
+	// 仅当短语言码也在 locales 中声明时才加载
+	for lang := range config.Locales {
+		shortLang := s.getShortLanguageCode(lang)
+		if shortLang != lang {
+			// 检查短语言码是否在 locales 中声明
+			if _, exists := config.Locales[shortLang]; exists {
+				if _, loaded := localesData[shortLang]; !loaded {
+					fileName := config.Locales[shortLang]
+					filePath := filepath.Join(localesDir, fileName)
+					data, err := os.ReadFile(filePath)
+					if err != nil {
+						continue
+					}
+					var translations map[string]string
+					if err := json.Unmarshal(data, &translations); err != nil {
+						continue
+					}
+					localesData[shortLang] = translations
+				}
+			}
+		}
+	}
+
+	// 预加载默认语言的翻译数据
+	if _, exists := config.Locales[defaultLocale]; exists {
+		if _, loaded := localesData[defaultLocale]; !loaded {
+			fileName := config.Locales[defaultLocale]
+			filePath := filepath.Join(localesDir, fileName)
+			data, err := os.ReadFile(filePath)
+			if err == nil {
+				var translations map[string]string
+				if err := json.Unmarshal(data, &translations); err == nil {
+					localesData[defaultLocale] = translations
+				}
+			}
+		}
+	}
+
+	// 为每个语言执行模板替换
+	newLangMap := make(map[string]models.AppInfo)
+	for lang := range config.Locales {
+		// 构建回退链：完整语言代码 → 语言短码 → 默认语言
+		fallbackChain := s.buildFallbackChain(lang, defaultLocale, localesData)
+
+		// 替换 AppInfo 中的模板变量
+		replacedAppInfo := s.replaceAppInfoTemplateVars(config.AppInfo, fallbackChain)
+		newLangMap[lang] = replacedAppInfo
+	}
+
+	// 更新 AppInfo
+	config.AppInfo.LangMap = newLangMap
+
+	// 清除临时字段
+	config.Locales = nil
+	config.DefaultLocale = ""
+
+	return nil
+}
+
+// getShortLanguageCode 获取语言短码（去掉地区后缀）
+// 例如：zh-CN → zh, en-US → en, zh → zh
+func (s *MicroAppPackageService) getShortLanguageCode(lang string) string {
+	if idx := strings.Index(lang, "-"); idx > 0 {
+		return lang[:idx]
+	}
+	return lang
+}
+
+// buildFallbackChain 构建语言回退链
+// 顺序：完整语言代码 → 语言短码 → 默认语言
+// 相邻重复的语言不会重复出现
+func (s *MicroAppPackageService) buildFallbackChain(lang, defaultLocale string, localesData map[string]map[string]string) []map[string]string {
+	var chain []map[string]string
+
+	// 1. 完整语言代码
+	if data, ok := localesData[lang]; ok {
+		chain = append(chain, data)
+	}
+
+	// 2. 语言短码（去掉地区后缀）
+	shortLang := s.getShortLanguageCode(lang)
+	if shortLang != lang {
+		if data, ok := localesData[shortLang]; ok {
+			chain = append(chain, data)
+		}
+	}
+
+	// 3. 默认语言（如果不在链中）
+	if defaultLocale != lang && defaultLocale != shortLang {
+		if data, ok := localesData[defaultLocale]; ok {
+			chain = append(chain, data)
+		}
+	}
+
+	return chain
+}
+
+// appInfoContainsTemplateVars 检查 AppInfo 是否包含模板变量
+func (s *MicroAppPackageService) appInfoContainsTemplateVars(appInfo models.AppInfoField) bool {
+	if appInfo.LangMap == nil {
+		return false
+	}
+
+	// 遍历所有语言的 AppInfo，检查是否有 $t: 前缀的值
+	for _, info := range appInfo.LangMap {
+		if strings.HasPrefix(info.AppName, "$t:") ||
+			strings.HasPrefix(info.Description, "$t:") ||
+			strings.HasPrefix(info.NetworkDescription, "$t:") {
+			return true
+		}
+	}
+
+	return false
+}
+
+// replaceAppInfoTemplateVars 替换 AppInfo 中的模板变量
+func (s *MicroAppPackageService) replaceAppInfoTemplateVars(
+	appInfo models.AppInfoField,
+	fallbackChain []map[string]string,
+) models.AppInfo {
+	var result models.AppInfo
+
+	// 获取原始 AppInfo（v1.1 格式已由 UnmarshalJSON 包装为 {"default": {...}}）
+	if len(appInfo.LangMap) == 0 {
+		return result
+	}
+
+	// 获取第一个 AppInfo（即 default 条目）
+	for _, info := range appInfo.LangMap {
+		result.AppName = s.replaceTemplateVar(info.AppName, fallbackChain)
+		result.Description = s.replaceTemplateVar(info.Description, fallbackChain)
+		result.NetworkDescription = s.replaceTemplateVar(info.NetworkDescription, fallbackChain)
+		break
+	}
+
+	return result
+}
+
+// replaceTemplateVar 替换单个模板变量
+// 按回退链顺序查找翻译，找不到则保留原始值
+func (s *MicroAppPackageService) replaceTemplateVar(
+	value string,
+	fallbackChain []map[string]string,
+) string {
+	if !strings.HasPrefix(value, "$t:") {
+		return value
+	}
+
+	// 提取 KEY：移除 $t: 前缀
+	key := strings.TrimPrefix(value, "$t:")
+
+	// 按回退链顺序查找翻译
+	for _, translations := range fallbackChain {
+		if translated, ok := translations[key]; ok {
+			return translated
+		}
+	}
+
+	// 所有回退语言都找不到，保留原始值
+	return value
 }
 
 // removeJSComments 移除 JavaScript 注释

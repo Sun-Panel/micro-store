@@ -32,6 +32,7 @@ declare namespace MicroApp {
     packageHash: string
     versionDesc: Record<string, { content: string }> // 版本说明（多语言格式）
     config?: VersionConfig
+    appJson?: string // 原始 app.json 内容
     status: number // 审核状态：-1-草稿 0-待审核 1-已通过 2-已拒绝 3-已下架
     reviewTime?: string
     reviewerId?: number
@@ -352,6 +353,7 @@ declare namespace MicroApp {
     url: string // 文件访问 URL
     hash: string // 文件 MD5 校验值
     config: VersionConfig // 解析出的配置文件
+    appJson: string // 原始 app.json 内容
     fileName: string // 文件名
     fileSize: number // 文件大小
     folderName: string // 缓存文件夹名（不含路径）

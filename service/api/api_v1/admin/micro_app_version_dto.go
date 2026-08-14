@@ -21,7 +21,7 @@ type MicroAppConfig struct {
 	Permissions    []string                  `json:"permissions"`    // 权限列表
 	DataNodes      map[string]DataNodeConfig `json:"dataNodes"`      // 数据节点配置
 	NetworkDomains []string                  `json:"networkDomains"` // 网络域名白名单
-	AppInfo        map[string]AppInfo        `json:"appInfo"`        // 应用信息
+	AppInfo        models.AppInfoField       `json:"appInfo"`        // 应用信息（兼容 v1.0 和 v1.1）
 }
 
 // ComponentsConfig 组件配置
@@ -72,6 +72,7 @@ type MicroAppVersionUploadResp struct {
 	URL           string                       `json:"url"`           // 文件访问 URL
 	Hash          string                       `json:"hash"`          // 文件 MD5 校验值
 	Config        models.MicroAppVersionConfig `json:"config"`        // 解析出的配置文件
+	AppJson       string                       `json:"appJson"`       // 原始 app.json 内容
 	FileName      string                       `json:"fileName"`      // 文件名
 	FileSize      int64                        `json:"fileSize"`      // 文件大小
 	FullFilePath  string                       `json:"fullFilePath"`  // 完整的文件路径

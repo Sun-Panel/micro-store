@@ -24,6 +24,19 @@ const uploadLoading = ref(false)
 const uploadedConfig = ref<MicroApp.VersionConfig | null>(null)
 const uploadCacheId = ref('')
 
+// 获取应用信息（兼容 v1.0 多语言格式和 v1.1 扁平格式）
+function getAppInfo(): MicroApp.AppInfo | null {
+  if (!uploadedConfig.value?.appInfo) return null
+  const appInfo = uploadedConfig.value.appInfo
+  // v1.0: 按语言键获取
+  if (appInfo['zh-CN']) return appInfo['zh-CN']
+  if (appInfo['en-US']) return appInfo['en-US']
+  // v1.1 或默认: 获取第一个可用的
+  const keys = Object.keys(appInfo)
+  if (keys.length > 0) return appInfo[keys[0]]
+  return null
+}
+
 // 语言列表
 const langOptions = [
   { label: '简体中文 (zh-CN)', value: 'zh-CN' },
@@ -220,8 +233,8 @@ async function handleAddVersion() {
           <div v-if="uploadedConfig.icon" class="mb-2">
             <img :src="uploadedConfig.icon" class="w-12 h-12 object-contain border rounded">
           </div>
-          <div v-if="uploadedConfig.appInfo?.['zh-CN']?.appName || uploadedConfig.appInfo?.['en-US']?.appName" class="text-lg font-bold">
-            应用名称：{{ uploadedConfig.appInfo?.['zh-CN']?.appName || uploadedConfig.appInfo?.['en-US']?.appName }}
+          <div v-if="getAppInfo()?.appName" class="text-lg font-bold">
+            应用名称：{{ getAppInfo()?.appName }}
           </div>
           <div v-if="uploadedConfig.microAppId" class="text-gray-500">
             应用ID：{{ uploadedConfig.microAppId }}

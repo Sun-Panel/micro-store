@@ -58,22 +58,24 @@ const langList = computed(() => {
   return Object.keys(detailInfo.value.appInfo)
 })
 
+// 获取应用信息（兼容 v1.0 多语言和 v1.1 扁平格式）
+function getAppInfoForLang(appInfo: Record<string, { appName: string, appDesc: string }> | undefined, lang: string): { appName: string, appDesc: string } | undefined {
+  if (!appInfo) return undefined
+  return appInfo[lang] || appInfo['zh-CN'] || appInfo['default'] || Object.values(appInfo)[0]
+}
+
 // 当前语言下的应用名称
 const currentAppName = computed(() => {
   if (!detailInfo.value?.appInfo)
     return ''
-  return detailInfo.value.appInfo[currentLang.value]?.appName
-    || detailInfo.value.appInfo['zh-CN']?.appName
-    || ''
+  return getAppInfoForLang(detailInfo.value.appInfo, currentLang.value)?.appName || ''
 })
 
 // 当前语言下的应用描述
 const currentAppDesc = computed(() => {
   if (!detailInfo.value?.appInfo)
     return ''
-  return detailInfo.value.appInfo[currentLang.value]?.appDesc
-    || detailInfo.value.appInfo['zh-CN']?.appDesc
-    || ''
+  return getAppInfoForLang(detailInfo.value.appInfo, currentLang.value)?.appDesc || ''
 })
 
 // 多语言表格列配置

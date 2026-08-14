@@ -6,6 +6,7 @@ import (
 	"sun-panel/biz"
 	"sun-panel/global"
 	"sun-panel/models"
+	"sun-panel/models/datatype"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -86,6 +87,7 @@ func (a *DeveloperVersionApi) Create(c *gin.Context) {
 		VersionDesc: req.VersionDesc,
 		Config:      &cache.PackageResult.Config,
 		IconUrl:     cache.PackageResult.IconURL,
+		AppJson:     datatype.AppJson(cache.PackageResult.AppJson),
 	}
 
 	// 创建或更新版本并进行审核检查

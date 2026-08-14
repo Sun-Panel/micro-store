@@ -86,6 +86,7 @@ func (a *MicroAppVersionUploadApi) Upload(c *gin.Context) {
 		// URL:           result.Src,
 		Hash:          result.Hash,
 		Config:        result.Config,
+		AppJson:       result.AppJson,
 		FileName:      result.FileName,
 		FileSize:      result.FileSize,
 		FullFilePath:  result.FullFilePath,

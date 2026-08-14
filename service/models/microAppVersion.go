@@ -22,7 +22,11 @@ type MicroAppVersionConfig struct {
 	Permissions    []string                   `json:"permissions"`    // 权限列表
 	DataNodes      map[string]json.RawMessage `json:"dataNodes"`      // 数据节点配置
 	NetworkDomains []string                   `json:"networkDomains"` // 网络域名白名单
-	AppInfo        map[string]AppInfo         `json:"appInfo"`        // 应用多语言信息
+	AppInfo        AppInfoField               `json:"appInfo"`        // 应用多语言信息
+
+	// 临时字段：仅用于 v1.1 解析阶段，解析完成后清除
+	Locales       map[string]string `json:"locales,omitempty"`       // 语言文件映射：语言代码 -> 文件名
+	DefaultLocale string            `json:"defaultLocale,omitempty"` // 默认语言
 }
 
 // AppInfo 应用多语言信息
@@ -30,6 +34,85 @@ type AppInfo struct {
 	AppName            string `json:"appName"`
 	Description        string `json:"description"`
 	NetworkDescription string `json:"networkDescription"`
+}
+
+// AppInfoField 兼容 v1.0 和 v1.1 格式的 AppInfo 字段
+// v1.0: {"zh-CN": {...}, "en-US": {...}}
+// v1.1: {"appName": "...", "description": "..."} → 转换为 {"default": {...}}
+type AppInfoField struct {
+	LangMap map[string]AppInfo
+}
+
+// UnmarshalJSON 实现 json.Unmarshaler 接口
+func (a *AppInfoField) UnmarshalJSON(data []byte) error {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	// 检查是否是 v1.1 格式（扁平对象，没有语言代码键）
+	if len(raw) > 0 {
+		// 获取第一个键，检查是否是语言代码格式
+		firstKey := ""
+		for k := range raw {
+			firstKey = k
+			break
+		}
+
+		// v1.1 格式：键是 appName, description 等
+		if firstKey == "appName" || firstKey == "description" || firstKey == "networkDescription" {
+			// 转换为 v1.0 格式：包装为 {"default": {...}}
+			var appInfo AppInfo
+			if err := json.Unmarshal(data, &appInfo); err != nil {
+				return err
+			}
+			a.LangMap = map[string]AppInfo{
+				"default": appInfo,
+			}
+			return nil
+		}
+	}
+
+	// v1.0 格式：多语言映射
+	a.LangMap = make(map[string]AppInfo)
+	for lang, rawInfo := range raw {
+		var appInfo AppInfo
+		if err := json.Unmarshal(rawInfo, &appInfo); err != nil {
+			return err
+		}
+		a.LangMap[lang] = appInfo
+	}
+
+	return nil
+}
+
+// MarshalJSON 实现 json.Marshaler 接口
+func (a AppInfoField) MarshalJSON() ([]byte, error) {
+	return json.Marshal(a.LangMap)
+}
+
+// GetAppInfo 获取指定语言的应用信息，如果没有则返回默认语言
+func (a *AppInfoField) GetAppInfo(lang string) (AppInfo, bool) {
+	if a.LangMap == nil {
+		return AppInfo{}, false
+	}
+
+	// 尝试获取指定语言
+	if info, ok := a.LangMap[lang]; ok {
+		return info, true
+	}
+
+	// 尝试获取默认语言
+	if info, ok := a.LangMap["default"]; ok {
+		return info, true
+	}
+
+	// 返回第一个可用的语言
+	for _, info := range a.LangMap {
+		return info, true
+	}
+
+	return AppInfo{}, false
 }
 
 // 微应用版本列表
@@ -44,6 +127,7 @@ type MicroAppVersion struct {
 	IconUrl           string                        `gorm:"type:varchar(2000)" json:"iconUrl"`                 // 图标URL
 	VersionDesc       datatype.VersionDesc          `gorm:"type:text" json:"versionDesc"`                      // 版本说明（多语言格式）
 	Config            *MicroAppVersionConfig        `gorm:"type:json;serializer:json" json:"config"`           // 完整配置信息（JSON）
+	AppJson           datatype.AppJson               `gorm:"type:text" json:"appJson"`                          // 原始 app.json 完整内容
 	Status            int                           `gorm:"type:tinyint(2);not null;default:-1" json:"status"` // 审核状态：-1-草稿 0-待审核 1-通过 2-拒绝
 	CodeSecurityAudit *datatype.SecurityAuditReport `gorm:"type:text" json:"codeSecurityAudit"`                // 代码安全审核报告
 	ReviewTime        *time.Time                    `gorm:"type:datetime" json:"reviewTime"`                   // 审核时间
