@@ -13,6 +13,8 @@ declare namespace MicroApp {
     thirdCharge?: number // 第三方收费方式：0-不含 1-付费才可用 2-基础功能免费
     adminName?: string // 应用名称(开发者可见)
     haveIframe?: boolean // 是否包含iframe
+    openSourceUrl?: string // 开源仓库地址
+    feedbackChannel?: string // 反馈方式（网址、QQ群、邮箱等）
   }
 
   // 单个语言的信息

@@ -340,6 +340,14 @@ onMounted(async () => {
                 <span class="text-gray-400">使用Iframe:</span>
                 <span class="ml-1">{{ microAppInfo.haveIframe ? '是' : '否' }}</span>
               </div>
+              <div v-if="microAppInfo.openSourceUrl" class="text-sm">
+                <span class="text-gray-400">{{ $t('microApp.sourceUrl') }}:</span>
+                <a :href="microAppInfo.openSourceUrl" target="_blank" class="text-blue-500 hover:underline ml-1">{{ microAppInfo.openSourceUrl }}</a>
+              </div>
+              <div v-if="microAppInfo.feedbackChannel" class="text-sm">
+                <span class="text-gray-400">{{ $t('microApp.feedbackChannel') }}:</span>
+                <span class="ml-1">{{ microAppInfo.feedbackChannel }}</span>
+              </div>
             </div>
 
             <!-- 介绍 -->

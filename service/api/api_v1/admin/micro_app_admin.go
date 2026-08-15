@@ -71,24 +71,28 @@ func (a *MicroAppAdminApi) GetInfo(c *gin.Context) {
 
 	// 组合数据返回
 	result := map[string]interface{}{
-		"id":         info.ID,
-		"microAppId": info.MicroAppId,
+		"id":               info.ID,
+		"microAppId":       info.MicroAppId,
 		// "appName":       info.AppName,
-		"appIcon": info.AppIcon,
+		"appIcon":          info.AppIcon,
 		// "appDesc":       info.AppDesc,
-		"remark":        info.Remark,
-		"categoryId":    info.CategoryId,
-		"chargeType":    info.ChargeType,
-		"points":        info.Points,
-		"authorId":      info.DeveloperId,
-		"status":        info.Status,
-		"screenshots":   info.Screenshots,
-		"langList":      info.LangList,
-		"createTime":    info.CreatedAt,
-		"updateTime":    info.UpdatedAt,
-		"reviewStatus":  reviewStatus,       // 审核状态：0-已通过 1-审核中 2-已拒绝 3-草稿
-		"draft":         draft,              // 草稿版本（如果存在）
-		"offlineReason": info.OfflineReason, // 下线原因
+		"remark":           info.Remark,
+		"categoryId":       info.CategoryId,
+		"chargeType":       info.ChargeType,
+		"points":           info.Points,
+		"authorId":         info.DeveloperId,
+		"status":           info.Status,
+		"screenshots":      info.Screenshots,
+		"langList":         info.LangList,
+		"createTime":       info.CreatedAt,
+		"updateTime":       info.UpdatedAt,
+		"thirdCharge":      info.ThirdCharge,
+		"haveIframe":       info.HaveIframe,
+		"openSourceUrl":     info.SourceUrl,
+		"feedbackChannel":   info.FeedbackChannel,
+		"reviewStatus":     reviewStatus,       // 审核状态：0-已通过 1-审核中 2-已拒绝 3-草稿
+		"draft":            draft,              // 草稿版本（如果存在）
+		"offlineReason":    info.OfflineReason, // 下线原因
 	}
 
 	apiReturn.SuccessData(c, result)

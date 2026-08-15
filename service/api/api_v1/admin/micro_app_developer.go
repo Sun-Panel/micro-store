@@ -2,6 +2,7 @@ package admin
 
 import (
 	"fmt"
+	"strings"
 
 	"sun-panel/api/api_v1/common/apiReturn"
 	"sun-panel/api/api_v1/common/base"
@@ -11,6 +12,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+)
+
+// 仅在本文件内使用的错误码
+const (
+	ErrCodeSourceUrlHttpsRequired = -2 // 开源仓库地址必须以 https:// 开头
 )
 
 // MicroAppDeveloperApi 开发者专用微应用 API
@@ -80,23 +86,27 @@ func (a *MicroAppDeveloperApi) GetInfo(c *gin.Context) {
 
 	// 组合数据返回
 	result := map[string]interface{}{
-		"id":         info.ID,
-		"microAppId": info.MicroAppId,
+		"id":               info.ID,
+		"microAppId":       info.MicroAppId,
 		// "appName":      info.AppName,
-		"appIcon": info.AppIcon,
+		"appIcon":          info.AppIcon,
 		// "appDesc":      info.AppDesc,
-		"remark":       info.Remark,
-		"categoryId":   info.CategoryId,
-		"chargeType":   info.ChargeType,
-		"points":       info.Points,
-		"authorId":     info.DeveloperId,
-		"status":       info.Status,
-		"screenshots":  info.Screenshots,
-		"langList":     info.LangList,
-		"createTime":   info.CreatedAt,
-		"updateTime":   info.UpdatedAt,
-		"reviewStatus": reviewStatus, // 审核状态：0-已通过 1-审核中 2-已拒绝 3-草稿
-		"draft":        draft,        // 草稿版本（如果存在）
+		"remark":           info.Remark,
+		"categoryId":       info.CategoryId,
+		"chargeType":       info.ChargeType,
+		"points":           info.Points,
+		"authorId":         info.DeveloperId,
+		"status":           info.Status,
+		"screenshots":      info.Screenshots,
+		"langList":         info.LangList,
+		"createTime":       info.CreatedAt,
+		"updateTime":       info.UpdatedAt,
+		"thirdCharge":      info.ThirdCharge,
+		"haveIframe":       info.HaveIframe,
+		"openSourceUrl":     info.SourceUrl,
+		"feedbackChannel":   info.FeedbackChannel,
+		"reviewStatus":     reviewStatus, // 审核状态：0-已通过 1-审核中 2-已拒绝 3-草稿
+		"draft":            draft,        // 草稿版本（如果存在）
 	}
 
 	apiReturn.SuccessData(c, result)
@@ -196,6 +206,12 @@ func (a *MicroAppDeveloperApi) Update(c *gin.Context) {
 		return
 	}
 
+	// 校验开源仓库地址必须以 https:// 开头
+	if param.SourceUrl != "" && !strings.HasPrefix(param.SourceUrl, "https://") {
+		apiReturn.ErrorByCode(c, ErrCodeSourceUrlHttpsRequired)
+		return
+	}
+
 	developer := base.GetCurrentDeveloper(c)
 
 	opts := biz.DeveloperAppOptions{
@@ -204,12 +220,16 @@ func (a *MicroAppDeveloperApi) Update(c *gin.Context) {
 			// AppName:     param.AppName,
 			AppIcon: param.AppIcon,
 			// AppDesc:     param.AppDesc,
-			Remark:      param.Remark,
-			CategoryId:  param.CategoryId,
-			ChargeType:  param.ChargeType,
-			Points:      param.Points,
-			Screenshots: param.Screenshots,
-			AdminName:   param.AdminName,
+			Remark:           param.Remark,
+			CategoryId:       param.CategoryId,
+			ChargeType:       param.ChargeType,
+			Points:           param.Points,
+			Screenshots:      param.Screenshots,
+			AdminName:        param.AdminName,
+			ThirdCharge:      param.ThirdCharge,
+			HaveIframe:       param.HaveIframe,
+			SourceUrl:        param.SourceUrl,
+			FeedbackChannel:  param.FeedbackChannel,
 		},
 		LangMap:     param.LangMap,
 		DeveloperId: developer.ID,

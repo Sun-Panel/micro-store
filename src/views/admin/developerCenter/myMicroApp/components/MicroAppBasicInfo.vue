@@ -75,6 +75,14 @@ const categoryName = computed(() => {
           <span class="text-gray-500">包含iframe：</span>
           <span>{{ microAppInfo.haveIframe ? '是' : '否' }}</span>
         </div>
+        <div v-if="microAppInfo.openSourceUrl">
+          <span class="text-gray-500">{{ $t('microApp.sourceUrl') }}：</span>
+          <a :href="microAppInfo.openSourceUrl" target="_blank" class="text-blue-500 hover:underline">{{ microAppInfo.openSourceUrl }}</a>
+        </div>
+        <div v-if="microAppInfo.feedbackChannel">
+          <span class="text-gray-500">{{ $t('microApp.feedbackChannel') }}：</span>
+          <span>{{ microAppInfo.feedbackChannel }}</span>
+        </div>
       </div>
       <div class="col-span-2">
         <span class="text-gray-500">应用描述：</span>

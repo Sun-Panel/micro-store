@@ -44,7 +44,8 @@
     "2004": "状态不允许操作",
     "2005": "已审核版本不能删除",
     "2006": "非待审核状态",
-    "2007": "无更新内容"
+    "2007": "无更新内容",
+    "-2": "开源仓库地址必须以 https:// 开头"
   },
   "appLauncher": {
     "title": "系统应用"
@@ -317,7 +318,12 @@
     "userInfo": "个人信息"
   },
   "microApp": {
-    "thirdCharge": "三方内购"
+    "thirdCharge": "三方内购",
+    "sourceUrl": "开源仓库地址",
+    "feedbackChannel": "反馈方式",
+    "sourceUrlPlaceholder": "请输入开源仓库地址，如 GitHub、Gitee 等",
+    "feedbackChannelPlaceholder": "请输入反馈方式，如网址、QQ群、邮箱等",
+    "sourceUrlHttpsRequired": "开源仓库地址必须以 https:// 开头"
   },
   "oAuth2": {
     "logoutAgainLogin": "账号异常，请先退出，然后再次登录",

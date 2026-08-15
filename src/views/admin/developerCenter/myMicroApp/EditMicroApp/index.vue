@@ -42,6 +42,8 @@ const formInitValue: MicroApp.Info = {
   status: 0,
   thirdCharge: 0,
   haveIframe: false,
+  openSourceUrl: '',
+  feedbackChannel: '',
 }
 
 const model = ref({ ...formInitValue })
@@ -109,6 +111,16 @@ const rules = computed<FormRules>(() => {
     appIcon: isEdit ? [{ required: true, trigger: 'blur', message: '请上传应用图标' }] : [],
     microAppId: !isEdit ? [{ required: true, trigger: 'blur', message: '请输入应用标识' }] : [],
     categoryId: [{ required: true, type: 'number', trigger: 'change', message: '请选择分类' }],
+    openSourceUrl: [
+      {
+        validator(_: any, value: string) {
+          if (value && !value.startsWith('https://'))
+            return new Error(t('microApp.sourceUrlHttpsRequired'))
+          return true
+        },
+        trigger: 'blur',
+      },
+    ],
   }
 })
 
@@ -146,6 +158,8 @@ watch(show, (newValue) => {
         adminName: props.microAppInfo.adminName,
         thirdCharge: props.microAppInfo.thirdCharge || 0,
         haveIframe: props.microAppInfo.haveIframe || false,
+        openSourceUrl: (props.microAppInfo as any).openSourceUrl || '',
+        feedbackChannel: props.microAppInfo.feedbackChannel || '',
       }
       // 初始化已有图片列表
       const screenshots = props.microAppInfo.screenshots ? props.microAppInfo.screenshots.split(',').filter(Boolean) : []
@@ -275,6 +289,8 @@ async function submit() {
         adminName: model.value.adminName,
         thirdCharge: model.value.thirdCharge,
         haveIframe: model.value.haveIframe,
+        openSourceUrl: model.value.openSourceUrl,
+        feedbackChannel: model.value.feedbackChannel,
       })
     }
     else {
@@ -292,12 +308,18 @@ async function submit() {
         langMap: localLangMap.value,
         thirdCharge: model.value.thirdCharge,
         haveIframe: model.value.haveIframe,
+        openSourceUrl: model.value.openSourceUrl,
+        feedbackChannel: model.value.feedbackChannel,
       })
     }
     emit('done')
     show.value = false
   }
-  catch (error) {
+  catch (error: any) {
+    if (error?.code === -2) {
+      message.error(t('apiErrorCode.-2'))
+      return
+    }
     apiRespErrMsgAndCustomCodeNeg1Msg(error, t('common.failed'))
   }
 }
@@ -519,6 +541,16 @@ function handleScreenshotFinish({ file, event }: { file: any, event?: any }) {
       <!-- 是否包含iframe -->
       <NFormItem label="是否包含iframe">
         <NSwitch v-model:value="model.haveIframe" />
+      </NFormItem>
+
+      <!-- 开源仓库地址 -->
+      <NFormItem path="openSourceUrl" :label="t('microApp.sourceUrl')">
+        <NInput v-model:value="model.openSourceUrl" :placeholder="t('microApp.sourceUrlPlaceholder')" />
+      </NFormItem>
+
+      <!-- 反馈方式 -->
+      <NFormItem :label="t('microApp.feedbackChannel')">
+        <NInput v-model:value="model.feedbackChannel" :placeholder="t('microApp.feedbackChannelPlaceholder')" />
       </NFormItem>
 
       <!-- 应用备注 -->

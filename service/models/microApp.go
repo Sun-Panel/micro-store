@@ -19,8 +19,10 @@ type MicroAppBaseInfo struct {
 	ChargeType  int    `gorm:"type:tinyint(1);not null;default:0" json:"chargeType"`  // 收费方式：0-免费 1-积分 2-订阅PRO免费
 	Points      int    `gorm:"type:int(11)" json:"points"`                            // 价格（积分数值）
 	Screenshots string `gorm:"type:varchar(2000)" json:"screenshots"`                 // 图集（多个图片URL用逗号分隔）
-	ThirdCharge int    `gorm:"type:tinyint(1);not null;default:0" json:"thirdCharge"` // 第三方收费方式：0-不含 1-付费才可用 2-基础功能免费
-	HaveIframe  bool   `gorm:"type:tinyint(1);not null;default:0" json:"haveIframe"`  // 是否包含iframe
+	ThirdCharge     int    `gorm:"type:tinyint(1);not null;default:0" json:"thirdCharge"`     // 第三方收费方式：0-不含 1-付费才可用 2-基础功能免费
+	HaveIframe      bool   `gorm:"type:tinyint(1);not null;default:0" json:"haveIframe"`      // 是否包含iframe
+	SourceUrl       string `gorm:"type:varchar(500);not null;default:''" json:"openSourceUrl"`    // 开源仓库地址
+	FeedbackChannel string `gorm:"type:varchar(500);not null;default:''" json:"feedbackChannel"` // 反馈方式（网址、QQ群、邮箱等）
 }
 
 // 微应用表（只存储生效版本）

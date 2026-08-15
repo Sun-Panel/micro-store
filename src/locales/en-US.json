@@ -44,7 +44,8 @@
     "2004": "Status not allowed",
     "2005": "Approved version cannot be deleted",
     "2006": "Not pending review",
-    "2007": "No update content"
+    "2007": "No update content",
+    "-2": "Source URL must start with https://"
   },
   "appLauncher": {
     "title": "System Applications"
@@ -316,7 +317,12 @@
     "userInfo": "Personal information"
   },
   "microApp": {
-    "thirdCharge": "Third-party in-app purchase"
+    "thirdCharge": "Third-party in-app purchase",
+    "sourceUrl": "Source URL",
+    "feedbackChannel": "Feedback Channel",
+    "sourceUrlPlaceholder": "Enter open source repo URL, e.g. GitHub, Gitee",
+    "feedbackChannelPlaceholder": "Enter feedback channel, e.g. URL, QQ group, email",
+    "sourceUrlHttpsRequired": "Source URL must start with https://"
   },
   "oAuth2": {
     "logoutAgainLogin": "The account is abnormal, please log out first and then log in again.",
