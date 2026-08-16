@@ -300,7 +300,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-2">
+  <div class="min-h-screen p-2 bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
     <NAlert type="info" :show-icon="false" class="mb-4 !rounded-lg">
       📣 感谢各位小伙伴一直以来的支持和关注，现官方版v2已经加入微应用框架，目前还在开发测试期间，每位开发者都可以开发应用提交供大家使用。待v2正式版上线应用商店将会有奖励机制，但暂未完全确定奖励形式。
       <span v-if="isIframe()" style="display: inline">

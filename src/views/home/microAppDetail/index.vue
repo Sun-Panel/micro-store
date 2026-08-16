@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { Theme } from '@/store/modules/app/helper'
 import moment from 'moment'
 import { NButton, NEllipsis, NImage, NImageGroup, NTooltip, useMessage } from 'naive-ui'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -25,6 +26,33 @@ const message = useMessage()
 const { sendInstallApp } = useIframe()
 const { getHomePath } = useRouterHelper('v1')
 const { getAppButtonStatus } = useAppInstallStatus()
+
+// // ==================== 深色模式 ====================
+// const themeQuery = computed(() => {
+//   // 依赖 route.query 以确保响应式更新
+//   void route.query
+//   const params = getIframeAllUrlParam()
+//   return (params.theme as string) || ''
+// })
+// const isDarkPage = computed(() => themeQuery.value === 'dark')
+// const originalTheme = ref<Theme | null>(null)
+
+// // 根据 iframe URL 参数设置深色模式
+// watch(isDarkPage, (dark) => {
+//   console.log('dark', dark)
+//   if (dark) {
+//     // 保存原始主题并切换到深色
+//     if (originalTheme.value === null) {
+//       originalTheme.value = appStore.theme
+//     }
+//     appStore.setTheme('dark')
+//   }
+//   else if (originalTheme.value !== null) {
+//     // 恢复原始主题
+//     appStore.setTheme(originalTheme.value)
+//     originalTheme.value = null
+//   }
+// }, { immediate: true })
 
 // 路由参数
 const routeId = computed(() => route.params.id as string)
@@ -298,22 +326,27 @@ onUnmounted(() => {
     el.removeEventListener('scroll', updateScrollButtons)
   }
   window.removeEventListener('resize', updateScrollButtons)
+  // // 恢复原始主题
+  // if (originalTheme.value !== null) {
+  //   appStore.setTheme(originalTheme.value)
+  //   originalTheme.value = null
+  // }
 })
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+  <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
     <!-- 顶部导航栏 -->
-    <div class="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-200/60">
+    <div class="sticky top-0 z-10 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-700/60">
       <div class="mx-auto ">
         <div class="flex items-center justify-between h-14">
-          <NButton quaternary class="flex items-center gap-1 text-slate-600 hover:text-slate-900" @click="handleBack">
+          <NButton quaternary class="flex items-center gap-1 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white" @click="handleBack">
             <template #icon>
               <SvgIconOnline icon="ph:arrow-left" />
             </template>
             <span class="hidden sm:inline">返回</span>
           </NButton>
-          <h1 class="text-sm font-medium text-slate-500 truncate max-w-[200px] sm:max-w-none">
+          <h1 class="text-sm font-medium text-slate-500 dark:text-slate-400 truncate max-w-[200px] sm:max-w-none">
             {{ displayAppName || '应用详情' }}
           </h1>
           <div class="w-10" />
@@ -323,7 +356,7 @@ onUnmounted(() => {
 
     <!-- 加载状态 -->
     <div v-if="loading" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
-      <div class="inline-flex items-center gap-3 text-slate-400">
+      <div class="inline-flex items-center gap-3 text-slate-400 dark:text-slate-500">
         <SvgIconOnline icon="eos-icons:loading" class="text-xl animate-spin" />
         <span class="text-sm">加载中...</span>
       </div>
@@ -331,10 +364,10 @@ onUnmounted(() => {
 
     <!-- 不存在状态 -->
     <div v-else-if="!microAppInfo" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
-      <div class="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-2xl flex items-center justify-center">
-        <SvgIconOnline icon="ph:magnifying-glass" class="text-2xl text-slate-400" />
+      <div class="w-16 h-16 mx-auto mb-4 bg-slate-100 dark:bg-slate-700 rounded-2xl flex items-center justify-center">
+        <SvgIconOnline icon="ph:magnifying-glass" class="text-2xl text-slate-400 dark:text-slate-500" />
       </div>
-      <p class="text-slate-400">
+      <p class="text-slate-400 dark:text-slate-500">
         微应用不存在
       </p>
     </div>
@@ -342,7 +375,7 @@ onUnmounted(() => {
     <!-- 主内容 -->
     <div v-else class="mx-auto py-6 sm:py-8">
       <!-- 应用头部卡片 -->
-      <div class="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden">
+      <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 overflow-hidden">
         <div class="p-5 sm:p-8">
           <div class="flex flex-col sm:flex-row gap-5 sm:gap-8">
             <!-- 应用图标 -->
@@ -351,10 +384,10 @@ onUnmounted(() => {
                 <img
                   v-if="microAppInfo.appIcon"
                   :src="microAppInfo.appIcon"
-                  class="w-28 h-28 sm:w-32 sm:h-32 object-contain rounded-2xl  ring-slate-100 group-hover:shadow-xl transition-shadow duration-300"
+                  class="w-28 h-28 sm:w-32 sm:h-32 object-contain rounded-2xl  ring-slate-100 dark:ring-slate-700 group-hover:shadow-xl transition-shadow duration-300"
                 >
-                <div v-else class="w-28 h-28 sm:w-32 sm:h-32 bg-gradient-to-br from-slate-100 to-slate-50 rounded-2xl flex items-center justify-center border border-slate-200/60">
-                  <SvgIconOnline icon="ph:app-window" class="text-3xl text-slate-300" />
+                <div v-else class="w-28 h-28 sm:w-32 sm:h-32 bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-700 dark:to-slate-600 rounded-2xl flex items-center justify-center border border-slate-200/60 dark:border-slate-600/60">
+                  <SvgIconOnline icon="ph:app-window" class="text-3xl text-slate-300 dark:text-slate-500" />
                 </div>
                 <!-- 状态角标 -->
                 <div
@@ -365,12 +398,12 @@ onUnmounted(() => {
                 </div>
               </div>
               <!-- 数据统计 -->
-              <div class="flex items-center gap-4 text-xs text-slate-500">
+              <div class="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
                 <div class="flex items-center gap-1.5" :title="$t('common.downloadCount')">
                   <SvgIconOnline icon="ph:arrow-down" class="text-sm" />
                   <span>{{ microAppInfo.downloadCount || 0 }}</span>
                 </div>
-                <div class="w-px h-3 bg-slate-200" />
+                <div class="w-px h-3 bg-slate-200 dark:bg-slate-600" />
                 <div class="flex items-center gap-1.5" :title="$t('common.installCount')">
                   <SvgIconOnline icon="ph:package" class="text-sm" />
                   <span>{{ microAppInfo.installCount || 0 }}</span>
@@ -382,10 +415,10 @@ onUnmounted(() => {
             <div class="flex-1 min-w-0 text-center sm:text-left">
               <!-- 标题行 -->
               <div class="mb-3">
-                <h1 class="text-xl sm:text-2xl font-bold text-slate-900 leading-tight mb-2">
+                <h1 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-tight mb-2">
                   {{ displayAppName }}
                 </h1>
-                <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-sm text-slate-500">
+                <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-sm text-slate-500 dark:text-slate-400">
                   <span v-if="microAppInfo.developer?.name" class="inline-flex items-center gap-1">
                     <SvgIconOnline icon="ph:user" class="text-sm" />
                     {{ microAppInfo.developer.name }}
@@ -399,16 +432,16 @@ onUnmounted(() => {
 
               <!-- 版本与收费信息 -->
               <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-4">
-                <span v-if="latestApprovedVersion" class="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded-lg">
+                <span v-if="latestApprovedVersion" class="inline-flex items-center px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-lg">
                   v{{ latestApprovedVersion.version }}
                 </span>
-                <span class="inline-flex items-center px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-medium rounded-lg">
+                <span class="inline-flex items-center px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-medium rounded-lg">
                   {{ microAppChargeTypeMap[microAppInfo.chargeType] || '免费' }}
                 </span>
-                <span v-if="microAppInfo.thirdCharge" class="inline-flex items-center px-2.5 py-1 bg-amber-50 text-amber-600 text-xs font-medium rounded-lg">
+                <span v-if="microAppInfo.thirdCharge" class="inline-flex items-center px-2.5 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-medium rounded-lg">
                   {{ microAppThirdChargeTypeMap[microAppInfo.thirdCharge] || '第三方收费' }}
                 </span>
-                <span v-if="microAppInfo.haveIframe" class="inline-flex items-center px-2.5 py-1 bg-purple-50 text-purple-600 text-xs font-medium rounded-lg">
+                <span v-if="microAppInfo.haveIframe" class="inline-flex items-center px-2.5 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs font-medium rounded-lg">
                   Iframe
                 </span>
               </div>
@@ -446,7 +479,7 @@ onUnmounted(() => {
                   覆盖安装
                 </NButton>
               </div>
-              <div v-else class="text-sm text-slate-400 italic">
+              <div v-else class="text-sm text-slate-400 dark:text-slate-500 italic">
                 暂无可用版本
               </div>
             </div>
@@ -460,8 +493,8 @@ onUnmounted(() => {
         <div class="lg:col-span-2 space-y-6">
           <!-- 截图预览 -->
           <div v-if="screenshotsList.length > 0">
-            <h2 class="text-base font-semibold text-slate-700 mb-3 flex items-center gap-2">
-              <SvgIconOnline icon="ph:images-square" class="text-lg text-slate-400" />
+            <h2 class="text-base font-semibold text-slate-700 dark:text-slate-200 mb-3 flex items-center gap-2">
+              <SvgIconOnline icon="ph:images-square" class="text-lg text-slate-400 dark:text-slate-500" />
               应用截图
             </h2>
             <div class="relative rounded-2xl overflow-hidden group/screenshot">
@@ -474,7 +507,7 @@ onUnmounted(() => {
                     v-for="(screenshot, index) in screenshotsList"
                     :key="index"
                     :src="screenshot"
-                    class="flex-shrink-0 w-64 h-40 sm:w-80 sm:h-52 object-cover rounded-xl shadow-md ring-1 ring-slate-200/60 snap-center hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                    class="flex-shrink-0 w-64 h-40 sm:w-80 sm:h-52 object-cover rounded-xl shadow-md ring-1 ring-slate-200/60 dark:ring-slate-600/60 snap-center hover:shadow-lg transition-shadow duration-300 cursor-pointer"
                   />
                 </div>
               </NImageGroup>
@@ -499,32 +532,32 @@ onUnmounted(() => {
           </div>
 
           <!-- 应用介绍 -->
-          <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-5 sm:p-6">
-            <h2 class="text-base font-semibold text-slate-700 mb-4 flex items-center gap-2">
+          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 p-5 sm:p-6">
+            <h2 class="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
               <div class="w-1 h-5 bg-blue-500 rounded-full" />
               应用介绍
             </h2>
-            <div v-if="displayAppDesc" class="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+            <div v-if="displayAppDesc" class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
               {{ displayAppDesc }}
             </div>
-            <div v-else class="text-sm text-slate-400 italic py-4 text-center bg-slate-50 rounded-xl">
+            <div v-else class="text-sm text-slate-400 dark:text-slate-500 italic py-4 text-center bg-slate-50 dark:bg-slate-700/50 rounded-xl">
               暂无介绍
             </div>
           </div>
 
           <!-- 新版本特性 -->
-          <div v-if="latestApprovedVersion" class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-5 sm:p-6">
-            <h2 class="text-base font-semibold text-slate-700 mb-4 flex items-center gap-2">
+          <div v-if="latestApprovedVersion" class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 p-5 sm:p-6">
+            <h2 class="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
               <div class="w-1 h-5 bg-green-500 rounded-full" />
               更新日志
-              <span class="text-xs font-normal text-slate-400 ml-auto">
+              <span class="text-xs font-normal text-slate-400 dark:text-slate-500 ml-auto">
                 v{{ latestApprovedVersion.version }}
               </span>
             </h2>
-            <div v-if="getVersionDescContent(latestApprovedVersion.versionDesc)" class="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+            <div v-if="getVersionDescContent(latestApprovedVersion.versionDesc)" class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
               {{ getVersionDescContent(latestApprovedVersion.versionDesc) }}
             </div>
-            <div v-else class="text-sm text-slate-400 italic py-4 text-center bg-slate-50 rounded-xl">
+            <div v-else class="text-sm text-slate-400 dark:text-slate-500 italic py-4 text-center bg-slate-50 dark:bg-slate-700/50 rounded-xl">
               暂无版本说明
             </div>
           </div>
@@ -533,49 +566,49 @@ onUnmounted(() => {
         <!-- 右侧：信息面板 -->
         <div class="space-y-6">
           <!-- 基本信息 -->
-          <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-5 sm:p-6">
-            <h2 class="text-base font-semibold text-slate-700 mb-4 flex items-center gap-2">
+          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 p-5 sm:p-6">
+            <h2 class="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
               <div class="w-1 h-5 bg-indigo-500 rounded-full" />
               应用信息
             </h2>
             <div class="space-y-3">
-              <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
-                <span class="text-sm text-slate-500 mr-5">AppID</span>
-                <NEllipsis :title="microAppInfo.microAppId" tooltip class="text-sm text-slate-700 font-medium font-mono max-w-[180px]">
+              <div class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
+                <span class="text-sm text-slate-500 dark:text-slate-400 mr-5">AppID</span>
+                <NEllipsis :title="microAppInfo.microAppId" tooltip class="text-sm text-slate-700 dark:text-slate-200 font-medium font-mono max-w-[180px]">
                   {{ microAppInfo.microAppId }}
                 </NEllipsis>
               </div>
-              <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
-                <span class="text-sm text-slate-500">版本</span>
-                <span class="text-sm text-slate-700 font-medium">
+              <div class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
+                <span class="text-sm text-slate-500 dark:text-slate-400">版本</span>
+                <span class="text-sm text-slate-700 dark:text-slate-200 font-medium">
                   {{ latestApprovedVersion ? `v${latestApprovedVersion.version}` : '未发布' }}
                 </span>
               </div>
-              <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
-                <span class="text-sm text-slate-500">更新时间</span>
-                <span class="text-sm text-slate-700">
+              <div class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
+                <span class="text-sm text-slate-500 dark:text-slate-400">更新时间</span>
+                <span class="text-sm text-slate-700 dark:text-slate-200">
                   {{ latestApprovedVersion ? dateFormat(String(latestApprovedVersion.createTime)) : '-' }}
                 </span>
               </div>
-              <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
-                <span class="text-sm text-slate-500">收费类型</span>
-                <span class="text-sm text-slate-700">{{ microAppChargeTypeMap[microAppInfo.chargeType] || '免费' }}</span>
+              <div class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
+                <span class="text-sm text-slate-500 dark:text-slate-400">收费类型</span>
+                <span class="text-sm text-slate-700 dark:text-slate-200">{{ microAppChargeTypeMap[microAppInfo.chargeType] || '免费' }}</span>
               </div>
-              <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
-                <span class="text-sm text-slate-500">第三方收费</span>
-                <span class="text-sm text-slate-700">{{ microAppThirdChargeTypeMap[microAppInfo.thirdCharge || 0] || '不含' }}</span>
+              <div class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
+                <span class="text-sm text-slate-500 dark:text-slate-400">第三方收费</span>
+                <span class="text-sm text-slate-700 dark:text-slate-200">{{ microAppThirdChargeTypeMap[microAppInfo.thirdCharge || 0] || '不含' }}</span>
               </div>
-              <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
-                <span class="text-sm text-slate-500">Iframe</span>
-                <span class="text-sm text-slate-700">{{ microAppInfo.haveIframe ? '支持' : '不支持' }}</span>
+              <div class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
+                <span class="text-sm text-slate-500 dark:text-slate-400">Iframe</span>
+                <span class="text-sm text-slate-700 dark:text-slate-200">{{ microAppInfo.haveIframe ? '支持' : '不支持' }}</span>
               </div>
               <!-- 开源信息 -->
               <div v-if="microAppInfo.openSourceUrl" class="flex items-center justify-between py-2">
-                <span class="text-sm text-slate-500">开源</span>
+                <span class="text-sm text-slate-500 dark:text-slate-400">开源</span>
                 <a
                   :href="microAppInfo.openSourceUrl"
                   target="_blank"
-                  class="inline-flex items-center gap-1 text-sm text-blue-500 hover:text-blue-600 hover:underline font-medium"
+                  class="inline-flex items-center gap-1 text-sm text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 hover:underline font-medium"
                 >
                   <SvgIconOnline icon="ph:git-branch" class="text-sm" />
                   查看仓库
@@ -586,25 +619,25 @@ onUnmounted(() => {
           </div>
 
           <!-- 反馈信息 -->
-          <div v-if="microAppInfo.feedbackChannel" class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-5 sm:p-6">
-            <h2 class="text-base font-semibold text-slate-700 mb-3 flex items-center gap-2">
+          <div v-if="microAppInfo.feedbackChannel" class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 p-5 sm:p-6">
+            <h2 class="text-base font-semibold text-slate-700 dark:text-slate-200 mb-3 flex items-center gap-2">
               <div class="w-1 h-5 bg-pink-500 rounded-full" />
               反馈渠道
               <NTooltip trigger="hover">
                 <template #trigger>
-                  <SvgIconOnline icon="ph:info" class="text-sm text-slate-400 hover:text-slate-600 cursor-help" />
+                  <SvgIconOnline icon="ph:info" class="text-sm text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 cursor-help" />
                 </template>
                 反馈渠道由开发者自行提供，请自行甄别安全性。如内部产生任何金钱交易，与 Sun-Panel 官方无关。
               </NTooltip>
             </h2>
-            <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-line break-words">
+            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line break-words">
               {{ microAppInfo.feedbackChannel }}
             </p>
           </div>
 
           <!-- 开发者信息 -->
-          <div v-if="microAppInfo.developer" class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-5 sm:p-6">
-            <h2 class="text-base font-semibold text-slate-700 mb-4 flex items-center gap-2">
+          <div v-if="microAppInfo.developer" class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 p-5 sm:p-6">
+            <h2 class="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
               <div class="w-1 h-5 bg-orange-500 rounded-full" />
               开发者
             </h2>
@@ -613,7 +646,7 @@ onUnmounted(() => {
                 {{ (microAppInfo.developer.name || 'U')[0] }}
               </div>
               <div>
-                <div class="text-sm font-medium text-slate-700">
+                <div class="text-sm font-medium text-slate-700 dark:text-slate-200">
                   {{ microAppInfo.developer.name || '未知开发者' }}
                 </div>
               </div>
@@ -624,8 +657,8 @@ onUnmounted(() => {
 
       <!-- 版本历史 -->
       <div v-if="versionList.length > 0" class="mt-6">
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-5 sm:p-6">
-          <h2 class="text-base font-semibold text-slate-700 mb-4 flex items-center gap-2">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 p-5 sm:p-6">
+          <h2 class="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
             <div class="w-1 h-5 bg-violet-500 rounded-full" />
             版本历史
           </h2>
@@ -634,18 +667,18 @@ onUnmounted(() => {
               v-for="(version, index) in versionList.filter(v => v.status === MicroAppVersionStatus.APPROVED)"
               :key="version.id"
               class="relative pl-6 pb-4 last:pb-0"
-              :class="{ 'border-l-2 border-slate-100': index < versionList.filter(v => v.status === MicroAppVersionStatus.APPROVED).length - 1 }"
+              :class="{ 'border-l-2 border-slate-100 dark:border-slate-700': index < versionList.filter(v => v.status === MicroAppVersionStatus.APPROVED).length - 1 }"
             >
               <!-- 时间线圆点 -->
-              <div class="absolute left-0 top-0 w-3 h-3 bg-white border-2 border-violet-400 rounded-full -translate-x-[7px] translate-y-1" />
+              <div class="absolute left-0 top-0 w-3 h-3 bg-white dark:bg-slate-800 border-2 border-violet-400 rounded-full -translate-x-[7px] translate-y-1" />
               <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-2">
-                <span class="text-sm font-semibold text-slate-800">v{{ version.version }}</span>
-                <span class="text-xs text-slate-400">{{ dateFormat(String(version.createTime)) }}</span>
+                <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">v{{ version.version }}</span>
+                <span class="text-xs text-slate-400 dark:text-slate-500">{{ dateFormat(String(version.createTime)) }}</span>
               </div>
-              <div v-if="getVersionDescContent(version.versionDesc)" class="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+              <div v-if="getVersionDescContent(version.versionDesc)" class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
                 {{ getVersionDescContent(version.versionDesc) }}
               </div>
-              <div v-else class="text-sm text-slate-400 italic">
+              <div v-else class="text-sm text-slate-400 dark:text-slate-500 italic">
                 暂无版本说明
               </div>
             </div>

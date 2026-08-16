@@ -9,7 +9,7 @@ import type { AppInfo } from '@/store/modules/localApp/helper'
 import { logout } from '@/api'
 
 import { iframeCaptchaLogin } from '@/api/login'
-import { useAuthStore, useLocalAppStore } from '@/store'
+import { useAppStore, useAuthStore, useLocalAppStore } from '@/store'
 import { debug } from '@/utils/logger'
 import { MICRO_APP_EVENTS, MICRO_APP_STORE_EVENTS } from './iframeEvents'
 import { getIframeAllUrlParam } from './useGetIframeUrlParam'
@@ -56,7 +56,7 @@ export function useIframe(config: UseIframeConfig = {}): UseIframeReturn {
   const urlParam = getIframeAllUrlParam()
   const authStore = useAuthStore()
   const localAppStore = useLocalAppStore()
-  // const appStore = useAppStore()
+  const appStore = useAppStore()
 
   let loginIn = false // 本次是否已登录
 
@@ -75,9 +75,9 @@ export function useIframe(config: UseIframeConfig = {}): UseIframeReturn {
   }
 
   // 设置主题
-  // if (urlParam?.theme) {
-  //   appStore.setTheme(urlParam?.theme === 'dark' ? 'dark' : 'light')
-  // }
+  if (urlParam?.theme) {
+    appStore.setTheme(urlParam?.theme === 'dark' ? 'dark' : 'light')
+  }
 
   /**
    * 判断当前是否已登录

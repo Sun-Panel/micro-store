@@ -165,7 +165,6 @@ function goOAuth2(callbackUrl: string) {
 onMounted(() => {
   getHomeBasePost()
   getLoginVcodeApi()
-  appStore.setTheme('light')
   // getUnReadMessageCount()
   // timerId = setInterval(getUnReadMessageCount, 5000)
   // handleResize()
