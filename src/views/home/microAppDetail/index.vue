@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import moment from 'moment'
-import { NButton, NCard, NImage, NImageGroup, NTag, useMessage } from 'naive-ui'
-import { computed, onMounted, ref } from 'vue'
+import { NButton, NEllipsis, NImage, NImageGroup, NTooltip, useMessage } from 'naive-ui'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { getInfo, getInfoByMicroAppId, getVersionList } from '@/api/microApp'
@@ -111,6 +111,41 @@ const displayAppDesc = computed(() => {
     || ''
 })
 
+// 截图列表
+const screenshotsList = computed(() => {
+  if (!microAppInfo.value?.screenshots)
+    return []
+  return microAppInfo.value.screenshots.split(',').map(s => s.trim()).filter(s => s)
+})
+
+// 截图轮播控制
+const screenshotScrollRef = ref<HTMLElement | null>(null)
+const screenshotScrollStep = 260 // 每次滚动的像素距离
+const canScrollLeft = ref(false)
+const canScrollRight = ref(false)
+
+function updateScrollButtons() {
+  const el = screenshotScrollRef.value
+  if (!el)
+    return
+  canScrollLeft.value = el.scrollLeft > 2
+  canScrollRight.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 2
+}
+
+function scrollScreenshots(direction: 'left' | 'right') {
+  const el = screenshotScrollRef.value
+  if (!el)
+    return
+  const scrollAmount = direction === 'left' ? -screenshotScrollStep : screenshotScrollStep
+  el.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+}
+
+// 监听截图列表变化，更新按钮状态
+watch(screenshotsList, async () => {
+  await nextTick()
+  updateScrollButtons()
+})
+
 // 分类名称
 const categoryName = computed(() => {
   if (!microAppInfo.value)
@@ -176,7 +211,7 @@ async function fetchMicroAppInfo() {
   }
 }
 
-// 获取分类选项
+// 获取分类选项（该接口虽在 admin 路径下，但未挂载认证中间件，公开可访问）
 async function fetchCategoryOptions() {
   try {
     const res = await getCategoryList<any>()
@@ -247,265 +282,390 @@ onMounted(async () => {
   await fetchCategoryOptions()
   await fetchMicroAppInfo()
   await fetchVersionList()
+  await nextTick()
+  // 监听截图容器的滚动事件，更新按钮状态
+  const el = screenshotScrollRef.value
+  if (el) {
+    el.addEventListener('scroll', updateScrollButtons, { passive: true })
+    window.addEventListener('resize', updateScrollButtons)
+    updateScrollButtons()
+  }
+})
+
+onUnmounted(() => {
+  const el = screenshotScrollRef.value
+  if (el) {
+    el.removeEventListener('scroll', updateScrollButtons)
+  }
+  window.removeEventListener('resize', updateScrollButtons)
 })
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- 返回按钮 -->
-    <div class="max-w-[1200px] mx-auto px-5 pt-5">
-      <NButton quaternary @click="handleBack">
-        ← 返回首页
-      </NButton>
+  <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+    <!-- 顶部导航栏 -->
+    <div class="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-200/60">
+      <div class="mx-auto ">
+        <div class="flex items-center justify-between h-14">
+          <NButton quaternary class="flex items-center gap-1 text-slate-600 hover:text-slate-900" @click="handleBack">
+            <template #icon>
+              <SvgIconOnline icon="ph:arrow-left" />
+            </template>
+            <span class="hidden sm:inline">返回</span>
+          </NButton>
+          <h1 class="text-sm font-medium text-slate-500 truncate max-w-[200px] sm:max-w-none">
+            {{ displayAppName || '应用详情' }}
+          </h1>
+          <div class="w-10" />
+        </div>
+      </div>
     </div>
 
-    <div v-if="loading" class="max-w-[1200px] mx-auto px-5 py-12 text-center text-gray-400">
-      加载中...
+    <!-- 加载状态 -->
+    <div v-if="loading" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
+      <div class="inline-flex items-center gap-3 text-slate-400">
+        <SvgIconOnline icon="eos-icons:loading" class="text-xl animate-spin" />
+        <span class="text-sm">加载中...</span>
+      </div>
     </div>
 
-    <div v-else-if="!microAppInfo" class="max-w-[1200px] mx-auto px-5 py-12 text-center text-gray-400">
-      微应用不存在
+    <!-- 不存在状态 -->
+    <div v-else-if="!microAppInfo" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
+      <div class="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-2xl flex items-center justify-center">
+        <SvgIconOnline icon="ph:magnifying-glass" class="text-2xl text-slate-400" />
+      </div>
+      <p class="text-slate-400">
+        微应用不存在
+      </p>
     </div>
 
-    <div v-else class="max-w-[1200px] mx-auto px-5 pb-12">
-      <!-- 应用主信息卡片 -->
-      <NCard class="mb-6" :bordered="false" shadow="hover">
-        <div class="flex flex-col md:flex-row gap-6">
-          <!-- 应用图标 -->
-          <div class="flex-shrink-0 flex flex-col items-center gap-3">
-            <img
-              v-if="microAppInfo.appIcon"
-              :src="microAppInfo.appIcon"
-              class="w-24 h-24 object-contain rounded-lg shadow-sm"
-            >
-            <div v-else class="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
-              暂无图标
-            </div>
-            <!-- 下载次数和安装次数 -->
-            <div class="app-stats">
-              <span class="stat-item" :title="$t('common.downloadCount')">
-                <SvgIconOnline icon="grommet-icons:download" />
-                <span class="stat-value">{{ microAppInfo.downloadCount || 0 }}</span>
-              </span>
-              <span class="stat-item" :title="$t('common.installCount')">
-                <SvgIconOnline icon="grommet-icons:install" />
-                <span class="stat-value">{{ microAppInfo.installCount || 0 }}</span>
-              </span>
-            </div>
-          </div>
-
-          <!-- 应用信息 -->
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-3 mb-2">
-              <h1 class="text-2xl font-bold text-gray-800">
-                {{ displayAppName }}
-              </h1>
-              <NTag v-if="microAppInfo.status !== 1" size="small">
-                已下架
-              </NTag>
-            </div>
-
-            <!-- 基础信息 -->
-            <div class="flex flex-wrap gap-x-6 gap-y-2 mb-3">
-              <div class="text-sm">
-                <span class="text-gray-400">AppID:</span>
-                <span class="text-gray-600 ml-1">{{ microAppInfo.microAppId }}</span>
+    <!-- 主内容 -->
+    <div v-else class="mx-auto py-6 sm:py-8">
+      <!-- 应用头部卡片 -->
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden">
+        <div class="p-5 sm:p-8">
+          <div class="flex flex-col sm:flex-row gap-5 sm:gap-8">
+            <!-- 应用图标 -->
+            <div class="flex-shrink-0 flex flex-col items-center sm:items-start gap-3">
+              <div class="relative group">
+                <img
+                  v-if="microAppInfo.appIcon"
+                  :src="microAppInfo.appIcon"
+                  class="w-28 h-28 sm:w-32 sm:h-32 object-contain rounded-2xl  ring-slate-100 group-hover:shadow-xl transition-shadow duration-300"
+                >
+                <div v-else class="w-28 h-28 sm:w-32 sm:h-32 bg-gradient-to-br from-slate-100 to-slate-50 rounded-2xl flex items-center justify-center border border-slate-200/60">
+                  <SvgIconOnline icon="ph:app-window" class="text-3xl text-slate-300" />
+                </div>
+                <!-- 状态角标 -->
+                <div
+                  v-if="microAppInfo.status !== 1"
+                  class="absolute -top-1 -right-1 px-2 py-0.5 bg-red-500 text-white text-[10px] font-medium rounded-full shadow-sm"
+                >
+                  已下架
+                </div>
               </div>
-              <div class="text-sm">
-                <span class="text-gray-400">作者:</span>
-                <span class="text-gray-600 ml-1">{{ microAppInfo.developer?.name || '未知' }}</span>
-              </div>
-              <div class="text-sm">
-                <span class="text-gray-400">分类:</span>
-                <span class="text-gray-600 ml-1">{{ categoryName }}</span>
-              </div>
-              <div v-if="latestApprovedVersion" class="text-sm">
-                <span class="text-gray-400">版本:</span>
-                <span class="font-medium ml-1">{{ latestApprovedVersion.version }}</span>
-                <span class="text-gray-400 text-xs ml-1">({{ dateFormat(String(latestApprovedVersion.createTime)) }})</span>
-              </div>
-              <div v-else class="text-sm">
-                <span class="text-gray-400">版本:</span>
-                <span class="text-gray-400 ml-1">未发布</span>
-              </div>
-              <div class="text-sm">
-                <span class="text-gray-400">收费:</span>
-                <span class="ml-1">{{ microAppChargeTypeMap[microAppInfo.chargeType] || '免费' }}</span>
-              </div>
-              <div class="text-sm">
-                <span class="text-gray-400">第三方收费:</span>
-                <span class="ml-1">{{ microAppThirdChargeTypeMap[microAppInfo.thirdCharge || 0] || '不含' }}</span>
-              </div>
-              <div class="text-sm">
-                <span class="text-gray-400">使用Iframe:</span>
-                <span class="ml-1">{{ microAppInfo.haveIframe ? '是' : '否' }}</span>
-              </div>
-              <div v-if="microAppInfo.openSourceUrl" class="text-sm">
-                <span class="text-gray-400">{{ $t('microApp.sourceUrl') }}:</span>
-                <a :href="microAppInfo.openSourceUrl" target="_blank" class="text-blue-500 hover:underline ml-1">{{ microAppInfo.openSourceUrl }}</a>
-              </div>
-              <div v-if="microAppInfo.feedbackChannel" class="text-sm">
-                <span class="text-gray-400">{{ $t('microApp.feedbackChannel') }}:</span>
-                <span class="ml-1">{{ microAppInfo.feedbackChannel }}</span>
+              <!-- 数据统计 -->
+              <div class="flex items-center gap-4 text-xs text-slate-500">
+                <div class="flex items-center gap-1.5" :title="$t('common.downloadCount')">
+                  <SvgIconOnline icon="ph:arrow-down" class="text-sm" />
+                  <span>{{ microAppInfo.downloadCount || 0 }}</span>
+                </div>
+                <div class="w-px h-3 bg-slate-200" />
+                <div class="flex items-center gap-1.5" :title="$t('common.installCount')">
+                  <SvgIconOnline icon="ph:package" class="text-sm" />
+                  <span>{{ microAppInfo.installCount || 0 }}</span>
+                </div>
               </div>
             </div>
 
-            <!-- 介绍 -->
-            <div class="mt-4 pt-4 border-t border-gray-100">
-              <div class="flex items-center gap-2 mb-2">
-                <span class="w-1 h-4 bg-blue-500 rounded-full" />
-                <span class="text-sm font-medium text-gray-700">应用介绍</span>
+            <!-- 应用信息 -->
+            <div class="flex-1 min-w-0 text-center sm:text-left">
+              <!-- 标题行 -->
+              <div class="mb-3">
+                <h1 class="text-xl sm:text-2xl font-bold text-slate-900 leading-tight mb-2">
+                  {{ displayAppName }}
+                </h1>
+                <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-sm text-slate-500">
+                  <span v-if="microAppInfo.developer?.name" class="inline-flex items-center gap-1">
+                    <SvgIconOnline icon="ph:user" class="text-sm" />
+                    {{ microAppInfo.developer.name }}
+                  </span>
+                  <span v-if="categoryName" class="inline-flex items-center gap-1">
+                    <SvgIconOnline icon="ph:tag" class="text-sm" />
+                    {{ categoryName }}
+                  </span>
+                </div>
               </div>
-              <div v-if="displayAppDesc" class="text-sm text-gray-600 leading-relaxed pl-3">
-                {{ displayAppDesc }}
-              </div>
-              <div v-else class="text-sm text-gray-400 pl-3">
-                暂无介绍
-              </div>
-            </div>
 
-            <!-- 新版本特性 -->
-            <div v-if="latestApprovedVersion" class="mt-4 pt-4 border-t border-gray-100">
-              <div class="flex items-center gap-2 mb-2">
-                <span class="w-1 h-4 bg-green-500 rounded-full" />
-                <span class="text-sm font-medium text-gray-700">新版本特性 (v{{ latestApprovedVersion.version }})</span>
+              <!-- 版本与收费信息 -->
+              <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-4">
+                <span v-if="latestApprovedVersion" class="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded-lg">
+                  v{{ latestApprovedVersion.version }}
+                </span>
+                <span class="inline-flex items-center px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-medium rounded-lg">
+                  {{ microAppChargeTypeMap[microAppInfo.chargeType] || '免费' }}
+                </span>
+                <span v-if="microAppInfo.thirdCharge" class="inline-flex items-center px-2.5 py-1 bg-amber-50 text-amber-600 text-xs font-medium rounded-lg">
+                  {{ microAppThirdChargeTypeMap[microAppInfo.thirdCharge] || '第三方收费' }}
+                </span>
+                <span v-if="microAppInfo.haveIframe" class="inline-flex items-center px-2.5 py-1 bg-purple-50 text-purple-600 text-xs font-medium rounded-lg">
+                  Iframe
+                </span>
               </div>
-              <div class="text-sm text-gray-600 leading-relaxed pl-3">
-                {{ getVersionDescContent(latestApprovedVersion.versionDesc) || '暂无版本说明' }}
+
+              <!-- 操作按钮 -->
+              <div v-if="latestApprovedVersion" class="flex flex-wrap items-center justify-center sm:justify-start gap-3">
+                <NButton
+                  v-if="!isIframe()"
+                  size="large"
+                  class="download-btn"
+                  @click="handleDownloadByVersionId()"
+                >
+                  <template #icon>
+                    <SvgIconOnline icon="ph:arrow-down" />
+                  </template>
+                  下载
+                </NButton>
+                <NButton
+                  size="large"
+                  :type="appStatusInfo.type"
+                  :disabled="appStatusInfo.disabled"
+                  class="install-btn"
+                  @click="handleInstall"
+                >
+                  <template #icon>
+                    <SvgIconOnline icon="ph:download-simple" />
+                  </template>
+                  {{ appStatusInfo.text }}
+                </NButton>
+                <NButton
+                  v-if="appStatusInfo.isInstalled && !appStatusInfo.hasUpdate"
+                  size="large"
+                  @click="handleInstall"
+                >
+                  覆盖安装
+                </NButton>
+              </div>
+              <div v-else class="text-sm text-slate-400 italic">
+                暂无可用版本
               </div>
             </div>
           </div>
         </div>
-      </NCard>
-
-      <!-- 下载及安装按钮 -->
-      <div v-if="latestApprovedVersion" class="flex items-center justify-center gap-3 mb-5">
-        <NButton v-if="!isIframe()" type="primary" @click="handleDownloadByVersionId()">
-          下载
-        </NButton>
-        <NButton
-          :type="appStatusInfo.type"
-          :disabled="appStatusInfo.disabled"
-          @click="handleInstall"
-        >
-          {{ appStatusInfo.text }}
-        </NButton>
-        <!-- 覆盖安装按钮：仅在已安装且是最新版本时显示 -->
-        <NButton
-          v-if="appStatusInfo.isInstalled && !appStatusInfo.hasUpdate"
-          type="warning"
-          @click="handleInstall"
-        >
-          覆盖安装
-        </NButton>
       </div>
 
-      <!-- 无版本提示 -->
-      <NCard v-else class="mb-6" :bordered="false" shadow="hover">
-        <div class="text-center py-8 text-gray-400">
-          暂无审核通过的版本
-        </div>
-      </NCard>
-
-      <!-- 图集预览 -->
-      <NCard v-if="microAppInfo.screenshots" title="图集预览" :bordered="false" shadow="hover">
-        <NImageGroup>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <NImage
-              v-for="(screenshot, index) in microAppInfo.screenshots.split(',').filter(s => s.trim())"
-              :key="index"
-              :src="screenshot.trim()"
-              class="rounded-lg"
-            />
-          </div>
-        </NImageGroup>
-      </NCard>
-
-      <!-- 版本信息卡片 -->
-      <!-- <NCard v-if="latestApprovedVersion" class="mb-6" title="最新版本" :bordered="false" shadow="hover">
-        <div class="flex flex-col md:flex-row md:items-center gap-4">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <span class="text-blue-600 font-bold">V</span>
+      <!-- 两栏布局：左侧截图+介绍，右侧应用信息 -->
+      <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- 左侧：截图与介绍 -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- 截图预览 -->
+          <div v-if="screenshotsList.length > 0">
+            <h2 class="text-base font-semibold text-slate-700 mb-3 flex items-center gap-2">
+              <SvgIconOnline icon="ph:images-square" class="text-lg text-slate-400" />
+              应用截图
+            </h2>
+            <div class="relative rounded-2xl overflow-hidden group/screenshot">
+              <NImageGroup>
+                <div
+                  ref="screenshotScrollRef"
+                  class="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
+                >
+                  <NImage
+                    v-for="(screenshot, index) in screenshotsList"
+                    :key="index"
+                    :src="screenshot"
+                    class="flex-shrink-0 w-64 h-40 sm:w-80 sm:h-52 object-cover rounded-xl shadow-md ring-1 ring-slate-200/60 snap-center hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                  />
+                </div>
+              </NImageGroup>
+              <!-- 左右滑动按钮 -->
+              <template v-if="screenshotsList.length > 1">
+                <button
+                  v-show="canScrollLeft"
+                  class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/30 hover:bg-black/50 backdrop-blur-sm shadow-md rounded-full flex items-center justify-center text-white hover:text-white transition-all"
+                  @click="scrollScreenshots('left')"
+                >
+                  <SvgIconOnline icon="ph:caret-left" class="text-lg" />
+                </button>
+                <button
+                  v-show="canScrollRight"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/30 hover:bg-black/50 backdrop-blur-sm shadow-md rounded-full flex items-center justify-center text-white hover:text-white transition-all"
+                  @click="scrollScreenshots('right')"
+                >
+                  <SvgIconOnline icon="ph:caret-right" class="text-lg" />
+                </button>
+              </template>
             </div>
-            <div>
-              <div class="text-lg font-semibold text-gray-800">
-                {{ latestApprovedVersion.version }}
+          </div>
+
+          <!-- 应用介绍 -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-5 sm:p-6">
+            <h2 class="text-base font-semibold text-slate-700 mb-4 flex items-center gap-2">
+              <div class="w-1 h-5 bg-blue-500 rounded-full" />
+              应用介绍
+            </h2>
+            <div v-if="displayAppDesc" class="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+              {{ displayAppDesc }}
+            </div>
+            <div v-else class="text-sm text-slate-400 italic py-4 text-center bg-slate-50 rounded-xl">
+              暂无介绍
+            </div>
+          </div>
+
+          <!-- 新版本特性 -->
+          <div v-if="latestApprovedVersion" class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-5 sm:p-6">
+            <h2 class="text-base font-semibold text-slate-700 mb-4 flex items-center gap-2">
+              <div class="w-1 h-5 bg-green-500 rounded-full" />
+              更新日志
+              <span class="text-xs font-normal text-slate-400 ml-auto">
+                v{{ latestApprovedVersion.version }}
+              </span>
+            </h2>
+            <div v-if="getVersionDescContent(latestApprovedVersion.versionDesc)" class="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+              {{ getVersionDescContent(latestApprovedVersion.versionDesc) }}
+            </div>
+            <div v-else class="text-sm text-slate-400 italic py-4 text-center bg-slate-50 rounded-xl">
+              暂无版本说明
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧：信息面板 -->
+        <div class="space-y-6">
+          <!-- 基本信息 -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-5 sm:p-6">
+            <h2 class="text-base font-semibold text-slate-700 mb-4 flex items-center gap-2">
+              <div class="w-1 h-5 bg-indigo-500 rounded-full" />
+              应用信息
+            </h2>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+                <span class="text-sm text-slate-500 mr-5">AppID</span>
+                <NEllipsis :title="microAppInfo.microAppId" tooltip class="text-sm text-slate-700 font-medium font-mono max-w-[180px]">
+                  {{ microAppInfo.microAppId }}
+                </NEllipsis>
               </div>
-              <div class="text-sm text-gray-500 mt-1">
-                {{ getVersionDescContent(latestApprovedVersion.versionDesc) }}
+              <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+                <span class="text-sm text-slate-500">版本</span>
+                <span class="text-sm text-slate-700 font-medium">
+                  {{ latestApprovedVersion ? `v${latestApprovedVersion.version}` : '未发布' }}
+                </span>
+              </div>
+              <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+                <span class="text-sm text-slate-500">更新时间</span>
+                <span class="text-sm text-slate-700">
+                  {{ latestApprovedVersion ? dateFormat(String(latestApprovedVersion.createTime)) : '-' }}
+                </span>
+              </div>
+              <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+                <span class="text-sm text-slate-500">收费类型</span>
+                <span class="text-sm text-slate-700">{{ microAppChargeTypeMap[microAppInfo.chargeType] || '免费' }}</span>
+              </div>
+              <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+                <span class="text-sm text-slate-500">第三方收费</span>
+                <span class="text-sm text-slate-700">{{ microAppThirdChargeTypeMap[microAppInfo.thirdCharge || 0] || '不含' }}</span>
+              </div>
+              <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+                <span class="text-sm text-slate-500">Iframe</span>
+                <span class="text-sm text-slate-700">{{ microAppInfo.haveIframe ? '支持' : '不支持' }}</span>
+              </div>
+              <!-- 开源信息 -->
+              <div v-if="microAppInfo.openSourceUrl" class="flex items-center justify-between py-2">
+                <span class="text-sm text-slate-500">开源</span>
+                <a
+                  :href="microAppInfo.openSourceUrl"
+                  target="_blank"
+                  class="inline-flex items-center gap-1 text-sm text-blue-500 hover:text-blue-600 hover:underline font-medium"
+                >
+                  <SvgIconOnline icon="ph:git-branch" class="text-sm" />
+                  查看仓库
+                  <SvgIconOnline icon="ph:arrow-up-right" class="text-xs" />
+                </a>
               </div>
             </div>
           </div>
-          <div class="md:ml-auto flex items-center gap-3">
-            <div class="text-sm text-gray-400 mr-2">
-              发布时间: {{ timeFormat(String(latestApprovedVersion.createTime)) }}
+
+          <!-- 反馈信息 -->
+          <div v-if="microAppInfo.feedbackChannel" class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-5 sm:p-6">
+            <h2 class="text-base font-semibold text-slate-700 mb-3 flex items-center gap-2">
+              <div class="w-1 h-5 bg-pink-500 rounded-full" />
+              反馈渠道
+              <NTooltip trigger="hover">
+                <template #trigger>
+                  <SvgIconOnline icon="ph:info" class="text-sm text-slate-400 hover:text-slate-600 cursor-help" />
+                </template>
+                反馈渠道由开发者自行提供，请自行甄别安全性。如内部产生任何金钱交易，与 Sun-Panel 官方无关。
+              </NTooltip>
+            </h2>
+            <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-line break-words">
+              {{ microAppInfo.feedbackChannel }}
+            </p>
+          </div>
+
+          <!-- 开发者信息 -->
+          <div v-if="microAppInfo.developer" class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-5 sm:p-6">
+            <h2 class="text-base font-semibold text-slate-700 mb-4 flex items-center gap-2">
+              <div class="w-1 h-5 bg-orange-500 rounded-full" />
+              开发者
+            </h2>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-gradient-to-br from-orange-400 to-amber-400 rounded-xl flex items-center justify-center text-white font-medium text-sm">
+                {{ (microAppInfo.developer.name || 'U')[0] }}
+              </div>
+              <div>
+                <div class="text-sm font-medium text-slate-700">
+                  {{ microAppInfo.developer.name || '未知开发者' }}
+                </div>
+              </div>
             </div>
-            <NButton type="primary" @click="handleDownloadByVersionId()">
-              下载
-            </NButton>
-            <NButton @click="handleInstall">
-              安装
-            </NButton>
           </div>
         </div>
-      </NCard> -->
-
-      <!-- 无版本提示 -->
-      <!-- <NCard v-else class="mb-6" :bordered="false" shadow="hover">
-        <div class="text-center py-8 text-gray-400">
-          暂无审核通过的版本
-        </div>
-      </NCard> -->
+      </div>
 
       <!-- 版本历史 -->
-      <!-- <NCard v-if="versionList.length > 0" title="版本历史" :bordered="false" shadow="hover">
-        <div class="space-y-4">
-          <div
-            v-for="version in versionList.filter(v => v.status === MicroAppVersionStatus.APPROVED)"
-            :key="version.id"
-            class="border-b border-gray-100 last:border-0 pb-4 last:pb-0"
-          >
-            <div class="flex items-start gap-4">
-              <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                <span class="text-gray-600 text-sm font-medium">V</span>
+      <div v-if="versionList.length > 0" class="mt-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-5 sm:p-6">
+          <h2 class="text-base font-semibold text-slate-700 mb-4 flex items-center gap-2">
+            <div class="w-1 h-5 bg-violet-500 rounded-full" />
+            版本历史
+          </h2>
+          <div class="space-y-4">
+            <div
+              v-for="(version, index) in versionList.filter(v => v.status === MicroAppVersionStatus.APPROVED)"
+              :key="version.id"
+              class="relative pl-6 pb-4 last:pb-0"
+              :class="{ 'border-l-2 border-slate-100': index < versionList.filter(v => v.status === MicroAppVersionStatus.APPROVED).length - 1 }"
+            >
+              <!-- 时间线圆点 -->
+              <div class="absolute left-0 top-0 w-3 h-3 bg-white border-2 border-violet-400 rounded-full -translate-x-[7px] translate-y-1" />
+              <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-2">
+                <span class="text-sm font-semibold text-slate-800">v{{ version.version }}</span>
+                <span class="text-xs text-slate-400">{{ dateFormat(String(version.createTime)) }}</span>
               </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="font-medium text-gray-800">{{ version.version }}</span>
-                  <span class="text-xs text-gray-400">{{ timeFormat(String(version.createTime)) }}</span>
-                </div>
-                <div v-if="getVersionDescContent(version.versionDesc)" class="text-sm text-gray-600 leading-relaxed">
-                  {{ getVersionDescContent(version.versionDesc) }}
-                </div>
-                <div v-else class="text-sm text-gray-400 italic">
-                  暂无版本说明
-                </div>
+              <div v-if="getVersionDescContent(version.versionDesc)" class="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+                {{ getVersionDescContent(version.versionDesc) }}
+              </div>
+              <div v-else class="text-sm text-slate-400 italic">
+                暂无版本说明
               </div>
             </div>
           </div>
         </div>
-      </NCard> -->
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.app-stats {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  font-size: 14px;
-  color: #666;
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.stat-value {
-  font-weight: 500;
+.install-btn :deep(.n-button__icon) {
+  margin-right: 4px;
 }
 </style>

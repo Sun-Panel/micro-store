@@ -69,18 +69,17 @@ func (a *MicroAppAdminApi) GetInfo(c *gin.Context) {
 		return
 	}
 
-	// 组合数据返回
+	// 组合数据返回（与公共API getInfoByMicroAppId 的字段保持一致，额外加上审核信息）
 	result := map[string]interface{}{
 		"id":               info.ID,
 		"microAppId":       info.MicroAppId,
-		// "appName":       info.AppName,
 		"appIcon":          info.AppIcon,
-		// "appDesc":       info.AppDesc,
 		"remark":           info.Remark,
 		"categoryId":       info.CategoryId,
 		"chargeType":       info.ChargeType,
 		"points":           info.Points,
-		"authorId":         info.DeveloperId,
+		"developerId":      info.DeveloperId,
+		"authorId":         info.DeveloperId, // 保留兼容旧前端
 		"status":           info.Status,
 		"screenshots":      info.Screenshots,
 		"langList":         info.LangList,
@@ -88,11 +87,17 @@ func (a *MicroAppAdminApi) GetInfo(c *gin.Context) {
 		"updateTime":       info.UpdatedAt,
 		"thirdCharge":      info.ThirdCharge,
 		"haveIframe":       info.HaveIframe,
-		"openSourceUrl":     info.SourceUrl,
-		"feedbackChannel":   info.FeedbackChannel,
-		"reviewStatus":     reviewStatus,       // 审核状态：0-已通过 1-审核中 2-已拒绝 3-草稿
-		"draft":            draft,              // 草稿版本（如果存在）
-		"offlineReason":    info.OfflineReason, // 下线原因
+		"openSourceUrl":    info.SourceUrl,
+		"feedbackChannel":  info.FeedbackChannel,
+		"offlineType":      info.OfflineType,
+		"offlineReason":    info.OfflineReason,
+		"downloadCount":    info.DownloadCount,
+		"installCount":     info.InstallCount,
+		"adminName":        info.AdminName,
+		"developer":        info.Developer,
+		"defaultLangInfo":  info.DefaultLangInfo,
+		"reviewStatus":     reviewStatus, // 审核状态：0-已通过 1-审核中 2-已拒绝 3-草稿
+		"draft":            draft,        // 草稿版本（如果存在）
 	}
 
 	apiReturn.SuccessData(c, result)
