@@ -126,7 +126,8 @@ export function getAppButtonStatus(
     if (!compatResult.compatible) {
       return {
         ...baseStatus,
-        text: '版本不兼容',
+        text: '安装',
+        type: 'default',
         disabled: true,
         incompatible: true,
         incompatibleMsg: compatResult.message,
@@ -137,6 +138,29 @@ export function getAppButtonStatus(
 
   // 已安装，检查是否有更新
   if (latestVersion && localAppStore.hasUpdate(microAppId, latestVersion)) {
+    // 有更新时，检查新版本的兼容性
+    let requiredVersion: string | undefined
+    if (typeof lowVersionOrConfig === 'string') {
+      requiredVersion = lowVersionOrConfig
+    }
+    else if (lowVersionOrConfig) {
+      requiredVersion = lowVersionOrConfig.lowVersion
+    }
+
+    // 检查新版本兼容性
+    const compatResult = checkVersionCompatibility(requiredVersion)
+    if (!compatResult.compatible) {
+      return {
+        text: '升级',
+        type: 'default',
+        disabled: true,
+        isInstalled: true,
+        hasUpdate: true,
+        incompatible: true,
+        incompatibleMsg: compatResult.message,
+      }
+    }
+
     return { text: '升级', type: 'warning', disabled: false, isInstalled: true, hasUpdate: true, incompatible: false }
   }
 

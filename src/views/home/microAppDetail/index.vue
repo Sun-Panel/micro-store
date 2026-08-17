@@ -484,8 +484,8 @@ onUnmounted(() => {
                   <template #trigger>
                     <NButton
                       size="large"
-                      type="error"
-                      disabled
+                      :type="appStatusInfo.type"
+                      :disabled="appStatusInfo.disabled"
                       class="install-btn"
                     >
                       <template #icon>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NAlert, NButton, NCard, useMessage } from 'naive-ui'
+import { NAlert, NButton, NCard, NTooltip, useMessage } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { getList as getListApi } from '@/api/microApp'
 import defaultAppIcon from '@/assets/image_fail.png'
@@ -348,8 +348,21 @@ onMounted(() => {
               <div class="font-bold m-0 leading-[1.4] truncate flex-1 min-w-0" :title="getAppName(item)">
                 {{ getAppName(item) || 'Unknown' }}
               </div>
+              <NTooltip v-if="isIframe() && getAppButtonStatus(item.microAppId, item.latestVersion, item.latestLowVersion).incompatible" trigger="hover">
+                <template #trigger>
+                  <NButton
+                    size="tiny"
+                    type="default"
+                    disabled
+                    class="w-[60px] !h-[24px] flex-shrink-0"
+                  >
+                    {{ getAppButtonStatus(item.microAppId, item.latestVersion, item.latestLowVersion).text }}
+                  </NButton>
+                </template>
+                {{ getAppButtonStatus(item.microAppId, item.latestVersion, item.latestLowVersion).incompatibleMsg }}
+              </NTooltip>
               <NButton
-                v-if="isIframe()"
+                v-else-if="isIframe()"
                 size="tiny"
                 :type="getAppButtonStatus(item.microAppId, item.latestVersion, item.latestLowVersion).type"
                 :disabled="getAppButtonStatus(item.microAppId, item.latestVersion, item.latestLowVersion).disabled"

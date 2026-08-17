@@ -50,15 +50,18 @@ export function getIframeAllUrlParam(): Record<string, string> {
 
 import { extractBaseVersion } from '@/utils/functions/version'
 
+const DEFAULT_HOST_APP_VERSION = '2.0.0'
+
 /**
  * 获取主应用基础版本号（从 URL 参数 version 中提取）
  * 例如 "2.0.0-beta260505" → "2.0.0"
- * @returns 主应用基础版本号，如 "2.0.0"
+ * @returns 主应用基础版本号，如 "2.0.0"，未传时默认 "2.0.0"
  */
 export function getHostAppBaseVersion(): string {
   const params = getIframeAllUrlParam()
   const versionParam = params['version'] || ''
-  return extractBaseVersion(versionParam)
+  const baseVersion = extractBaseVersion(versionParam)
+  return baseVersion === '0.0.0' ? DEFAULT_HOST_APP_VERSION : baseVersion
 }
 
 /**
