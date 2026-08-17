@@ -33,6 +33,7 @@ declare namespace MicroApp {
     packageUrl: string
     packageHash: string
     versionDesc: Record<string, { content: string }> // 版本说明（多语言格式）
+    lowVersion?: string // 最低支持的主应用版本号（独立字段，从 config 迁移到顶层）
     config?: VersionConfig
     appJson?: string // 原始 app.json 内容
     status: number // 审核状态：-1-草稿 0-待审核 1-已通过 2-已拒绝 3-已下架
@@ -56,6 +57,7 @@ declare namespace MicroApp {
     microAppId?: string
     version?: string
     apiVersion?: string
+    lowVersion?: string // 最低支持的主应用基础版本号，如 "2.0.0"
     author?: string
     entry?: string
     icon?: string
@@ -104,6 +106,7 @@ declare namespace MicroApp {
     createTime?: string // 创建时间
     // 版本信息
     latestVersion?: string // 最新审核通过的版本号（列表接口返回）
+    latestLowVersion?: string // 最新版本最低支持的主应用版本（列表接口返回）
   }
 
   // 带语言信息的微应用信息（用于前端展示）

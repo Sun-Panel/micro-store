@@ -351,12 +351,12 @@ onMounted(() => {
               <NButton
                 v-if="isIframe()"
                 size="tiny"
-                :type="getAppButtonStatus(item.microAppId, item.latestVersion).type"
-                :disabled="getAppButtonStatus(item.microAppId, item.latestVersion).disabled"
+                :type="getAppButtonStatus(item.microAppId, item.latestVersion, item.latestLowVersion).type"
+                :disabled="getAppButtonStatus(item.microAppId, item.latestVersion, item.latestLowVersion).disabled"
                 class="w-[60px] !h-[24px] flex-shrink-0"
                 @click.stop="handleInstall(item)"
               >
-                {{ getAppButtonStatus(item.microAppId, item.latestVersion).text }}
+                {{ getAppButtonStatus(item.microAppId, item.latestVersion, item.latestLowVersion).text }}
               </NButton>
             </div>
             <div class="flex items-center gap-1 text-[11px] text-gray-500">

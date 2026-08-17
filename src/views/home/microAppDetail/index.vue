@@ -11,6 +11,7 @@ import { microAppChargeTypeMap, microAppThirdChargeTypeMap, MicroAppVersionStatu
 import { isIframe } from '@/utils/cmn'
 import { useAppInstallStatus } from '../composables/useAppInstallStatus'
 import { getDownloadUrl } from '../composables/useDownload'
+import { isIframeMode } from '../composables/useGetIframeUrlParam'
 import { useIframe } from '../composables/useIframe'
 import { useRouterHelper } from '../composables/useRouterHelper'
 import 'moment/dist/locale/zh-cn'
@@ -196,9 +197,16 @@ const latestApprovedVersion = computed(() => {
   })[0]
 })
 
-// 获取应用状态信息
+// 获取应用状态信息（传入版本配置进行兼容性检查）
+const resolvedLowVersion = computed(() => {
+  return latestApprovedVersion.value?.lowVersion || latestApprovedVersion.value?.config?.lowVersion || ''
+})
 const appStatusInfo = computed(() => {
-  return getAppButtonStatus(microAppInfo.value?.microAppId, latestApprovedVersion.value?.version)
+  return getAppButtonStatus(
+    microAppInfo.value?.microAppId,
+    latestApprovedVersion.value?.version,
+    resolvedLowVersion.value,
+  )
 })
 
 // 获取版本说明（兼容多语言格式）
@@ -444,6 +452,19 @@ onUnmounted(() => {
                 <span v-if="microAppInfo.haveIframe" class="inline-flex items-center px-2.5 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs font-medium rounded-lg">
                   Iframe
                 </span>
+                <!-- 主应用版本兼容性提示（仅 iframe 模式下显示） -->
+                <span
+                  v-if="isIframeMode() && latestApprovedVersion && appStatusInfo.incompatible"
+                  class="inline-flex items-center px-2.5 py-1 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-medium rounded-lg"
+                >
+                  {{ appStatusInfo.incompatibleMsg }}
+                </span>
+                <span
+                  v-else-if="isIframeMode() && latestApprovedVersion && !appStatusInfo.incompatible"
+                  class="inline-flex items-center px-2.5 py-1 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-medium rounded-lg"
+                >
+                  主应用兼容
+                </span>
               </div>
 
               <!-- 操作按钮 -->
@@ -459,7 +480,24 @@ onUnmounted(() => {
                   </template>
                   下载
                 </NButton>
+                <NTooltip v-if="isIframeMode() && appStatusInfo.incompatible" trigger="hover">
+                  <template #trigger>
+                    <NButton
+                      size="large"
+                      type="error"
+                      disabled
+                      class="install-btn"
+                    >
+                      <template #icon>
+                        <SvgIconOnline icon="ph:warning" />
+                      </template>
+                      {{ appStatusInfo.text }}
+                    </NButton>
+                  </template>
+                  {{ appStatusInfo.incompatibleMsg }}
+                </NTooltip>
                 <NButton
+                  v-else
                   size="large"
                   :type="appStatusInfo.type"
                   :disabled="appStatusInfo.disabled"
@@ -582,6 +620,17 @@ onUnmounted(() => {
                 <span class="text-sm text-slate-500 dark:text-slate-400">版本</span>
                 <span class="text-sm text-slate-700 dark:text-slate-200 font-medium">
                   {{ latestApprovedVersion ? `v${latestApprovedVersion.version}` : '未发布' }}
+                </span>
+              </div>
+              <!-- 主应用版本要求（仅 iframe 模式下显示） -->
+              <div v-if="isIframeMode() && latestApprovedVersion && resolvedLowVersion" class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
+                <span class="text-sm text-slate-500 dark:text-slate-400">主应用要求</span>
+                <span
+                  class="text-sm font-medium"
+                  :class="appStatusInfo.incompatible ? 'text-red-500 dark:text-red-400' : 'text-green-500 dark:text-green-400'"
+                >
+                  {{ `>= v${resolvedLowVersion}` }}
+                  {{ appStatusInfo.incompatible ? '(不满足)' : '(满足)' }}
                 </span>
               </div>
               <div class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">

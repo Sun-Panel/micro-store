@@ -14,6 +14,7 @@ type MicroAppVersionConfig struct {
 	MicroAppId     string                     `json:"microAppId"`     // 应用唯一标识
 	Version        string                     `json:"version"`        // 版本号
 	APIVersion     string                     `json:"apiVersion"`     // API 版本
+	LowVersion     string                     `json:"lowVersion"`     // 最低支持的主应用版本号（如 "2.0.0"）
 	Author         string                     `json:"author"`         // 作者
 	Entry          string                     `json:"entry"`          // 入口文件
 	Icon           string                     `json:"icon"`           // 图标
@@ -126,6 +127,7 @@ type MicroAppVersion struct {
 	PackageHash       string                        `gorm:"type:varchar(100);not null" json:"packageHash"`     // 版本校验值（MD5/SHA）
 	IconUrl           string                        `gorm:"type:varchar(2000)" json:"iconUrl"`                 // 图标URL
 	VersionDesc       datatype.VersionDesc          `gorm:"type:text" json:"versionDesc"`                      // 版本说明（多语言格式）
+	LowVersion       string                        `gorm:"type:varchar(20);not null;default:''" json:"lowVersion"`       // 最低支持的主应用版本号（如 "2.0.0"）
 	Config            *MicroAppVersionConfig        `gorm:"type:json;serializer:json" json:"config"`           // 完整配置信息（JSON）
 	AppJson           datatype.AppJson               `gorm:"type:text" json:"appJson"`                          // 原始 app.json 完整内容
 	Status            int                           `gorm:"type:tinyint(2);not null;default:-1" json:"status"` // 审核状态：-1-草稿 0-待审核 1-通过 2-拒绝

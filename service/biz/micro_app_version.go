@@ -216,7 +216,7 @@ func (s *MicroAppVersionService) DeleteVersion(db *gorm.DB, ids []uint) error {
 }
 
 // UpdateVersion 更新版本
-func (s *MicroAppVersionService) UpdateVersion(db *gorm.DB, id uint, version string, versionCode int) error {
+func (s *MicroAppVersionService) UpdateVersion(db *gorm.DB, id uint, version string, versionCode int, lowVersion string) error {
 	m := models.MicroAppVersion{}
 	v, err := m.GetById(db, id)
 	if err != nil {
@@ -227,7 +227,7 @@ func (s *MicroAppVersionService) UpdateVersion(db *gorm.DB, id uint, version str
 		return NewBizError(ErrCodeStatusNotAllowed)
 	}
 
-	if version == "" && versionCode <= 0 {
+	if version == "" && versionCode <= 0 && lowVersion == "" {
 		return NewBizError(ErrCodeNoUpdateContent)
 	}
 
@@ -236,6 +236,9 @@ func (s *MicroAppVersionService) UpdateVersion(db *gorm.DB, id uint, version str
 	}
 	if versionCode > 0 {
 		v.VersionCode = versionCode
+	}
+	if lowVersion != "" {
+		v.LowVersion = lowVersion
 	}
 
 	if err := v.Update(db); err != nil {

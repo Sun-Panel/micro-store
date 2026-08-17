@@ -82,12 +82,13 @@ func (a *DeveloperVersionApi) Create(c *gin.Context) {
 		Version:     cache.PackageResult.Config.Version,
 		VersionCode: 0,
 		// PackageUrl:  cache.PackageResult.URL,
-		PackageSrc:  cache.PackageResult.Src, // 设置 PackageSrc 为与 PackageUrl 相同的值
-		PackageHash: cache.PackageResult.Hash,
-		VersionDesc: req.VersionDesc,
-		Config:      &cache.PackageResult.Config,
-		IconUrl:     cache.PackageResult.IconURL,
-		AppJson:     datatype.AppJson(cache.PackageResult.AppJson),
+		PackageSrc:   cache.PackageResult.Src, // 设置 PackageSrc 为与 PackageUrl 相同的值
+		PackageHash:  cache.PackageResult.Hash,
+		VersionDesc:  req.VersionDesc,
+		Config:       &cache.PackageResult.Config,
+		LowVersion:   cache.PackageResult.Config.LowVersion,
+		IconUrl:      cache.PackageResult.IconURL,
+		AppJson:      datatype.AppJson(cache.PackageResult.AppJson),
 	}
 
 	// 创建或更新版本并进行审核检查
@@ -107,7 +108,7 @@ func (a *DeveloperVersionApi) Update(c *gin.Context) {
 		return
 	}
 
-	if err := biz.MicroAppVersion.UpdateVersion(global.Db, param.Id, param.Version, param.VersionCode); err != nil {
+	if err := biz.MicroAppVersion.UpdateVersion(global.Db, param.Id, param.Version, param.VersionCode, param.LowVersion); err != nil {
 		handleBizError(c, err)
 		return
 	}

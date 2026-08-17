@@ -35,6 +35,7 @@ type MicroAppVersionUpdateReq struct {
 	Version     string              `json:"version"`
 	VersionCode int                 `json:"versionCode"`
 	VersionDesc datatype.VersionDesc `json:"versionDesc"`
+	LowVersion  string              `json:"lowVersion"` // 最低支持的主应用版本号
 }
 
 // MicroAppVersionSubmitReviewReq 提交审核请求
