@@ -14,6 +14,7 @@ import (
 	"sun-panel/initialize/systemSettingCache"
 	"sun-panel/initialize/userToken"
 	"sun-panel/lib/cmn"
+	"sun-panel/lib/compat"
 	"sun-panel/models"
 	"sun-panel/scheduler"
 	"sun-panel/structs"
@@ -87,6 +88,9 @@ func InitAuthServiceApp() error {
 
 	biz.InitBIZ(global.RedisDb)
 	global.SystemSetting = systemSettingCache.InItSystemSettingCache()
+
+	// 初始化版本兼容性模块，注入 SystemSetting 实例
+	compat.Init(global.SystemSetting)
 
 	// 开启调度中心(根据配置是否开启)
 	if global.Config.GetValueString("base", "scheduler_enable") == "true" {

@@ -5,6 +5,7 @@ import (
 	"sun-panel/api/api_v1/common/base"
 	"sun-panel/biz"
 	"sun-panel/global"
+	"sun-panel/lib/compat"
 	"sun-panel/models"
 	"sun-panel/models/datatype"
 
@@ -77,6 +78,15 @@ func (a *DeveloperVersionApi) Create(c *gin.Context) {
 		biz.MicroAppPackage.DelUploadCache(req.UploadCacheId)
 	}()
 
+	// 根据 apiVersion 和 appJsonVersion 自动生成 lowVersion
+	lowVersion := compat.ResolveLowVersion(
+		cache.PackageResult.Config.APIVersion,
+		cache.PackageResult.Config.AppJsonVersion,
+	)
+
+	// 同步更新 Config 中的 LowVersion 字段，保持一致
+	cache.PackageResult.Config.LowVersion = lowVersion
+
 	version := &models.MicroAppVersion{
 		AppRecordId: cache.AppRecordId,
 		Version:     cache.PackageResult.Config.Version,
@@ -86,7 +96,7 @@ func (a *DeveloperVersionApi) Create(c *gin.Context) {
 		PackageHash:  cache.PackageResult.Hash,
 		VersionDesc:  req.VersionDesc,
 		Config:       &cache.PackageResult.Config,
-		LowVersion:   cache.PackageResult.Config.LowVersion,
+		LowVersion:   lowVersion,
 		IconUrl:      cache.PackageResult.IconURL,
 		AppJson:      datatype.AppJson(cache.PackageResult.AppJson),
 	}
