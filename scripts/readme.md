@@ -4,7 +4,7 @@
 
 ```bash
 # 进入项目根目录执行以下命令
-./scripts/build.sh -n microapp-store -v 1.0.260608 --push \
+./scripts/build.sh -n microapp-store -v 1.0.260818 --push \
 -r registry.cn-hangzhou.aliyuncs.com/hslr \
 -p linux/amd64,linux/arm64
 ```

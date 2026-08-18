@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AppStatusInfo } from './composables/useAppInstallStatus'
 import { NAlert, NButton, NCard, NTooltip, useMessage } from 'naive-ui'
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { getList as getListApi } from '@/api/microApp'
 import defaultAppIcon from '@/assets/image_fail.png'
 import { SvgIconOnline } from '@/components/common'
@@ -23,9 +23,14 @@ const { getDetailPath } = useRouterHelper('v1')
 const { getAppButtonStatus } = useAppInstallStatus()
 
 const list = ref<MicroAppListItem[]>([])
+const page = ref(1)
+const total = ref(0)
+const loading = ref(false)
+const hasMore = computed(() => list.value.length < total.value)
+const sentinelRef = ref<HTMLElement | null>(null)
 const req = ref<MicroApp.GetListRequest>({
   page: 1,
-  limit: 10,
+  limit: 30,
   onlyWithVersion: true,
 })
 
@@ -79,185 +84,139 @@ async function handleInstall(item: MicroAppListItem) {
 //   // TODO: 实现购买/卸载逻辑
 // }
 
-// 模拟10条数据（当API调用失败时使用）
-// const mockData: MicroApp.Info[] = [
-//   {
-//     id: 1,
-//     microAppId: 'app-001',
-//     appName: '智能日历',
-//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     appDesc: '智能日历管理工具，支持日程提醒和智能排程',
-//     developer: {
-//       id: 1,
-//       name: '张三',
-//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     },
-//     developerId: 1,
-//     categoryId: 1,
-//     chargeType: 0,
-//     points: 0,
-//     status: 1,
-//   },
-//   {
-//     id: 2,
-//     microAppId: 'app-002',
-//     appName: '天气助手',
-//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     appDesc: '实时天气查询，未来7天天气预报',
-//     developer: {
-//       id: 2,
-//       name: '李四',
-//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     },
-//     developerId: 2,
-//     categoryId: 1,
-//     chargeType: 0,
-//     points: 0,
-//     status: 1,
-//   },
-//   {
-//     id: 3,
-//     microAppId: 'app-003',
-//     appName: '记账本',
-//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     appDesc: '简洁实用的个人记账应用，支持多种账本分类',
-//     developer: {
-//       id: 1,
-//       name: '张三',
-//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     },
-//     developerId: 1,
-//     categoryId: 2,
-//     chargeType: 1,
-//     points: 100,
-//     status: 1,
-//   },
-//   {
-//     id: 4,
-//     microAppId: 'app-004',
-//     appName: '待办事项',
-//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     appDesc: '高效的待办事项管理工具，支持标签和优先级',
-//     developer: {
-//       id: 3,
-//       name: '王五',
-//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     },
-//     developerId: 3,
-//     categoryId: 2,
-//     chargeType: 0,
-//     points: 0,
-//     status: 1,
-//   },
-//   {
-//     id: 5,
-//     microAppId: 'app-005',
-//     appName: '备忘录',
-//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     appDesc: '快速记录笔记和想法，支持富文本编辑',
-//     developer: {
-//       id: 2,
-//       name: '李四',
-//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     },
-//     developerId: 2,
-//     categoryId: 3,
-//     chargeType: 2,
-//     points: 0,
-//     status: 1,
-//   },
-//   {
-//     id: 6,
-//     microAppId: 'app-006',
-//     appName: '计算器',
-//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     appDesc: '功能强大的科学计算器，支持历史记录',
-//     developer: {
-//       id: 4,
-//       name: '赵六',
-//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     },
-//     developerId: 4,
-//     categoryId: 1,
-//     chargeType: 0,
-//     points: 0,
-//     status: 1,
-//   },
-//   {
-//     id: 7,
-//     microAppId: 'app-007',
-//     appName: '番茄时钟',
-//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     appDesc: '专注时间管理，番茄工作法工具',
-//     developer: {
-//       id: 3,
-//       name: '王五',
-//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     },
-//     developerId: 3,
-//     categoryId: 3,
-//     chargeType: 0,
-//     points: 0,
-//     status: 1,
-//   },
-//   {
-//     id: 8,
-//     microAppId: 'app-008',
-//     appName: '汇率换算',
-//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     appDesc: '实时汇率查询，支持多种货币换算',
-//     developer: {
-//       id: 4,
-//       name: '赵六',
-//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     },
-//     developerId: 4,
-//     categoryId: 2,
-//     chargeType: 0,
-//     points: 0,
-//     status: 1,
-//   },
-//   {
-//     id: 9,
-//     microAppId: 'app-009',
-//     appName: '二维码生成',
-//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     appDesc: '快速生成各类二维码，支持文本、链接等',
-//     developer: {
-//       id: 1,
-//       name: '张三',
-//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     },
-//     developerId: 1,
-//     categoryId: 1,
-//     chargeType: 1,
-//     points: 50,
-//     status: 1,
-//   },
-//   {
-//     id: 10,
-//     microAppId: 'app-010',
-//     appName: '密码管理',
-//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     appDesc: '安全的密码管理工具，支持多平台同步',
-//     developer: {
-//       id: 2,
-//       name: '李四',
-//       avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
-//     },
-//     developerId: 2,
-//     categoryId: 3,
-//     chargeType: 2,
-//     points: 0,
-//     status: 1,
-//   },
-// ]
+// // 模拟模式控制：URL参数 ?mock=true 或 localStorage mock=true
+// const isMockMode = ref(
+//   new URLSearchParams(window.location.search).get('mock') === 'true'
+//     || localStorage.getItem('mock') === 'true',
+// )
+//
+// function toggleMockMode() {
+//   isMockMode.value = !isMockMode.value
+//   localStorage.setItem('mock', String(isMockMode.value))
+//   // 切换模式后重新加载数据
+//   page.value = 1
+//   list.value = []
+//   total.value = 0
+//   nextTick(() => getList())
+// }
 
-function getList() {
-  getListApi<Common.ListResponse<MicroAppListItem[]>>(req.value).then(({ data }) => {
-    list.value = data.list
-  }).catch(() => {
-    // API 调用失败
+// 模拟数据生成函数：生成足够的数据测试翻页（默认60条，每页30条可翻两页）
+// function generateMockData(count = 60): MicroAppListItem[] {
+//   const appNames = [
+//     '智能日历', '天气助手', '记账本', '待办事项', '备忘录',
+//     '计算器', '番茄时钟', '汇率换算', '二维码生成', '密码管理',
+//     '文件管理', '音乐播放器', '视频播放器', '图片编辑', 'PDF阅读器',
+//     '翻译工具', '笔记应用', '习惯追踪', '运动记录', '睡眠监测',
+//     '食谱大全', '读书笔记', '新闻聚合', '天气预警', '倒数日',
+//     '时间记录', '剪贴板', '屏幕录制', '截图工具', '网络检测',
+//     '代码编辑器', 'Markdown编辑', '思维导图', '流程图', '白板工具',
+//     '密码生成', '单位换算', '颜色选择', '字体管理', '图标库',
+//     'API测试', 'JSON格式化', '正则测试', 'Base64编码', '时间戳转换',
+//     '文本差异', 'CSV编辑器', '数据可视化', '图表工具', '仪表盘',
+//     '任务看板', '日程管理', '会议安排', '团队协作', '项目管理',
+//     '代码片段', 'API文档', '接口管理', '版本控制', '部署工具',
+//   ]
+//   const descriptions = [
+//     '高效便捷的工具应用，提升工作效率',
+//     '简洁实用的生活助手，让生活更简单',
+//     '功能强大的专业工具，满足各种需求',
+//     '轻松管理日常事务，随时随地访问',
+//     '安全可靠的数据管理，保护您的隐私',
+//   ]
+//   const developers = [
+//     { id: 1, name: '张三', developerName: '张三工作室', avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg' },
+//     { id: 2, name: '李四', developerName: '李四科技', avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg' },
+//     { id: 3, name: '王五', developerName: '王五软件', avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg' },
+//     { id: 4, name: '赵六', developerName: '赵六开发', avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg' },
+//     { id: 5, name: '孙七', developerName: '孙七创意', avatar: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg' },
+//   ]
+//   const categories = [1, 2, 3]
+//   const chargeTypes = [0, 1, 2]
+
+//   return Array.from({ length: count }, (_, i) => ({
+//     id: i + 1,
+//     microAppId: `app-${String(i + 1).padStart(3, '0')}`,
+//     appName: appNames[i % appNames.length],
+//     appIcon: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg',
+//     appDesc: descriptions[i % descriptions.length],
+//     developer: developers[i % developers.length],
+//     developerId: developers[i % developers.length].id,
+//     categoryId: categories[i % categories.length],
+//     chargeType: chargeTypes[i % chargeTypes.length],
+//     points: i % 3 === 0 ? 100 : 0,
+//     status: 1,
+//     downloadCount: Math.floor(Math.random() * 10000),
+//     installCount: Math.floor(Math.random() * 5000),
+//     latestVersion: '1.0.0',
+//   }))
+// }
+
+// // 模拟分页数据
+// const allMockData = generateMockData()
+
+// function getMockPageData(page: number, limit: number) {
+//   const start = (page - 1) * limit
+//   const end = start + limit
+//   return {
+//     list: allMockData.slice(start, end),
+//     count: allMockData.length,
+//   }
+// }
+
+let observer: IntersectionObserver | null = null
+
+async function getList(append = false) {
+  if (loading.value)
+    return
+  loading.value = true
+  const targetPage = append ? page.value + 1 : 1
+
+  // // 模拟模式：直接使用本地模拟数据
+  // if (isMockMode.value) {
+  //   // 模拟网络延迟
+  //   await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 500))
+  //   const mockResult = getMockPageData(targetPage, req.value.limit)
+  //   list.value = append ? [...list.value, ...mockResult.list] : mockResult.list
+  //   total.value = mockResult.count
+  //   page.value = targetPage
+  //   loading.value = false
+  //   updateObserver()
+  //   return
+  // }
+
+  try {
+    const { data } = await getListApi<Common.ListResponse<MicroAppListItem[]>>({ ...req.value, page: targetPage })
+    list.value = append ? [...list.value, ...data.list] : data.list
+    total.value = data.count
+    page.value = targetPage
+  }
+  catch {
+    // // API 调用失败时回退到模拟数据
+    // console.warn('API 调用失败，使用模拟数据')
+    // const mockResult = getMockPageData(targetPage, req.value.limit)
+    // list.value = append ? [...list.value, ...mockResult.list] : mockResult.list
+    // total.value = mockResult.count
+    // page.value = targetPage
+  }
+  finally {
+    loading.value = false
+    updateObserver()
+  }
+}
+
+// 滚动到底自动加载更多（观察底部哨兵元素，兼容 iframe 场景）
+function updateObserver() {
+  nextTick(() => {
+    const el = sentinelRef.value
+    if (!el)
+      return
+    if (observer)
+      observer.disconnect()
+    observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore.value && !loading.value)
+        getList(true)
+    }, { rootMargin: '200px 0px' })
+    observer.observe(el)
   })
 }
 
@@ -267,6 +226,10 @@ function handleCardClick(item: MicroAppListItem) {
 
 onMounted(() => {
   getList()
+})
+
+onBeforeUnmount(() => {
+  observer?.disconnect()
 })
 </script>
 
@@ -284,6 +247,16 @@ onMounted(() => {
         </NButton>
       </span>
     </NAlert>
+
+    <!-- 开发调试：模拟模式控制 -->
+    <!-- <div class="mb-4 flex items-center gap-2">
+      <NButton size="small" :type="isMockMode ? 'warning' : 'default'" @click="toggleMockMode">
+        {{ isMockMode ? '模拟模式 ON' : '模拟模式 OFF' }}
+      </NButton>
+      <span v-if="isMockMode" class="text-xs text-orange-500">
+        使用本地模拟数据（{{ allMockData.length }} 条，每页 {{ req.limit }} 条）
+      </span>
+    </div> -->
 
     <div v-if="list.length === 0" class="flex flex-col items-center justify-center py-15 px-5">
       <img src="@/assets/image_fail.png" alt="empty" class="w-16 h-16 opacity-40 mb-4">
@@ -353,6 +326,12 @@ onMounted(() => {
           </div>
         </div>
       </NCard>
+    </div>
+    <div v-if="list.length > 0" ref="sentinelRef" class="flex flex-col items-center gap-2 py-4">
+      <NButton v-if="hasMore" size="small" :loading="loading" @click="getList(true)">
+        加载更多
+      </NButton>
+      <span v-else class="text-xs text-gray-400">— END —</span>
     </div>
   </div>
 </template>

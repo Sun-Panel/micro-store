@@ -47,7 +47,7 @@ build_image() {
       # 构建 OCI tar 文件
       # --provenance=false: 禁用 provenance attestation 生成，避免 skopeo 压缩错误
       docker buildx build \
-        --cache-to type=local,dest="$CACHE_DIR",mode=max \
+        --cache-to type=local,dest="$CACHE_DIR",mode=min \
         --cache-from type=local,src="$CACHE_DIR" \
         --platform=linux/amd64 \
         --platform=linux/arm64 \
