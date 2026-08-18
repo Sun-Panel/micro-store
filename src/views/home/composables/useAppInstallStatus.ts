@@ -37,6 +37,17 @@ export interface VersionCompatibilityResult {
 }
 
 /**
+ * 从 lowVersionOrConfig 参数中提取最低主应用版本号
+ * @param lowVersionOrConfig 版本号字符串或版本配置对象
+ * @returns 最低主应用版本号
+ */
+function extractLowVersion(lowVersionOrConfig?: string | MicroApp.VersionConfig): string | undefined {
+  if (typeof lowVersionOrConfig === 'string')
+    return lowVersionOrConfig
+  return lowVersionOrConfig?.lowVersion
+}
+
+/**
  * 检查当前主应用版本是否兼容微应用指定的最低版本
  * @param requiredVersion 微应用要求的最低主应用版本（如 "2.0.0"）
  * @returns 兼容性检查结果
@@ -108,21 +119,11 @@ export function getAppButtonStatus(
   }
 
   const isInstalled = localAppStore.isInstalled(microAppId)
+  const requiredVersion = extractLowVersion(lowVersionOrConfig)
+  const compatResult = checkVersionCompatibility(requiredVersion)
 
-  // 版本兼容性检查（仅未安装时检查）
+  // 未安装
   if (!isInstalled) {
-    // 提取 lowVersion：仅使用 lowVersion 字段（最低主应用版本要求）
-    // 不 fallback 到 apiVersion/appJsonVersion，因为那是微应用自身版本，不是主应用版本要求
-    let requiredVersion: string | undefined
-    if (typeof lowVersionOrConfig === 'string') {
-      requiredVersion = lowVersionOrConfig
-    }
-    else if (lowVersionOrConfig) {
-      requiredVersion = lowVersionOrConfig.lowVersion
-    }
-
-    // lowVersion 为空时跳过兼容性检查
-    const compatResult = checkVersionCompatibility(requiredVersion)
     if (!compatResult.compatible) {
       return {
         ...baseStatus,
@@ -138,17 +139,6 @@ export function getAppButtonStatus(
 
   // 已安装，检查是否有更新
   if (latestVersion && localAppStore.hasUpdate(microAppId, latestVersion)) {
-    // 有更新时，检查新版本的兼容性
-    let requiredVersion: string | undefined
-    if (typeof lowVersionOrConfig === 'string') {
-      requiredVersion = lowVersionOrConfig
-    }
-    else if (lowVersionOrConfig) {
-      requiredVersion = lowVersionOrConfig.lowVersion
-    }
-
-    // 检查新版本兼容性
-    const compatResult = checkVersionCompatibility(requiredVersion)
     if (!compatResult.compatible) {
       return {
         text: '升级',
@@ -160,7 +150,6 @@ export function getAppButtonStatus(
         incompatibleMsg: compatResult.message,
       }
     }
-
     return { text: '升级', type: 'warning', disabled: false, isInstalled: true, hasUpdate: true, incompatible: false }
   }
 

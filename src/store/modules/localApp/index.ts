@@ -18,11 +18,6 @@ export const useLocalAppStore = defineStore('local-app-store', {
       this.installedApps = apps
     },
 
-    // findInstalledApps(microAppId: string) {
-    //   microAppId = microAppId.toLowerCase()
-    //   return this.installedApps[microAppId] ?? null
-    // },
-
     /**
      * 检查指定微应用是否已安装
      * @param microAppId - 微应用的唯一标识符
@@ -60,30 +55,6 @@ export const useLocalAppStore = defineStore('local-app-store', {
       if (!app?.version)
         return false
       return isVersionGreater(latestVersion, app.version)
-    },
-
-    /**
-     * 获取微应用的完整状态信息
-     * 包括安装状态、版本比较结果等
-     * @param microAppId - 微应用的唯一标识符
-     * @param latestVersion - 最新版本号
-     * @returns 微应用状态信息对象
-     */
-    getAppStatus(microAppId: string, latestVersion: string) {
-      microAppId = microAppId.toLowerCase()
-      const app = this.installedApps[microAppId]
-      const installedVersion = app?.version || null
-      
-      return {
-        /** 是否已安装 */
-        isInstalled: this.isInstalled(microAppId),
-        /** 已安装的版本号 */
-        installedVersion,
-        /** 是否有可用更新 */
-        hasUpdate: installedVersion ? isVersionGreater(latestVersion, installedVersion) : false,
-        /** 是否为最新版本 */
-        isLatestVersion: installedVersion ? isVersionEqual(installedVersion, latestVersion) : false,
-      }
     },
 
   },

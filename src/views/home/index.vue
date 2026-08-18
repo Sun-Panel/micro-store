@@ -1,19 +1,19 @@
 <script setup lang="ts">
+import type { AppStatusInfo } from './composables/useAppInstallStatus'
 import { NAlert, NButton, NCard, NTooltip, useMessage } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { getList as getListApi } from '@/api/microApp'
 import defaultAppIcon from '@/assets/image_fail.png'
-
 import { SvgIconOnline } from '@/components/common'
 import { router } from '@/router'
 import { isIframe } from '@/utils/cmn'
+import { getAppDescByLang, getAppNameByLang, getBrowserLang, getLangMapFromAppInfo } from '@/utils/functions/lang'
 import { useAppInstallStatus } from './composables/useAppInstallStatus'
 import { getDownloadUrl } from './composables/useDownload'
 import { useIframe } from './composables/useIframe'
 import { useRouterHelper } from './composables/useRouterHelper'
 
 interface MicroAppListItem extends MicroApp.Info {
-  // developerName: string
   developer: MicroApp.DeveloperInfo
 }
 
@@ -29,57 +29,20 @@ const req = ref<MicroApp.GetListRequest>({
   onlyWithVersion: true,
 })
 
-// ==================== 多语言处理 ====================
-// 浏览器语言检测
-function getBrowserLang(): string {
-  const lang = navigator.language || (navigator as any).userLanguage || 'zh-CN'
-  if (lang.startsWith('zh'))
-    return 'zh-CN'
-  if (lang.startsWith('en'))
-    return 'en-US'
-  if (lang.startsWith('ja'))
-    return 'ja-JP'
-  if (lang.startsWith('ko'))
-    return 'ko-KR'
-  return 'zh-CN'
+// 当前语言（浏览器语言不会变化，只计算一次）
+const currentLang = getBrowserLang()
+
+// 缓存每个应用的语言 Map，避免在模板中重复构建
+function getLangMap(item: MicroAppListItem): Record<string, MicroApp.LangInfo> {
+  return getLangMapFromAppInfo(item) as Record<string, MicroApp.LangInfo>
 }
 
-// 当前语言
-const currentLang = computed(() => getBrowserLang())
-
-// 获取应用的多语言列表
-// function getLangList(item: MicroAppListItem): string[] {
-//   const langList = item.langList || []
-//   if (langList.length > 0) {
-//     return langList.map(l => l.lang)
-//   }
-//   return ['zh-CN']
-// }
-
-// 获取指定语言下的应用名称
 function getAppName(item: MicroAppListItem): string {
-  const langMap: Record<string, MicroApp.LangInfo> = {}
-  const langList = item.langList || []
-  langList.forEach((l) => {
-    langMap[l.lang] = l
-  })
-  return langMap[currentLang.value]?.appName
-    || langMap['zh-CN']?.appName
-    || item.appName
-    || ''
+  return getAppNameByLang(getLangMap(item), currentLang, item.appName)
 }
 
-// 获取指定语言下的应用描述
 function getAppDesc(item: MicroAppListItem): string {
-  const langMap: Record<string, MicroApp.LangInfo> = {}
-  const langList = item.langList || []
-  langList.forEach((l) => {
-    langMap[l.lang] = l
-  })
-  return langMap[currentLang.value]?.appDesc
-    || langMap['zh-CN']?.appDesc
-    || item.appDesc
-    || ''
+  return getAppDescByLang(getLangMap(item), currentLang, item.appDesc)
 }
 
 // 获取有效的应用图标，无效时返回默认图标
@@ -87,16 +50,26 @@ function getAppIcon(item: MicroAppListItem): string {
   return item.appIcon || defaultAppIcon
 }
 
+// 按钮状态缓存：避免模板中同一个 item 调用 getAppButtonStatus 多达 6 次
+const buttonStatusCache = computed(() => {
+  const cache = new Map<string, AppStatusInfo>()
+  for (const item of list.value) {
+    cache.set(item.microAppId, getAppButtonStatus(item.microAppId, item.latestVersion, item.latestLowVersion))
+  }
+  return cache
+})
+
+function getButtonStatus(item: MicroAppListItem): AppStatusInfo {
+  return buttonStatusCache.value.get(item.microAppId) || { text: '安装', type: 'primary', disabled: false, isInstalled: false, hasUpdate: false, incompatible: false }
+}
+
 // 安装/打开按钮点击事件
 async function handleInstall(item: MicroAppListItem) {
   if (isIframe()) {
-    // 在 iframe 中，先获取下载地址再发送安装消息给父窗口
     const url = await getDownloadUrl(item.microAppId)
-    // console.log('uuuuurl', url)
     sendInstallApp({ microAppId: item.microAppId, url })
   }
   else {
-    // 非 iframe 环境，显示提示
     message.info('请在私有部署项目中打开微应用商店安装')
   }
 }
@@ -284,8 +257,7 @@ function getList() {
   getListApi<Common.ListResponse<MicroAppListItem[]>>(req.value).then(({ data }) => {
     list.value = data.list
   }).catch(() => {
-    // API调用失败时使用模拟数据
-    // list.value = mockData
+    // API 调用失败
   })
 }
 
@@ -295,7 +267,6 @@ function handleCardClick(item: MicroAppListItem) {
 
 onMounted(() => {
   getList()
-  // list.value = mockData
 })
 </script>
 
@@ -348,7 +319,7 @@ onMounted(() => {
               <div class="font-bold m-0 leading-[1.4] truncate flex-1 min-w-0" :title="getAppName(item)">
                 {{ getAppName(item) || 'Unknown' }}
               </div>
-              <NTooltip v-if="isIframe() && getAppButtonStatus(item.microAppId, item.latestVersion, item.latestLowVersion).incompatible" trigger="hover">
+              <NTooltip v-if="isIframe() && getButtonStatus(item).incompatible" trigger="hover">
                 <template #trigger>
                   <NButton
                     size="tiny"
@@ -356,20 +327,20 @@ onMounted(() => {
                     disabled
                     class="w-[60px] !h-[24px] flex-shrink-0"
                   >
-                    {{ getAppButtonStatus(item.microAppId, item.latestVersion, item.latestLowVersion).text }}
+                    {{ getButtonStatus(item).text }}
                   </NButton>
                 </template>
-                {{ getAppButtonStatus(item.microAppId, item.latestVersion, item.latestLowVersion).incompatibleMsg }}
+                {{ getButtonStatus(item).incompatibleMsg }}
               </NTooltip>
               <NButton
                 v-else-if="isIframe()"
                 size="tiny"
-                :type="getAppButtonStatus(item.microAppId, item.latestVersion, item.latestLowVersion).type"
-                :disabled="getAppButtonStatus(item.microAppId, item.latestVersion, item.latestLowVersion).disabled"
+                :type="getButtonStatus(item).type"
+                :disabled="getButtonStatus(item).disabled"
                 class="w-[60px] !h-[24px] flex-shrink-0"
                 @click.stop="handleInstall(item)"
               >
-                {{ getAppButtonStatus(item.microAppId, item.latestVersion, item.latestLowVersion).text }}
+                {{ getButtonStatus(item).text }}
               </NButton>
             </div>
             <div class="flex items-center gap-1 text-[11px] text-gray-500">

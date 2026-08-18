@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import type { Theme } from '@/store/modules/app/helper'
 import moment from 'moment'
 import { NButton, NEllipsis, NImage, NImageGroup, NTooltip, useMessage } from 'naive-ui'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -9,6 +8,7 @@ import { getInfo, getInfoByMicroAppId, getVersionList } from '@/api/microApp'
 import { SvgIconOnline } from '@/components/common'
 import { microAppChargeTypeMap, microAppThirdChargeTypeMap, MicroAppVersionStatus } from '@/enums/panel'
 import { isIframe } from '@/utils/cmn'
+import { getAppDescByLang, getAppNameByLang, getBrowserLang, getCurrentLang, getLangMapFromAppInfo } from '@/utils/functions/lang'
 import { useAppInstallStatus } from '../composables/useAppInstallStatus'
 import { getDownloadUrl } from '../composables/useDownload'
 import { isIframeMode } from '../composables/useGetIframeUrlParam'
@@ -28,33 +28,6 @@ const { sendInstallApp } = useIframe()
 const { getHomePath } = useRouterHelper('v1')
 const { getAppButtonStatus } = useAppInstallStatus()
 
-// // ==================== 深色模式 ====================
-// const themeQuery = computed(() => {
-//   // 依赖 route.query 以确保响应式更新
-//   void route.query
-//   const params = getIframeAllUrlParam()
-//   return (params.theme as string) || ''
-// })
-// const isDarkPage = computed(() => themeQuery.value === 'dark')
-// const originalTheme = ref<Theme | null>(null)
-
-// // 根据 iframe URL 参数设置深色模式
-// watch(isDarkPage, (dark) => {
-//   console.log('dark', dark)
-//   if (dark) {
-//     // 保存原始主题并切换到深色
-//     if (originalTheme.value === null) {
-//       originalTheme.value = appStore.theme
-//     }
-//     appStore.setTheme('dark')
-//   }
-//   else if (originalTheme.value !== null) {
-//     // 恢复原始主题
-//     appStore.setTheme(originalTheme.value)
-//     originalTheme.value = null
-//   }
-// }, { immediate: true })
-
 // 路由参数
 const routeId = computed(() => route.params.id as string)
 
@@ -64,9 +37,6 @@ const isNumericId = computed(() => /^\d+$/.test(routeId.value))
 // 微应用 ID（数字）
 const appRecordId = computed(() => Number(routeId.value))
 
-// 微应用 ID（字符串）
-const microAppId = computed(() => routeId.value)
-
 // 数据
 const microAppInfo = ref<MicroApp.Info>()
 const versionList = ref<MicroApp.VersionInfo[]>([])
@@ -74,70 +44,28 @@ const categoryOptions = ref<{ label: string, value: number }[]>([])
 const loading = ref(false)
 
 // ==================== 多语言处理 ====================
-// 浏览器语言检测
-function getBrowserLang(): string {
-  const lang = navigator.language || (navigator as any).userLanguage || 'zh-CN'
-  if (lang.startsWith('zh'))
-    return 'zh-CN'
-  if (lang.startsWith('en'))
-    return 'en-US'
-  if (lang.startsWith('ja'))
-    return 'ja-JP'
-  if (lang.startsWith('ko'))
-    return 'ko-KR'
-  return 'zh-CN'
-}
 
-// 微应用的多语言列表
-const baseInfoLangList = computed(() => {
-  if (!microAppInfo.value)
-    return ['zh-CN']
-  const langList = microAppInfo.value.langList || []
-  if (langList.length > 0) {
-    return langList.map(l => l.lang)
-  }
-  return ['zh-CN']
-})
-
-// 微应用语言 Map
+// 微应用语言 Map（使用共享工具函数）
 const baseInfoLangMap = computed(() => {
-  const result: Record<string, MicroApp.LangInfo> = {}
-  if (!microAppInfo.value)
-    return result
-  const langList = microAppInfo.value.langList || []
-  langList.forEach((l) => {
-    result[l.lang] = l
-  })
-  return result
+  return getLangMapFromAppInfo(microAppInfo.value) as Record<string, MicroApp.LangInfo>
 })
 
-// 当前语言
+// 当前语言（根据应用支持的语言列表匹配浏览器语言）
 const currentLang = computed(() => {
-  const browserLang = getBrowserLang()
-  const langs = baseInfoLangList.value
-  return langs.includes(browserLang) ? browserLang : (langs.includes('zh-CN') ? 'zh-CN' : langs[0])
+  if (!microAppInfo.value)
+    return getBrowserLang()
+  const langList = (microAppInfo.value.langList || []).map(l => l.lang)
+  return getCurrentLang(langList.length > 0 ? langList : ['zh-CN'])
 })
 
-// 当前语言下的应用名称
+// 当前语言下的应用名称（使用共享工具函数）
 const displayAppName = computed(() => {
-  if (!microAppInfo.value)
-    return ''
-  const langMap = baseInfoLangMap.value
-  return langMap[currentLang.value]?.appName
-    || langMap['zh-CN']?.appName
-    || microAppInfo.value.appName
-    || ''
+  return getAppNameByLang(baseInfoLangMap.value, currentLang.value, microAppInfo.value?.appName)
 })
 
-// 当前语言下的应用描述
+// 当前语言下的应用描述（使用共享工具函数）
 const displayAppDesc = computed(() => {
-  if (!microAppInfo.value)
-    return ''
-  const langMap = baseInfoLangMap.value
-  return langMap[currentLang.value]?.appDesc
-    || langMap['zh-CN']?.appDesc
-    || microAppInfo.value.appDesc
-    || ''
+  return getAppDescByLang(baseInfoLangMap.value, currentLang.value, microAppInfo.value?.appDesc)
 })
 
 // 截图列表
@@ -184,17 +112,19 @@ const categoryName = computed(() => {
 })
 
 // ==================== 版本处理 ====================
-// 最新审核通过的版本
+// 已审核通过的版本列表（提取为 computed 避免模板中重复 filter）
+const approvedVersionList = computed(() => {
+  return versionList.value.filter(v => v.status === MicroAppVersionStatus.APPROVED)
+})
+
+// 最新审核通过的版本（用 reduce 代替 sort+索引，避免创建完整排序数组）
 const latestApprovedVersion = computed(() => {
-  const approvedVersions = versionList.value.filter(v => v.status === MicroAppVersionStatus.APPROVED)
-  if (approvedVersions.length === 0)
-    return null
-  // 按创建时间排序，最新的在前面
-  return approvedVersions.sort((a, b) => {
-    const timeA = new Date(a.createTime ?? 0).getTime()
-    const timeB = new Date(b.createTime ?? 0).getTime()
-    return timeB - timeA
-  })[0]
+  return approvedVersionList.value.reduce<MicroApp.VersionInfo | null>((latest, v) => {
+    if (!latest) return v
+    const timeV = new Date(v.createTime ?? 0).getTime()
+    const timeLatest = new Date(latest.createTime ?? 0).getTime()
+    return timeV > timeLatest ? v : latest
+  }, null)
 })
 
 // 获取应用状态信息（传入版本配置进行兼容性检查）
@@ -223,6 +153,11 @@ function getVersionDescContent(versionDesc: Record<string, { content: string }> 
     || ''
 }
 
+// 最新版本说明缓存（避免模板中 v-if 和插值重复计算）
+const latestVersionDesc = computed(() => {
+  return getVersionDescContent(latestApprovedVersion.value?.versionDesc)
+})
+
 // 获取微应用详情
 async function fetchMicroAppInfo() {
   loading.value = true
@@ -234,7 +169,7 @@ async function fetchMicroAppInfo() {
     }
     else {
       // 字符串 ID，使用新接口
-      const { data } = await getInfoByMicroAppId<MicroApp.Info>(microAppId.value)
+      const { data } = await getInfoByMicroAppId<MicroApp.Info>(routeId.value)
       microAppInfo.value = data
     }
   }
@@ -283,13 +218,6 @@ async function fetchVersionList() {
 function handleBack() {
   router.push(getHomePath())
 }
-
-// // 下载版本
-// function handleDownload() {
-//   if (latestApprovedVersion.value?.packageUrl) {
-//     window.location.href = latestApprovedVersion.value.packageUrl
-//   }
-// }
 
 // 下载版本包
 async function handleDownloadByVersionId(version?: string) {
@@ -592,8 +520,8 @@ onUnmounted(() => {
                 v{{ latestApprovedVersion.version }}
               </span>
             </h2>
-            <div v-if="getVersionDescContent(latestApprovedVersion.versionDesc)" class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
-              {{ getVersionDescContent(latestApprovedVersion.versionDesc) }}
+            <div v-if="latestVersionDesc" class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
+              {{ latestVersionDesc }}
             </div>
             <div v-else class="text-sm text-slate-400 dark:text-slate-500 italic py-4 text-center bg-slate-50 dark:bg-slate-700/50 rounded-xl">
               暂无版本说明
@@ -713,10 +641,10 @@ onUnmounted(() => {
           </h2>
           <div class="space-y-4">
             <div
-              v-for="(version, index) in versionList.filter(v => v.status === MicroAppVersionStatus.APPROVED)"
+              v-for="(version, index) in approvedVersionList"
               :key="version.id"
               class="relative pl-6 pb-4 last:pb-0"
-              :class="{ 'border-l-2 border-slate-100 dark:border-slate-700': index < versionList.filter(v => v.status === MicroAppVersionStatus.APPROVED).length - 1 }"
+              :class="{ 'border-l-2 border-slate-100 dark:border-slate-700': index < approvedVersionList.length - 1 }"
             >
               <!-- 时间线圆点 -->
               <div class="absolute left-0 top-0 w-3 h-3 bg-white dark:bg-slate-800 border-2 border-violet-400 rounded-full -translate-x-[7px] translate-y-1" />

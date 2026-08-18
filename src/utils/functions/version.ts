@@ -17,8 +17,8 @@ export function parseVersion(version: string): number[] {
   return version
     .split('.')
     .map(part => {
-      const num = parseInt(part, 10)
-      return isNaN(num) ? 0 : num
+      const num = Number.parseInt(part, 10)
+      return Number.isNaN(num) ? 0 : num
     })
 }
 
@@ -87,8 +87,7 @@ export function isVersionEqual(version1: string, version2: string): boolean {
  * @returns boolean
  */
 export function isVersionGreaterOrEqual(version1: string, version2: string): boolean {
-  const result = compareVersions(version1, version2)
-  return result === 1 || result === 0
+  return compareVersions(version1, version2) >= 0
 }
 
 /**

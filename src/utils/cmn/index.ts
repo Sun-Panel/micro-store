@@ -285,7 +285,12 @@ export function formatAmount(amount: number): string {
 }
 
 export function isIframe() {
-  return window !== window.top
+  try {
+    return window !== window.top
+  }
+  catch {
+    return true
+  }
 }
 
 export const apiRespErrMsg = apiRespErrMsgApiMessage
