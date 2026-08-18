@@ -67,7 +67,7 @@ func (a *MicroAppAuditorApi) GetMicroAppInfo(c *gin.Context) {
 		return
 	}
 
-	microApp, err := biz.MicroApp.GetById(global.Db, req.ID, "Developer")
+	microApp, err := biz.MicroApp.GetById(global.Db, req.ID, "Developer", "LangList")
 	if err != nil {
 		base.HandleBizErrorAndReturn(c, err)
 		return

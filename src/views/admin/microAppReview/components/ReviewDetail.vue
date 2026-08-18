@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { NButton, NDescriptions, NDescriptionsItem, NDivider, NImage, NImageGroup, NInput, NModal, NSpace, NTag, useMessage } from 'naive-ui'
+import { NButton, NDescriptions, NDescriptionsItem, NDivider, NImage, NImageGroup, NInput, NModal, NSpace, NSwitch, NTag, useMessage } from 'naive-ui'
 import { computed, ref, watch } from 'vue'
 import { approve, getMicroAppInfo } from '@/api/admin/microAppReview'
 import { microAppChargeTypeMap, microAppThirdChargeTypeMap } from '@/enums/panel'
@@ -26,7 +26,66 @@ const reviewForm = ref({
 })
 const iframeModalVisible = ref(false)
 
-// ==================== 多语言处理 ====================
+// ==================== 同步滚动 ====================
+const syncScrollEnabled = ref(true)
+const onlyShowDiff = ref(false)
+const leftPanelRef = ref<HTMLDivElement>()
+const rightPanelRef = ref<HTMLDivElement>()
+let isSyncing = false
+
+function handleLeftScroll() {
+  if (!syncScrollEnabled.value || isSyncing) return
+  isSyncing = true
+  if (leftPanelRef.value && rightPanelRef.value) {
+    rightPanelRef.value.scrollTop = leftPanelRef.value.scrollTop
+  }
+  requestAnimationFrame(() => {
+    isSyncing = false
+  })
+}
+
+function handleRightScroll() {
+  if (!syncScrollEnabled.value || isSyncing) return
+  isSyncing = true
+  if (leftPanelRef.value && rightPanelRef.value) {
+    leftPanelRef.value.scrollTop = rightPanelRef.value.scrollTop
+  }
+  requestAnimationFrame(() => {
+    isSyncing = false
+  })
+}
+
+// ==================== 多语言处理工具函数 ====================
+interface LangItem {
+  lang: string
+  appName?: string
+  appDesc?: string
+}
+
+// 解析 langMap（可能为字符串、数组或对象）为 Record<string, LangItem>
+function parseLangMap(langMap: MicroApp.MicroAppReviewInfo['langMap']): Record<string, LangItem> {
+  if (!langMap)
+    return {}
+  let parsed: any = langMap
+  if (typeof langMap === 'string') {
+    try {
+      parsed = JSON.parse(langMap)
+    }
+    catch {
+      return {}
+    }
+  }
+  if (Array.isArray(parsed)) {
+    const result: Record<string, LangItem> = {}
+    parsed.forEach((l: any) => {
+      if (l.lang)
+        result[l.lang] = l
+    })
+    return result
+  }
+  return parsed
+}
+
 // 浏览器语言检测
 function getBrowserLang(): string {
   const lang = navigator.language || (navigator as any).userLanguage || 'zh-CN'
@@ -41,131 +100,147 @@ function getBrowserLang(): string {
   return 'zh-CN'
 }
 
-// 获取待审核信息的多语言列表
+// ==================== 计算属性 ====================
+// 待审核语言 Map（解析一次，其他计算属性复用）
+const reviewLangMap = computed(() => parseLangMap(props.reviewInfo?.langMap))
+
+// 待审核语言列表（从已解析的 map 提取）
 const reviewLangList = computed(() => {
-  if (!props.reviewInfo?.langMap)
-    return ['zh-CN']
-  const langMap = props.reviewInfo.langMap
-  let parsed: any = langMap
-
-  // 如果是字符串，解析 JSON
-  if (typeof langMap === 'string') {
-    try {
-      parsed = JSON.parse(langMap)
-    }
-    catch (e) {
-      console.error('解析 langMap JSON 失败:', e)
-      return ['zh-CN']
-    }
-  }
-
-  // 处理可能是数组的情况
-  if (Array.isArray(parsed))
-    return parsed.map((l: any) => l.lang).filter(Boolean)
-
-  return Object.keys(parsed)
+  const keys = Object.keys(reviewLangMap.value)
+  return keys.length > 0 ? keys : ['zh-CN']
 })
 
-// 获取当前信息的多语言列表
-const currentLangList = computed(() => {
+// 当前语言 Map（从 langList 数组转换）
+const currentLangMap = computed(() => {
   if (!currentAppInfo.value)
-    return ['zh-CN']
-  const langList = (currentAppInfo.value as any).langList || []
-  if (langList.length > 0)
-    return langList.map((l: any) => l.lang)
-
-  return ['zh-CN']
+    return {}
+  const langList = currentAppInfo.value.langList || []
+  const map: Record<string, LangItem> = {}
+  langList.forEach((l) => {
+    if (l.lang)
+      map[l.lang] = l
+  })
+  return map
 })
 
-// 当前语言
+// 当前语言列表（从已解析的 map 提取）
+const currentLangList = computed(() => {
+  const keys = Object.keys(currentLangMap.value)
+  return keys.length > 0 ? keys : ['zh-CN']
+})
+
+// 当前语言（优先匹配浏览器语言）
 const currentLang = computed(() => {
   const browserLang = getBrowserLang()
   const langs = reviewLangList.value
   return langs.includes(browserLang) ? browserLang : (langs.includes('zh-CN') ? 'zh-CN' : langs[0])
 })
 
-// 获取待审核信息的多语言 Map（处理可能是数组或字符串的情况）
-const reviewLangMap = computed(() => {
-  if (!props.reviewInfo?.langMap)
-    return {}
-  const langMap = props.reviewInfo.langMap
-  let parsed: any = langMap
+// 显示名称/描述（带语言回退）
+function getLocalizedField(
+  langMap: Record<string, LangItem>,
+  fallbackInfo: { appName?: string; appDesc?: string },
+  field: 'appName' | 'appDesc',
+): string {
+  const lang = currentLang.value
+  return langMap[lang]?.[field]
+    || langMap['zh-CN']?.[field]
+    || fallbackInfo[field]
+    || ''
+}
 
-  // 如果是字符串，解析 JSON
-  if (typeof langMap === 'string') {
-    try {
-      parsed = JSON.parse(langMap)
-    }
-    catch (e) {
-      console.error('解析 langMap JSON 失败:', e)
-      return {}
-    }
-  }
-
-  // 如果是数组，转换为对象
-  if (Array.isArray(parsed)) {
-    const result: Record<string, any> = {}
-    parsed.forEach((l: any) => {
-      if (l.lang)
-        result[l.lang] = l
-    })
-    return result
-  }
-
-  return parsed
-})
-
-// 当前语言下的应用名称（待审核）
 const displayReviewAppName = computed(() => {
   if (!props.reviewInfo)
     return ''
-  const langMap = reviewLangMap.value
-  return langMap[currentLang.value]?.appName
-    || langMap['zh-CN']?.appName
-    || props.reviewInfo.appName
-    || ''
+  return getLocalizedField(reviewLangMap.value, props.reviewInfo, 'appName')
 })
 
-// 当前语言下的应用描述（待审核）
 const displayReviewAppDesc = computed(() => {
   if (!props.reviewInfo)
     return ''
-  const langMap = reviewLangMap.value
-  return langMap[currentLang.value]?.appDesc
-    || langMap['zh-CN']?.appDesc
-    || props.reviewInfo.appDesc
-    || ''
+  return getLocalizedField(reviewLangMap.value, props.reviewInfo, 'appDesc')
 })
 
-// 当前语言下的应用名称（当前）
 const displayCurrentAppName = computed(() => {
   if (!currentAppInfo.value)
     return ''
-  const langList = (currentAppInfo.value as any).langList || []
-  const langMap: Record<string, any> = {}
-  langList.forEach((l: any) => {
-    langMap[l.lang] = l
-  })
-  return langMap[currentLang.value]?.appName
-    || langMap['zh-CN']?.appName
-    || currentAppInfo.value.appName
-    || ''
+  return getLocalizedField(currentLangMap.value, currentAppInfo.value, 'appName')
 })
 
-// 当前语言下的应用描述（当前）
 const displayCurrentAppDesc = computed(() => {
   if (!currentAppInfo.value)
     return ''
-  const langList = (currentAppInfo.value as any).langList || []
-  const langMap: Record<string, any> = {}
-  langList.forEach((l: any) => {
-    langMap[l.lang] = l
-  })
-  return langMap[currentLang.value]?.appDesc
-    || langMap['zh-CN']?.appDesc
-    || currentAppInfo.value.appDesc
-    || ''
+  return getLocalizedField(currentLangMap.value, currentAppInfo.value, 'appDesc')
 })
+
+// 截图列表（预处理为数组，避免模板中重复计算）
+const currentScreenshots = computed(() => {
+  const screenshots = currentAppInfo.value?.screenshots || ''
+  return screenshots.split(',').filter(s => s.trim())
+})
+
+const reviewScreenshots = computed(() => {
+  const screenshots = props.reviewInfo?.screenshots || ''
+  return screenshots.split(',').filter(s => s.trim())
+})
+
+// ==================== 字段差异对比 ====================
+const fieldDiff = computed(() => {
+  const curr = currentAppInfo.value
+  const rev = props.reviewInfo
+  if (!curr || !rev) return {} as Record<string, boolean>
+
+  // 复用已计算的语言映射
+  const currLang = currentLangMap.value[currentLang.value] || currentLangMap.value['zh-CN'] || {}
+  const revLang = reviewLangMap.value[currentLang.value] || reviewLangMap.value['zh-CN'] || {}
+
+  return {
+    appName: (currLang.appName || curr.appName || '') !== (revLang.appName || rev.appName || ''),
+    appIcon: (curr.appIcon || '') !== (rev.appIcon || ''),
+    appDesc: (currLang.appDesc || curr.appDesc || '') !== (revLang.appDesc || rev.appDesc || ''),
+    chargeType: curr.chargeType !== rev.chargeType,
+    points: curr.points !== rev.points,
+    thirdCharge: (curr.thirdCharge || 0) !== (rev.thirdCharge || 0),
+    haveIframe: curr.haveIframe !== rev.haveIframe,
+    openSourceUrl: (curr.openSourceUrl || '') !== (rev.openSourceUrl || ''),
+    feedbackChannel: (curr.feedbackChannel || '') !== (rev.feedbackChannel || ''),
+    remark: (curr.remark || '') !== (rev.remark || ''),
+    screenshots: (curr.screenshots || '') !== (rev.screenshots || ''),
+    langList: JSON.stringify(currentLangList.value.slice().sort())
+      !== JSON.stringify(reviewLangList.value.slice().sort()),
+  }
+})
+
+function isDiff(field: string): boolean {
+  return !!fieldDiff.value[field]
+}
+
+// 逐语言差异对比
+const langDiffMap = computed<Record<string, Record<string, boolean>>>(() => {
+  const currLang = currentLangMap.value
+  const revLang = reviewLangMap.value
+  if (!currLang && !revLang) return {}
+
+  const allLangs = new Set([...Object.keys(currLang), ...Object.keys(revLang)])
+  const result: Record<string, Record<string, boolean>> = {}
+
+  allLangs.forEach((lang) => {
+    const c = currLang[lang]
+    const r = revLang[lang]
+    result[lang] = {
+      appName: (c?.appName || '') !== (r?.appName || ''),
+      appDesc: (c?.appDesc || '') !== (r?.appDesc || ''),
+      missingInCurrent: !c && !!r,
+      missingInReview: !!c && !r,
+    }
+  })
+
+  return result
+})
+
+function isLangDiff(lang: string, field: string): boolean {
+  return !!langDiffMap.value[lang]?.[field]
+}
 
 // 监听弹窗打开，获取应用信息
 watch(() => props.visible, async (visible) => {
@@ -241,187 +316,292 @@ async function handleReview() {
       </div>
     </template>
     <div v-if="reviewInfo" class="space-y-6">
+      <!-- 工具栏 -->
+      <div class="flex items-center gap-6 px-2 py-1 bg-gray-50 rounded">
+        <div class="flex items-center gap-2">
+          <NSwitch v-model:value="syncScrollEnabled" size="small" />
+          <span class="text-sm text-gray-600">同步滚动</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <NSwitch v-model:value="onlyShowDiff" size="small" />
+          <span class="text-sm text-gray-600">仅显示有变动的项</span>
+        </div>
+      </div>
       <!-- 对比展示 -->
       <div class="flex gap-6">
         <!-- 原始信息 -->
-        <div v-if="currentAppInfo" class="flex-1">
+        <div v-if="currentAppInfo" class="flex-1 min-w-0">
           <div class="text-lg font-semibold mb-4 pb-2 border-b">
             当前发布信息
           </div>
-          <NDescriptions bordered :column="1">
-            <NDescriptionsItem label="应用名称">
-              {{ displayCurrentAppName }}
-            </NDescriptionsItem>
-            <NDescriptionsItem label="应用图标">
-              <img
-                v-if="currentAppInfo.appIcon"
-                :src="currentAppInfo.appIcon"
-                class="w-16 h-16 object-contain rounded"
+          <div ref="leftPanelRef" class="scroll-panel" @scroll="handleLeftScroll">
+            <NDescriptions bordered :column="1">
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('appName')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('appName') }">应用名称</span>
+                </template>
+                {{ displayCurrentAppName }}
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('appIcon')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('appIcon') }">应用图标</span>
+                </template>
+                <img
+                  v-if="currentAppInfo.appIcon"
+                  :src="currentAppInfo.appIcon"
+                  class="w-16 h-16 object-contain rounded"
+                >
+                <span v-else class="text-gray-400">暂无图标</span>
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('appDesc')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('appDesc') }">应用描述</span>
+                </template>
+                {{ displayCurrentAppDesc || '-' }}
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('chargeType')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('chargeType') }">收费方式</span>
+                </template>
+                {{ microAppChargeTypeMap[currentAppInfo.chargeType] || '免费' }}
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="(!onlyShowDiff || isDiff('points')) && currentAppInfo.chargeType === 1">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('points') }">价格</span>
+                </template>
+                {{ currentAppInfo.points }} 积分
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('thirdCharge')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('thirdCharge') }">{{ $t('microApp.thirdCharge') }}</span>
+                </template>
+                {{ microAppThirdChargeTypeMap[currentAppInfo.thirdCharge || 0] || '不含' }}
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('haveIframe')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('haveIframe') }">包含iframe</span>
+                </template>
+                {{ currentAppInfo.haveIframe ? '是' : '否' }}
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('openSourceUrl')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('openSourceUrl') }">开源地址</span>
+                </template>
+                <a
+                  v-if="currentAppInfo.openSourceUrl"
+                  :href="currentAppInfo.openSourceUrl"
+                  target="_blank"
+                  class="text-blue-600 hover:text-blue-800"
+                >
+                  {{ currentAppInfo.openSourceUrl }}
+                </a>
+                <span v-else class="text-gray-400">未提供</span>
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('feedbackChannel')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('feedbackChannel') }">反馈信息</span>
+                </template>
+                {{ currentAppInfo.feedbackChannel || '未提供' }}
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('remark')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('remark') }">备注</span>
+                </template>
+                {{ currentAppInfo.remark || '暂无备注' }}
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('langList')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('langList') }">支持语言</span>
+                </template>
+                <NTag v-for="lang in currentLangList" :key="lang" size="small" class="mr-1">
+                  {{ lang }}
+                </NTag>
+              </NDescriptionsItem>
+            </NDescriptions>
+
+            <!-- 当前多语言详情 -->
+            <NDivider v-if="!onlyShowDiff || isDiff('langList')" title-placement="left">
+              <span :class="{ 'diff-label': isDiff('langList') }">多语言详情</span>
+            </NDivider>
+            <div v-if="currentAppInfo?.langList && currentAppInfo.langList.length > 0">
+              <div
+                v-for="(langItem, index) in currentAppInfo.langList"
+                v-show="!onlyShowDiff || isLangDiff(langItem.lang, 'appName') || isLangDiff(langItem.lang, 'appDesc') || isLangDiff(langItem.lang, 'missingInReview')"
+                :key="`current-lang-${index}`"
+                class="mb-3 p-3 bg-gray-50 rounded"
               >
-              <span v-else class="text-gray-400">暂无图标</span>
-            </NDescriptionsItem>
-            <NDescriptionsItem label="应用描述">
-              {{ displayCurrentAppDesc || '-' }}
-            </NDescriptionsItem>
-            <NDescriptionsItem label="收费方式">
-              {{ microAppChargeTypeMap[currentAppInfo.chargeType] || '免费' }}
-            </NDescriptionsItem>
-            <NDescriptionsItem v-if="currentAppInfo.chargeType === 1" label="价格">
-              {{ currentAppInfo.points }} 积分
-            </NDescriptionsItem>
-            <NDescriptionsItem :label="$t('microApp.thirdCharge')">
-              {{ microAppThirdChargeTypeMap[currentAppInfo.thirdCharge || 0] || '不含' }}
-            </NDescriptionsItem>
-            <NDescriptionsItem label="包含iframe">
-              {{ currentAppInfo.haveIframe ? '是' : '否' }}
-            </NDescriptionsItem>
-            <NDescriptionsItem label="备注">
-              {{ currentAppInfo.remark || '暂无备注' }}
-            </NDescriptionsItem>
-            <NDescriptionsItem label="支持语言">
-              <NTag v-for="lang in currentLangList" :key="lang" size="small" class="mr-1">
-                {{ lang }}
-              </NTag>
-            </NDescriptionsItem>
-          </NDescriptions>
+                <div class="font-semibold text-sm mb-1">
+                  {{ langItem.lang }}
+                  <span v-if="isLangDiff(langItem.lang, 'missingInReview')" class="diff-tag added">审核中无此语言</span>
+                </div>
+                <div class="text-sm">
+                  <div class="mb-1">
+                    <span :class="{ 'diff-label': isLangDiff(langItem.lang, 'appName') }">名称:</span> {{ langItem.appName }}
+                  </div>
+                  <div>
+                    <span :class="{ 'diff-label': isLangDiff(langItem.lang, 'appDesc') }">描述:</span> {{ langItem.appDesc || '-' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-gray-400 text-sm">
+              暂无多语言信息
+            </div>
+
+            <!-- 当前截图 -->
+            <NDivider v-if="!onlyShowDiff || isDiff('screenshots')" title-placement="left">
+              <span :class="{ 'diff-label': isDiff('screenshots') }">应用截图</span>
+            </NDivider>
+            <div v-if="currentScreenshots.length > 0" class="grid grid-cols-2 gap-2">
+              <NImageGroup>
+                <NImage
+                  v-for="(screenshot, index) in currentScreenshots"
+                  :key="`screenshot-${index}`"
+                  :src="screenshot"
+                />
+              </NImageGroup>
+            </div>
+            <div v-else-if="!onlyShowDiff || isDiff('screenshots')" class="text-gray-400 text-sm">
+              暂无截图
+            </div>
+          </div>
         </div>
 
         <!-- 待审核信息 -->
-        <div class="flex-1 bg-blue-50 -mx-4 -mt-4 p-4 border-2 border-blue-200 rounded">
+        <div class="flex-1 bg-blue-50 -mx-4 -mt-4 p-4 border-2 border-blue-200 rounded min-w-0">
           <div class="text-lg font-semibold mb-4 pb-2 border-b text-blue-600">
             待审核信息
           </div>
-          <NDescriptions bordered :column="1">
-            <NDescriptionsItem label="应用名称">
-              {{ displayReviewAppName }}
-            </NDescriptionsItem>
-            <NDescriptionsItem label="应用图标">
-              <img
-                v-if="reviewInfo.appIcon"
-                :src="reviewInfo.appIcon"
-                class="w-16 h-16 object-contain rounded"
+          <div ref="rightPanelRef" class="scroll-panel" @scroll="handleRightScroll">
+            <NDescriptions bordered :column="1">
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('appName')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('appName') }">应用名称</span>
+                </template>
+                {{ displayReviewAppName }}
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('appIcon')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('appIcon') }">应用图标</span>
+                </template>
+                <img
+                  v-if="reviewInfo.appIcon"
+                  :src="reviewInfo.appIcon"
+                  class="w-16 h-16 object-contain rounded"
+                >
+                <span v-else class="text-gray-400">暂无图标</span>
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('appDesc')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('appDesc') }">应用描述</span>
+                </template>
+                {{ displayReviewAppDesc || '-' }}
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('chargeType')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('chargeType') }">收费方式</span>
+                </template>
+                {{ microAppChargeTypeMap[reviewInfo.chargeType] || '免费' }}
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="(!onlyShowDiff || isDiff('points')) && reviewInfo.chargeType === 1">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('points') }">价格</span>
+                </template>
+                {{ reviewInfo.points }} 积分
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('thirdCharge')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('thirdCharge') }">{{ $t('microApp.thirdCharge') }}</span>
+                </template>
+                {{ microAppThirdChargeTypeMap[reviewInfo.thirdCharge || 0] || '不含' }}
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('haveIframe')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('haveIframe') }">包含iframe</span>
+                </template>
+                {{ reviewInfo.haveIframe ? '是' : '否' }}
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('openSourceUrl')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('openSourceUrl') }">开源地址</span>
+                </template>
+                <a
+                  v-if="reviewInfo.openSourceUrl"
+                  :href="reviewInfo.openSourceUrl"
+                  target="_blank"
+                  class="text-blue-600 hover:text-blue-800"
+                >
+                  {{ reviewInfo.openSourceUrl }}
+                </a>
+                <span v-else class="text-gray-400">未提供</span>
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('feedbackChannel')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('feedbackChannel') }">反馈信息</span>
+                </template>
+                {{ reviewInfo.feedbackChannel || '未提供' }}
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('remark')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('remark') }">备注</span>
+                </template>
+                {{ reviewInfo.remark || '暂无备注' }}
+              </NDescriptionsItem>
+              <NDescriptionsItem v-if="!onlyShowDiff || isDiff('langList')">
+                <template #label>
+                  <span :class="{ 'diff-label': isDiff('langList') }">支持语言</span>
+                </template>
+                <NTag v-for="lang in reviewLangList" :key="lang" type="primary" size="small" class="mr-1">
+                  {{ lang }}
+                </NTag>
+              </NDescriptionsItem>
+            </NDescriptions>
+
+            <!-- 待审核多语言详情 -->
+            <NDivider v-if="!onlyShowDiff || isDiff('langList')" title-placement="left">
+              <span :class="{ 'diff-label': isDiff('langList') }">多语言详情</span>
+            </NDivider>
+            <div v-if="reviewLangList.length > 0">
+              <div
+                v-for="(langItem, lang) in reviewLangMap"
+                v-show="!onlyShowDiff || isLangDiff(lang as string, 'appName') || isLangDiff(lang as string, 'appDesc') || isLangDiff(lang as string, 'missingInCurrent')"
+                :key="`review-lang-${lang}`"
+                class="mb-3 p-3 bg-blue-50 rounded border border-blue-200"
               >
-              <span v-else class="text-gray-400">暂无图标</span>
-            </NDescriptionsItem>
-            <NDescriptionsItem label="应用描述">
-              {{ displayReviewAppDesc || '-' }}
-            </NDescriptionsItem>
-            <NDescriptionsItem label="收费方式">
-              {{ microAppChargeTypeMap[reviewInfo.chargeType] || '免费' }}
-            </NDescriptionsItem>
-            <NDescriptionsItem v-if="reviewInfo.chargeType === 1" label="价格">
-              {{ reviewInfo.points }} 积分
-            </NDescriptionsItem>
-            <NDescriptionsItem :label="$t('microApp.thirdCharge')">
-              {{ microAppThirdChargeTypeMap[reviewInfo.thirdCharge || 0] || '不含' }}
-            </NDescriptionsItem>
-            <NDescriptionsItem label="包含iframe">
-              {{ reviewInfo.haveIframe ? '是' : '否' }}
-            </NDescriptionsItem>
-            <NDescriptionsItem label="备注">
-              {{ reviewInfo.remark || '暂无备注' }}
-            </NDescriptionsItem>
-            <NDescriptionsItem label="支持语言">
-              <NTag v-for="lang in reviewLangList" :key="lang" type="primary" size="small" class="mr-1">
-                {{ lang }}
-              </NTag>
-            </NDescriptionsItem>
-          </NDescriptions>
-        </div>
-      </div>
-
-      <!-- 多语言详情 -->
-      <NDivider title-placement="left">
-        多语言详情
-      </NDivider>
-      <div class="flex gap-6">
-        <!-- 当前多语言信息 -->
-        <div v-if="currentAppInfo" class="flex-1">
-          <div class="text-sm text-gray-500 mb-2">
-            当前多语言信息
-          </div>
-          <div v-if="currentAppInfo?.langList && currentAppInfo.langList.length > 0">
-            <div v-for="(langItem, index) in currentAppInfo.langList" :key="`current-lang-${index}`" class="mb-3 p-3 bg-gray-50 rounded">
-              <div class="font-semibold text-sm mb-1">
-                {{ langItem.lang }}
-              </div>
-              <div class="text-sm">
-                <div class="mb-1">
-                  <span class="text-gray-500">名称:</span> {{ langItem.appName }}
+                <div class="font-semibold text-sm mb-1 text-blue-700">
+                  {{ lang }}
+                  <span v-if="isLangDiff(lang as string, 'missingInCurrent')" class="diff-tag added">新语言</span>
                 </div>
-                <div>
-                  <span class="text-gray-500">描述:</span> {{ langItem.appDesc || '-' }}
+                <div class="text-sm">
+                  <div class="mb-1">
+                    <span :class="{ 'diff-label': isLangDiff(lang as string, 'appName') }">名称:</span> {{ langItem.appName }}
+                  </div>
+                  <div>
+                    <span :class="{ 'diff-label': isLangDiff(lang as string, 'appDesc') }">描述:</span> {{ langItem.appDesc || '-' }}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div v-else class="text-gray-400 text-sm">
-            暂无多语言信息
-          </div>
-        </div>
-        <!-- 待审核多语言信息 -->
-        <div class="flex-1">
-          <div class="text-sm text-blue-600 mb-2">
-            待审核多语言信息
-          </div>
-          <div v-if="Object.keys(reviewLangMap).length > 0">
-            <div v-for="(langItem, lang) in reviewLangMap" :key="`review-lang-${lang}`" class="mb-3 p-3 bg-blue-50 rounded border border-blue-200">
-              <div class="font-semibold text-sm mb-1 text-blue-700">
-                {{ lang }}
-              </div>
-              <div class="text-sm">
-                <div class="mb-1">
-                  <span class="text-gray-500">名称:</span> {{ langItem.appName }}
-                </div>
-                <div>
-                  <span class="text-gray-500">描述:</span> {{ langItem.appDesc || '-' }}
-                </div>
-              </div>
+            <div v-else class="text-gray-400 text-sm">
+              暂无多语言信息
             </div>
-          </div>
-          <div v-else class="text-gray-400 text-sm">
-            暂无多语言信息
-          </div>
-        </div>
-      </div>
 
-      <!-- 截图对比 -->
-      <NDivider title-placement="left">
-        应用截图
-      </NDivider>
-      <div class="flex gap-6">
-        <div class="flex-1">
-          <div class="text-sm text-gray-500 mb-2">
-            当前截图
-          </div>
-          <div v-if="currentAppInfo?.screenshots" class="grid grid-cols-4 gap-2">
-            <NImageGroup>
-              <NImage
-                v-for="(screenshot, index) in currentAppInfo?.screenshots.split(',').filter(s => s.trim())"
-                :key="`screenshot-${index}`"
-                :src="screenshot.trim()"
-              />
-            </NImageGroup>
-          </div>
-          <div v-else class="text-gray-400 text-sm">
-            暂无截图
-          </div>
-        </div>
-        <div class="flex-1">
-          <div class="text-sm text-blue-600 mb-2">
-            待审核截图
-          </div>
-          <div v-if="reviewInfo?.screenshots" class="grid grid-cols-4 gap-2">
-            <NImageGroup>
-              <NImage
-                v-for="(screenshot, index) in reviewInfo.screenshots.split(',').filter(s => s.trim())"
-                :key="`review-${index}`"
-                :src="screenshot.trim()"
-              />
-            </NImageGroup>
-          </div>
-          <div v-else class="text-gray-400 text-sm">
-            暂无截图
+            <!-- 待审核截图 -->
+            <NDivider v-if="!onlyShowDiff || isDiff('screenshots')" title-placement="left">
+              <span :class="{ 'diff-label': isDiff('screenshots') }">应用截图</span>
+            </NDivider>
+            <div v-if="reviewScreenshots.length > 0" class="grid grid-cols-2 gap-2">
+              <NImageGroup>
+                <NImage
+                  v-for="(screenshot, index) in reviewScreenshots"
+                  :key="`review-${index}`"
+                  :src="screenshot"
+                />
+              </NImageGroup>
+            </div>
+            <div v-else-if="!onlyShowDiff || isDiff('screenshots')" class="text-gray-400 text-sm">
+              暂无截图
+            </div>
           </div>
         </div>
       </div>
@@ -491,7 +671,7 @@ async function handleReview() {
     </template>
   </NModal>
 
-  <!-- 应用公开页面 Modal -->
+ <!-- 应用公开页面 Modal -->
   <NModal
     :show="iframeModalVisible"
     preset="card"
@@ -509,3 +689,45 @@ async function handleReview() {
     </div>
   </NModal>
 </template>
+
+<style scoped>
+.diff-label {
+  color: #e53e3e;
+  font-weight: 700;
+  position: relative;
+}
+.diff-label::after {
+  content: '✦';
+  margin-left: 4px;
+  font-size: 0.7em;
+}
+.diff-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 20px;
+  vertical-align: middle;
+}
+.diff-tag.added {
+  background-color: #e53e3e;
+  color: #fff;
+}
+.scroll-panel {
+  max-height: calc(100vh - 320px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.scroll-panel::-webkit-scrollbar {
+  width: 6px;
+}
+.scroll-panel::-webkit-scrollbar-thumb {
+  background-color: #c1c1c1;
+  border-radius: 3px;
+}
+.scroll-panel::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+</style>
