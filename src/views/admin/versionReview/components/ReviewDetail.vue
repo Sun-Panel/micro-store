@@ -152,12 +152,6 @@ const reviewPermissionGroups = computed<PermissionGroup[]>(() => {
   return buildPermissionGroups(revPerms, curPerms, 'review')
 })
 
-const hasPermissionDiff = computed(() => {
-  const curPerms = currentApprovedVersion.value?.config?.permissions || []
-  const revPerms = props.versionInfo?.config?.permissions || []
-  return JSON.stringify(curPerms) !== JSON.stringify(revPerms)
-})
-
 // 始终显示所有权限分组，不做过滤
 const filteredCurrentPermissionGroups = computed(() => {
   return currentPermissionGroups.value
@@ -165,11 +159,6 @@ const filteredCurrentPermissionGroups = computed(() => {
 
 const filteredReviewPermissionGroups = computed(() => {
   return reviewPermissionGroups.value
-})
-
-// iframe 权限检查（基于微应用信息的 haveIframe 字段）
-const hasIframePermission = computed(() => {
-  return props.microApp?.haveIframe ?? false
 })
 
 const currentHasIframe = computed(() => {

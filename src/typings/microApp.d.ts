@@ -51,6 +51,12 @@ declare namespace MicroApp {
     codeSecurityAudit?: CodeSecurityAudit // 安全审核报告
   }
 
+  // 应用信息（app.json 中的 appInfo 字段）
+  interface AppInfo {
+    appName?: string
+    [key: string]: any
+  }
+
   // 版本配置信息
   interface VersionConfig {
     appJsonVersion?: string
