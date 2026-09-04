@@ -46,13 +46,15 @@ type MicroAppInfo struct {
 	AppIcon        string `json:"appIcon"`
 	ChargeType     int    `json:"chargeType"`
 	Points         int    `json:"points"`
-	DeveloperName  string `json:"developerName"` // 开发者名称
-	DeveloperName2 string `json:"developer"`     // 开发者标识
+	DeveloperName  string `json:"developerName"`  // 开发者名称
+	DeveloperName2 string `json:"developer"`      // 开发者标识
+	LatestVersion  string `json:"latestVersion"`  // 最新审核通过的版本号
 }
 
 // BatchGetMicroAppInfoReq 批量查询微应用信息 - 请求
 type BatchGetMicroAppInfoReq struct {
-	MicroAppIds []string `json:"microAppIds" binding:"required,min=1,max=100"`
+	MicroAppIds    []string `json:"microAppIds" binding:"required,min=1,max=100"`
+	IncludeVersion bool     `json:"includeVersion"` // 是否返回最新版本号（可选，默认false）
 }
 
 // BatchGetMicroAppInfoResp 批量查询微应用信息 - 响应

@@ -151,7 +151,7 @@ func (a *Api) BatchGetMicroAppInfo(c *gin.Context) {
 	}
 
 	// 使用 biz 层带缓存的方法查询
-	infos, err := biz.MicroApp.BatchGetMicroAppInfo(global.Db, uniqueIds)
+	infos, err := biz.MicroApp.BatchGetMicroAppInfo(global.Db, uniqueIds, param.IncludeVersion)
 	if err != nil {
 		apiReturn.ErrorDatabase(c, err.Error())
 		return
@@ -167,6 +167,7 @@ func (a *Api) BatchGetMicroAppInfo(c *gin.Context) {
 			Points:         info.Points,
 			DeveloperName:  info.DeveloperName,
 			DeveloperName2: info.DeveloperName2,
+			LatestVersion:  info.LatestVersion,
 		}
 	}
 

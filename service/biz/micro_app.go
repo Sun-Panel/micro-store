@@ -20,6 +20,7 @@ type MicroAppInfoCache struct {
 	DeveloperId    uint   `json:"developerId"`
 	DeveloperName  string `json:"developerName"`  // 开发者名称
 	DeveloperName2 string `json:"developerName2"` // 开发者标识
+	LatestVersion  string `json:"latestVersion"`  // 最新审核通过的版本号
 }
 
 // microApp 微应用业务层
@@ -236,19 +237,26 @@ func (s *microApp) GetList(db *gorm.DB, opts GetListOptions) ([]models.MicroAppL
 // 1. 先从缓存获取已有的
 // 2. 未命中的再批量查库（包括开发者信息）
 // 3. 查库结果写入缓存
-func (s *microApp) BatchGetMicroAppInfo(db *gorm.DB, microAppIds []string) (map[string]MicroAppInfoCache, error) {
+// includeVersion: 是否查询最新版本号（可选，默认false）
+func (s *microApp) BatchGetMicroAppInfo(db *gorm.DB, microAppIds []string, includeVersion ...bool) (map[string]MicroAppInfoCache, error) {
+	needVersion := len(includeVersion) > 0 && includeVersion[0]
 	result := make(map[string]MicroAppInfoCache, len(microAppIds))
 
 	if s.InfoCache == nil {
 		// 缓存未初始化，降级为直接查库
-		return s.batchGetFromDB(db, microAppIds)
+		return s.batchGetFromDB(db, microAppIds, needVersion)
 	}
 
 	// 1. 读缓存
 	var missIds []string
 	for _, id := range microAppIds {
 		if info, ok := s.InfoCache.Get(id); ok {
-			result[id] = info
+			// 如果请求需要版本号但缓存中没有，则标记为未命中
+			if needVersion && info.LatestVersion == "" {
+				missIds = append(missIds, id)
+			} else {
+				result[id] = info
+			}
 		} else {
 			missIds = append(missIds, id)
 		}
@@ -256,7 +264,7 @@ func (s *microApp) BatchGetMicroAppInfo(db *gorm.DB, microAppIds []string) (map[
 
 	// 2. 缓存未命中，批量查库
 	if len(missIds) > 0 {
-		dbResults, err := s.batchGetFromDB(db, missIds)
+		dbResults, err := s.batchGetFromDB(db, missIds, needVersion)
 		if err != nil {
 			return nil, err
 		}
@@ -270,7 +278,8 @@ func (s *microApp) BatchGetMicroAppInfo(db *gorm.DB, microAppIds []string) (map[
 }
 
 // batchGetFromDB 从数据库批量获取微应用信息（含开发者信息）
-func (s *microApp) batchGetFromDB(db *gorm.DB, microAppIds []string) (map[string]MicroAppInfoCache, error) {
+// needVersion: 是否查询最新版本号
+func (s *microApp) batchGetFromDB(db *gorm.DB, microAppIds []string, needVersion bool) (map[string]MicroAppInfoCache, error) {
 	result := make(map[string]MicroAppInfoCache, len(microAppIds))
 
 	// 批量查询微应用
@@ -304,6 +313,38 @@ func (s *microApp) batchGetFromDB(db *gorm.DB, microAppIds []string) (map[string
 		developerMap[dev.ID] = dev
 	}
 
+	// 按需查询每个微应用的最新审核通过版本号
+	latestVersionMap := make(map[uint]string)
+	if needVersion {
+		appRecordIds := make([]uint, 0, len(apps))
+		for _, app := range apps {
+			appRecordIds = append(appRecordIds, app.ID)
+		}
+
+		type latestVersionResult struct {
+			AppRecordId uint
+			Version     string
+		}
+		var versionResults []latestVersionResult
+		if err := db.Model(&models.MicroAppVersion{}).
+			Select("app_record_id, version").
+			Where("app_record_id IN ?", appRecordIds).
+			Where("status = ? AND offline_type = ? AND deleted_at IS NULL", 1, 0).
+			Order("app_record_id, created_at DESC").
+			Find(&versionResults).Error; err != nil {
+			return nil, err
+		}
+
+		// 取每组的第一条（即最新的）
+		seen := make(map[uint]bool, len(appRecordIds))
+		for _, vr := range versionResults {
+			if !seen[vr.AppRecordId] {
+				latestVersionMap[vr.AppRecordId] = vr.Version
+				seen[vr.AppRecordId] = true
+			}
+		}
+	}
+
 	// 组装结果
 	for _, app := range apps {
 		dev := developerMap[app.DeveloperId]
@@ -315,6 +356,7 @@ func (s *microApp) batchGetFromDB(db *gorm.DB, microAppIds []string) (map[string
 			DeveloperId:    app.DeveloperId,
 			DeveloperName:  dev.Name,
 			DeveloperName2: dev.DeveloperName,
+			LatestVersion:  latestVersionMap[app.ID],
 		}
 	}
 

@@ -264,6 +264,14 @@ func (s *MicroAppVersionService) Review(db *gorm.DB, versionId uint, status int,
 		return err // 数据库错误，直接返回
 	}
 
+	// 审核通过时，清除微应用信息缓存（最新版本号已变更）
+	if status == 1 {
+		app := models.MicroApp{}
+		if appRecord, err := app.GetById(db, version.AppRecordId); err == nil {
+			MicroApp.invalidateCache(appRecord.MicroAppId)
+		}
+	}
+
 	return nil
 }
 
