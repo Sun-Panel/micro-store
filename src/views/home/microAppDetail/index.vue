@@ -120,7 +120,8 @@ const approvedVersionList = computed(() => {
 // 最新审核通过的版本（用 reduce 代替 sort+索引，避免创建完整排序数组）
 const latestApprovedVersion = computed(() => {
   return approvedVersionList.value.reduce<MicroApp.VersionInfo | null>((latest, v) => {
-    if (!latest) return v
+    if (!latest)
+      return v
     const timeV = new Date(v.createTime ?? 0).getTime()
     const timeLatest = new Date(latest.createTime ?? 0).getTime()
     return timeV > timeLatest ? v : latest
@@ -377,21 +378,13 @@ onUnmounted(() => {
                 <span v-if="microAppInfo.thirdCharge" class="inline-flex items-center px-2.5 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-medium rounded-lg">
                   {{ microAppThirdChargeTypeMap[microAppInfo.thirdCharge] || '第三方收费' }}
                 </span>
-                <span v-if="microAppInfo.haveIframe" class="inline-flex items-center px-2.5 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs font-medium rounded-lg">
-                  Iframe
-                </span>
+
                 <!-- 主应用版本兼容性提示（仅 iframe 模式下显示） -->
                 <span
                   v-if="isIframeMode() && latestApprovedVersion && appStatusInfo.incompatible"
                   class="inline-flex items-center px-2.5 py-1 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-medium rounded-lg"
                 >
                   {{ appStatusInfo.incompatibleMsg }}
-                </span>
-                <span
-                  v-else-if="isIframeMode() && latestApprovedVersion && !appStatusInfo.incompatible"
-                  class="inline-flex items-center px-2.5 py-1 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-medium rounded-lg"
-                >
-                  主应用兼容
                 </span>
               </div>
 
@@ -461,7 +454,7 @@ onUnmounted(() => {
           <div v-if="screenshotsList.length > 0">
             <h2 class="text-base font-semibold text-slate-700 dark:text-slate-200 mb-3 flex items-center gap-2">
               <SvgIconOnline icon="ph:images-square" class="text-lg text-slate-400 dark:text-slate-500" />
-              应用截图
+              应用图集
             </h2>
             <div class="relative rounded-2xl overflow-hidden group/screenshot">
               <NImageGroup>
@@ -575,9 +568,18 @@ onUnmounted(() => {
                 <span class="text-sm text-slate-500 dark:text-slate-400">第三方收费</span>
                 <span class="text-sm text-slate-700 dark:text-slate-200">{{ microAppThirdChargeTypeMap[microAppInfo.thirdCharge || 0] || '不含' }}</span>
               </div>
-              <div class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
-                <span class="text-sm text-slate-500 dark:text-slate-400">Iframe</span>
-                <span class="text-sm text-slate-700 dark:text-slate-200">{{ microAppInfo.haveIframe ? '支持' : '不支持' }}</span>
+              <div v-if="microAppInfo.haveIframe" class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
+                <span class="text-sm text-slate-500 dark:text-slate-400 flex items-center justify-center">
+                  <div class="mr-1">含 Iframe</div>
+                  <NTooltip trigger="hover">
+                    <template #trigger>
+                      <SvgIconOnline icon="ph:info" class="text-sm text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 cursor-help" />
+                    </template>
+                    含有 iframe 框架的应用，安全不受平台控制，请谨慎选择安装使用。
+                  </NTooltip>
+                </span>
+
+                <span class="text-sm text-slate-700 dark:text-slate-200">{{ microAppInfo.haveIframe ? '是' : '否' }}</span>
               </div>
               <!-- 开源信息 -->
               <div v-if="microAppInfo.openSourceUrl" class="flex items-center justify-between py-2">
@@ -619,9 +621,9 @@ onUnmounted(() => {
               开发者
             </h2>
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 bg-gradient-to-br from-orange-400 to-amber-400 rounded-xl flex items-center justify-center text-white font-medium text-sm">
+              <!-- <div class="w-10 h-10 bg-gradient-to-br from-orange-400 to-amber-400 rounded-xl flex items-center justify-center text-white font-medium text-sm">
                 {{ (microAppInfo.developer.name || 'U')[0] }}
-              </div>
+              </div> -->
               <div>
                 <div class="text-sm font-medium text-slate-700 dark:text-slate-200">
                   {{ microAppInfo.developer.name || '未知开发者' }}
