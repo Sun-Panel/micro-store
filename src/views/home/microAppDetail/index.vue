@@ -460,13 +460,13 @@ onUnmounted(() => {
               <NImageGroup>
                 <div
                   ref="screenshotScrollRef"
-                  class="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
+                  class="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory items-center"
                 >
                   <NImage
                     v-for="(screenshot, index) in screenshotsList"
                     :key="index"
                     :src="screenshot"
-                    class="flex-shrink-0 w-64 h-40 sm:w-80 sm:h-52 object-cover rounded-xl shadow-md ring-1 ring-slate-200/60 dark:ring-slate-600/60 snap-center hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                    class="flex-shrink-0 w-64 sm:w-80 aspect-[16/10] object-cover rounded-xl shadow-md ring-1 ring-slate-200/60 dark:ring-slate-600/60 snap-center hover:shadow-lg transition-shadow duration-300 cursor-pointer"
                   />
                 </div>
               </NImageGroup>
