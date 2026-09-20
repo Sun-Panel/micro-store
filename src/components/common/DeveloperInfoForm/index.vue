@@ -29,6 +29,8 @@ const message = useMessage()
 const authStore = useAuthStore()
 const formRef = ref<FormInst | null>(null)
 const loading = ref(false)
+// 是否显示收款信息模块（当前写死隐藏）
+const showPaymentInfo = ref(false)
 
 // 待上传的二维码图片文件
 const pendingUploadFile = ref<File | null>(null)
@@ -267,35 +269,37 @@ defineExpose({
         />
       </NFormItem>
 
-      <NDivider title-placement="left">
-        收款信息
-      </NDivider>
+      <!-- 收款信息模块：通过 showPaymentInfo 变量控制是否显示，当前写死隐藏 -->
+      <template v-if="showPaymentInfo">
+        <NDivider title-placement="left">
+          收款信息
+        </NDivider>
 
-      <NFormItem
-        path="paymentName"
-        label="收款人姓名"
-      >
-        <NInput
-          v-model:value="model.paymentName"
-          placeholder="请输入收款人真实姓名"
-        />
-      </NFormItem>
+        <NFormItem
+          path="paymentName"
+          label="收款人姓名"
+        >
+          <NInput
+            v-model:value="model.paymentName"
+            placeholder="请输入收款人真实姓名"
+          />
+        </NFormItem>
 
-      <NFormItem
-        path="paymentMethod"
-        label="收款方式"
-      >
-        <NSelect
-          v-model:value="model.paymentMethod"
-          :options="paymentMethodOptions"
-          placeholder="请选择收款方式"
-        />
-      </NFormItem>
+        <NFormItem
+          path="paymentMethod"
+          label="收款方式"
+        >
+          <NSelect
+            v-model:value="model.paymentMethod"
+            :options="paymentMethodOptions"
+            placeholder="请选择收款方式"
+          />
+        </NFormItem>
 
-      <NFormItem
-        path="paymentQrcode"
-        label="收款二维码"
-      >
+        <NFormItem
+          path="paymentQrcode"
+          label="收款二维码"
+        >
         <div class="w-full">
           <!-- 图片预览 -->
           <div
@@ -311,24 +315,20 @@ defineExpose({
             />
           </div>
           <div class="flex items-center gap-2">
-            <!-- 隐藏的输入框，用于保存URL -->
             <NInput
               v-show="false"
               v-model:value="model.paymentQrcode"
             />
-            <!-- 上传按钮 -->
             <NUpload
               :show-file-list="false"
               accept="image/*"
               :custom-request="() => { }"
               @change="handleQrcodeFileChange"
             >
-              <!-- 上传收款码 -->
               <div class="flex gap-2">
                 <NButton>
                   {{ qrcodePreviewUrl ? '更换二维码' : '上传二维码' }}
                 </NButton>
-                <!-- 删除按钮 -->
                 <NButton
                   v-if="qrcodePreviewUrl"
                   type="error"
@@ -341,6 +341,7 @@ defineExpose({
           </div>
         </div>
       </NFormItem>
+      </template>
     </NForm>
 
     <NSpace justify="end">

@@ -177,15 +177,21 @@ func (a *DeveloperApi) Update(c *gin.Context) {
 	}
 
 	// 更新信息
-	bizService := biz.DeveloperService{}
-	err = bizService.UpdateDeveloperInfo(global.Db, info.ID, models.DeveloperUpdateFields{
+	// 注意：Name 字段有 180 天冷却期限制，biz 层以 updateFields.Name != nil 作为“要修改 Name”的依据。
+	// 因此只有当 Name 实际发生变化时才传入该字段，避免未修改 Name（仅改邮箱等）却触发冷却期校验。
+	updateFields := models.DeveloperUpdateFields{
 		DeveloperName: &param.DeveloperName,
 		ContactMail:   &param.ContactMail,
 		PaymentName:   &param.PaymentName,
 		PaymentQrcode: &param.PaymentQrcode,
 		PaymentMethod: &param.PaymentMethod,
-		Name:          &param.Name,
-	})
+	}
+	if param.Name != info.Name {
+		name := param.Name
+		updateFields.Name = &name
+	}
+	bizService := biz.DeveloperService{}
+	err = bizService.UpdateDeveloperInfo(global.Db, info.ID, updateFields)
 	if err != nil {
 		var bizErr models.ModelErrorWithData
 		if errors.As(err, &bizErr) {
