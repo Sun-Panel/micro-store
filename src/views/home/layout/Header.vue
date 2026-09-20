@@ -179,7 +179,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="border-b">
+  <div class="border-b border-slate-200 dark:border-slate-700">
     <!-- header -->
     <div class="flex max-w-[1200px] mx-auto px-2">
       <div class="w-full flex items-center h-[60px] ">

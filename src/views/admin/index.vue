@@ -48,6 +48,7 @@ const ADMIN_MENU_CONFIG: AdminMenuItem[] = [
     children: [
       { label: '应用审核', key: 'AdminMicroAppReview' },
       { label: '版本审核', key: 'AdminVersionReview' },
+      { label: '自定义代码审核', key: 'AdminCustomCodeReview' },
     ],
   },
   {
@@ -57,6 +58,7 @@ const ADMIN_MENU_CONFIG: AdminMenuItem[] = [
     children: [
       { label: '我的微应用', key: 'AdminMyMicroApp' },
       { label: '开发者信息', key: 'AdminDeveloperInfo' },
+      { label: '我的自定义代码', key: 'AdminCustomCodeMyList' },
     ],
   },
   {
@@ -67,6 +69,7 @@ const ADMIN_MENU_CONFIG: AdminMenuItem[] = [
       { label: '邮箱设置', key: 'AdminSystemEmailSetting' },
       { label: '网站设置', key: 'AdminSystemWebsiteSetting' },
       { label: '系统变量', key: 'AdminSystemVariable' },
+      { label: 'HTML页面', key: 'AdminHtmlPageManage' },
     ],
   },
 ]

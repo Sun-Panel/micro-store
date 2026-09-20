@@ -294,3 +294,13 @@ export function isIframe() {
 }
 
 export const apiRespErrMsg = apiRespErrMsgApiMessage
+
+/**
+ * 获取当前url根路径（history模式：http://127.0.0.1:1003）
+ * 若日后改为hash模式需要手动修改此函数
+ * @returns
+ */
+export function getCurrentBaseUrlRoot(): string {
+  const url = new URL(window.location.href)
+  return `${url.protocol}//${url.hostname}${url.port ? `:${url.port}` : ''}`
+}

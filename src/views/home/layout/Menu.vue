@@ -35,11 +35,25 @@ const publishMicroAppOption = computed<MenuOption>(() => ({
   key: 'publishMicroApp',
 }))
 
+// 发布自定义代码片段：与"发布微应用"逻辑一致，开发者进入管理页，非开发者引导注册
+const publishCustomCodeOption = computed<MenuOption>(() => ({
+  label: () => a(
+    hasDeveloperPermission.value
+      ? '/admin/customCode/myList'
+      : '/developer/register',
+    t('menu.publishCustomCode'),
+  ),
+  key: 'publishCustomCode',
+}))
+
 const menuOptions = computed<MenuOption[]>(() => {
   const options: MenuOption[] = []
 
   // 始终显示"发布微应用"按钮，根据权限跳转不同页面
   options.push(publishMicroAppOption.value)
+
+  // 始终显示"发布自定义代码片段"按钮，根据权限跳转不同页面
+  options.push(publishCustomCodeOption.value)
 
   options.push({
     label: () => aBlank(devDocLinks, t('menu.devDoc')),

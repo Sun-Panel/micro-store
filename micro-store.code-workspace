@@ -12,6 +12,10 @@
 			"name": "ai-doc",
 			"path": "ai-doc"
 		},
+		// {
+		// 	"name": "audit",
+		// 	"path": "/Users/sunjingliang/my_code/sun-panel_group/micro-app-audit"
+		// },
 		{
 			"name": "root",
 			"path": ".",
@@ -144,6 +148,8 @@
 			"scss",
 			"pcss",
 			"postcss"
-		]
+		],
+		"trae.tab.enableRename": false,
+		"trae.tab.enableAutoImport": false
 	}
 }

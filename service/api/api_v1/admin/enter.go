@@ -7,6 +7,9 @@ type ApiAdmin struct {
 	EmailApi                   EmailApi
 	SystemVariableApi          SystemVariableApi
 	MdPageApi                  MdPageApi
+	HtmlPageApi                HtmlPageApi
+	CustomCodeApi              CustomCodeApi
+	CustomCodeReviewApi        CustomCodeReviewApi
 	DashboardApi               DashboardApi
 	ClientBlackListIPApi       ClientBlackListIPApi
 	ClientCreateOnlineCacheApi ClientCreateOnlineCacheApi

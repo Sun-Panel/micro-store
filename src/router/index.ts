@@ -91,6 +91,36 @@ const adminRouter = {
       component: () => import('@/views/admin/mdPageManage/index.vue'),
     },
     {
+      path: '/admin/htmlPageManage',
+      name: 'AdminHtmlPageManage',
+      component: () => import('@/views/admin/htmlPageManage/index.vue'),
+    },
+    {
+      path: '/admin/htmlPageManage/edit',
+      name: 'AdminHtmlPageManageEdit',
+      component: () => import('@/views/admin/htmlPageManage/edit.vue'),
+    },
+    {
+      path: '/admin/customCode/myList',
+      name: 'AdminCustomCodeMyList',
+      component: () => import('@/views/admin/customCode/myList.vue'),
+    },
+    {
+      path: '/admin/customCode/edit',
+      name: 'AdminCustomCodeEdit',
+      component: () => import('@/views/admin/customCode/edit.vue'),
+    },
+    {
+      path: '/admin/customCode/review',
+      name: 'AdminCustomCodeReview',
+      component: () => import('@/views/admin/customCode/review.vue'),
+    },
+    {
+      path: '/admin/customCode/review/detail',
+      name: 'AdminCustomCodeReviewDetail',
+      component: () => import('@/views/admin/customCode/reviewDetail.vue'),
+    },
+    {
       path: '/admin/versionManage',
       name: 'AdminVersionManage',
       component: () => import('@/views/admin/versionManage/index.vue'),
@@ -260,6 +290,16 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/home/pro.vue'),
       },
       {
+        path: '/customCode',
+        name: 'CustomCodeList',
+        component: () => import('@/views/customCode/index.vue'),
+      },
+      {
+        path: '/customCode/:id',
+        name: 'CustomCodeDetail',
+        component: () => import('@/views/customCode/detail.vue'),
+      },
+      {
         path: '/platformLogin',
         name: 'platformLogin',
         children: platformLogin,
@@ -284,6 +324,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/home/microAppDetail/index.vue'),
       },
     ],
+  },
+
+  {
+    path: '/hPage/:p',
+    name: 'HtmlPage',
+    component: () => import('@/views/htmlPage/index.vue'),
   },
 
   {

@@ -10,6 +10,8 @@ func Init(routerGroup *gin.RouterGroup) {
 	InitEmail(adminGroup)
 	InitSystemVariableRouter(adminGroup)
 	InitMdPageRouter(adminGroup)
+	InitHtmlPageRouter(adminGroup)
+	InitCustomCodeRouter(adminGroup)
 	InitDashboard(adminGroup)
 	InitClientSetting(adminGroup)
 	InitRedeemCodeRouter(adminGroup)

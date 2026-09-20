@@ -46,9 +46,12 @@ service/plugins
 service/authService/conf
 service/authService/database
 service/micro_app_upload
+service/runtime
 
 # 临时
 cache 
 sun-panel-test
 
+.gitignore
 ai-doc/临时记事本.md
+micro-store.code-workspace

@@ -15,4 +15,6 @@ type ApiSystem struct {
 	SystemVariableApi SystemVariableApi
 	CaptchaApi        CaptchaApi
 	MdPageApi         MdPageApi
+	HtmlPageApi       HtmlPageApi
+	CustomCodeApi     CustomCodeApi
 }

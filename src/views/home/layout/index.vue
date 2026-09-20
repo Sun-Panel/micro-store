@@ -25,7 +25,7 @@ onMounted(() => {
 
 <template>
   <div>
-    <div v-show="!isIframe()" class="fixed top-0 w-full z-10 bg-slate-100">
+    <div v-show="!isIframe()" class="fixed top-0 w-full z-10 bg-slate-100 dark:bg-slate-800/80 backdrop-blur">
       <Header />
     </div>
     <NLoadingBarProvider>

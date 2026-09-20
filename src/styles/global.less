@@ -8,3 +8,19 @@ body {
 	padding-bottom: constant(safe-area-inset-bottom);
 	padding-bottom: env(safe-area-inset-bottom);
 }
+
+// 深色模式下给根节点设置背景色，避免浏览器默认白色背景透出（"发白"问题）
+html.dark {
+	color-scheme: dark; // 让原生控件、滚动条、默认文字自动走深色
+}
+
+html.dark,
+html.dark body,
+html.dark #app {
+	background-color: #0f172a; // slate-900
+}
+
+// 设置深色模式默认文字色，使未显式指定颜色的原生标签（如 h1/span/p）自动适配，无需逐个加 dark: 类
+html.dark body {
+	color: #e2e8f0; // slate-200
+}

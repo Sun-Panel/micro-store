@@ -2,7 +2,12 @@ package initialize
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"sun-panel/biz"
+	"sun-panel/biz/event"
 	"sun-panel/global"
 	"sun-panel/initialize/authService"
 	"sun-panel/initialize/cUserToken"
@@ -96,6 +101,29 @@ func InitAuthServiceApp() error {
 	if global.Config.GetValueString("base", "scheduler_enable") == "true" {
 		go scheduler.Start()
 	}
+
+	// 启动进程内领域事件分发器（单实例），并注册自定义代码提交事件的占位 handler
+	event.Default.OnDrop = func(name string) {
+		global.Logger.Warnln("事件队列已满，已丢弃:", name)
+	}
+	event.Start()
+	event.Register(event.CustomCodeSubmitted, func(payload interface{}) {
+		p, ok := payload.(event.CustomCodeSubmittedPayload)
+		if !ok {
+			global.Logger.Warnln("custom_code.submitted 事件载荷类型错误")
+			return
+		}
+		// TODO: 占位 handler，后续接入具体副作用（人工路径通知审核员 / webhook / 审计等）
+		global.Logger.Infoln("事件 custom_code.submitted: customCodeID=", p.CustomCodeID,
+			" reviewID=", p.ReviewID, " auto=", p.Auto)
+	})
+	// 进程退出时优雅关闭分发器，等待已入队事件处理完毕
+	go func() {
+		sig := make(chan os.Signal, 1)
+		signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+		<-sig
+		event.Stop()
+	}()
 
 	return nil
 }

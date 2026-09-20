@@ -56,6 +56,7 @@ func InitRouters(addr string) error {
 		}
 		router.StaticFile("/", webPath+"/index.html")
 		router.Static("/assets", webPath+"/assets")
+		router.Static("/tinymce", webPath+"/tinymce") // 富文本编辑器目录
 		router.StaticFile("/favicon.ico", webPath+"/favicon.ico")
 		router.StaticFile("/favicon.svg", webPath+"/favicon.svg")
 

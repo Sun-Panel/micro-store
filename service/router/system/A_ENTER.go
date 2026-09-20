@@ -17,4 +17,6 @@ func Init(routerGroup *gin.RouterGroup) {
 	InitSystemVariableRouter(routerGroup)
 	InitCaptchaRouter(routerGroup)
 	InitMdPageRouter(routerGroup)
+	InitHtmlPageRouter(routerGroup)
+	InitCustomCodeRouter(routerGroup)
 }

@@ -133,9 +133,21 @@ func CreateDatabase(driver string, db *gorm.DB) error {
 		&models.MicroAppLang{},      // 微应用多语言表
 		&models.MicroAppReview{},    // 微应用审核快照表
 
+		// 自定义代码相关表
+		&models.CustomCode{},       // 自定义代码表
+		&models.CustomCodeReview{}, // 自定义代码审核快照表
+		&models.CustomCodeBlock{},  // 自定义代码片块表
+
 	)
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	// 回填历史数据默认值（老数据的 versions / code_types 可能为空）
+	models.BackfillCustomCodeDefaults(db)
+
+	return nil
 }
 
 // 初始化一个用户,一个用户都没有的时候创建一个
