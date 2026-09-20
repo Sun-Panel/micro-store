@@ -306,12 +306,17 @@
   "menu": {
     "community": "Community",
     "console": "Console",
+    "customCode": "Custom code",
     "demo": "Demo",
+    "registerDeveloper": "Register developer",
     "devDoc": "Dev document",
     "document": "Document",
+    "microApp": "Micro-app",
     "myMessage": "Mmessage",
     "myOrder": "My Order",
     "prAuthorizeInfo": "PRO authorize information",
+    "publish": "Publish",
+    "publishCustomCode": "Release custom code",
     "publishMicroApp": "Release micro-app",
     "upgradePRO": "Upgrade PRO",
     "userInfo": "Personal information"
