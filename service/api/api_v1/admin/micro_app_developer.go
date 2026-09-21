@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"gorm.io/gorm"
 )
 
 // 仅在本文件内使用的错误码
@@ -316,6 +317,82 @@ func (a *MicroAppDeveloperApi) GetReviewHistory(c *gin.Context) {
 	}
 
 	apiReturn.SuccessListData(c, list, total)
+}
+
+// Deletes 删除微应用（开发者专用，仅能删除自己的应用）
+func (a *MicroAppDeveloperApi) Deletes(c *gin.Context) {
+	param := MicroAppDeletesReq{}
+	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	if len(param.Ids) == 0 {
+		apiReturn.ErrorParamFomat(c, "ids 不能为空")
+		return
+	}
+
+	developer := base.GetCurrentDeveloper(c)
+
+	// 归属校验：只要存在不属于当前开发者的应用即整体拒绝（单条计数查询，避免逐条加载全字段）
+	var mismatch int64
+	if err := global.Db.Model(&models.MicroApp{}).
+		Where("id IN ?", param.Ids).
+		Where("developer_id != ?", developer.ID).
+		Count(&mismatch).Error; err != nil {
+		apiReturn.ErrorDatabase(c, err.Error())
+		return
+	}
+	if mismatch > 0 {
+		apiReturn.ErrorByCode(c, apiReturn.ErrCodeNoCurrentPermission)
+		return
+	}
+
+	// 开启事务批量删除应用及其多语言数据
+	if err := global.Db.Transaction(func(tx *gorm.DB) error {
+		return deleteMicroApps(tx, param.Ids)
+	}); err != nil {
+		apiReturn.ErrorDatabase(c, err.Error())
+		return
+	}
+
+	apiReturn.Success(c)
+}
+
+// Offline 下架微应用（开发者专用，仅能下架自己的应用，且只能作者下架）
+func (a *MicroAppDeveloperApi) Offline(c *gin.Context) {
+	req := MicroAppOfflineReq{}
+	if err := c.ShouldBindBodyWith(&req, binding.JSON); err != nil {
+		apiReturn.ErrorParamFomat(c, err.Error())
+		return
+	}
+
+	developer := base.GetCurrentDeveloper(c)
+
+	// 开发者下架只能是作者下架（offlineType=1）
+	if req.OfflineType != 1 {
+		apiReturn.ErrorParamFomat(c, "开发者只能进行作者下架")
+		return
+	}
+
+	// 验证应用的归属（只取归属字段，避免加载整行）
+	var app models.MicroApp
+	if err := global.Db.Select("developer_id").Where("id = ?", req.Id).First(&app).Error; err != nil {
+		apiReturn.ErrorDataNotFound(c)
+		return
+	}
+	if app.DeveloperId != developer.ID {
+		apiReturn.ErrorByCode(c, apiReturn.ErrCodeNoCurrentPermission)
+		return
+	}
+
+	m := models.MicroApp{}
+	if err := m.Offline(global.Db, req.Id, req.OfflineType, req.Reason); err != nil {
+		apiReturn.ErrorDatabase(c, err.Error())
+		return
+	}
+
+	apiReturn.Success(c)
 }
 
 // convertToBizLangMap 将 API 层的 MicroAppLangInfo 转换为 biz 层的 map[string]interface{}

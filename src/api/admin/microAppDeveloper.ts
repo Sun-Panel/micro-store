@@ -72,18 +72,18 @@ export function getReviewHistory<T>(data: MicroApp.GetReviewHistoryRequest) {
   })
 }
 
-// 删除微应用（共享接口）
+// 删除微应用（开发者专用，仅能删除自己的应用）
 export function deletes<T>(ids: number[]) {
   return post<T>({
-    url: '/admin/microApp/deletes',
+    url: '/admin/developer/myMicroApp/deletes',
     data: { ids },
   })
 }
 
-// 下架微应用（共享接口）
+// 下架微应用（开发者专用，仅能下架自己的应用）
 export function offline<T>(data: MicroApp.OfflineRequest) {
   return post<T>({
-    url: '/admin/microApp/offline',
+    url: '/admin/developer/myMicroApp/offline',
     data,
   })
 }

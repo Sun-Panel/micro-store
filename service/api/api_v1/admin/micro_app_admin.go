@@ -159,35 +159,42 @@ func (a *MicroAppAdminApi) Deletes(c *gin.Context) {
 		return
 	}
 
-	// 开启事务删除应用及其多语言数据
-	err := global.Db.Transaction(func(tx *gorm.DB) error {
-		// 先获取要删除的应用的 microAppId
-		var apps []models.MicroApp
-		if err := tx.Where("id IN ?", param.Ids).Find(&apps).Error; err != nil {
-			return err
-		}
+	if len(param.Ids) == 0 {
+		apiReturn.ErrorParamFomat(c, "ids 不能为空")
+		return
+	}
 
-		// 删除多语言数据
-		for _, app := range apps {
-			if err := tx.Where("micro_app_id = ?", app.MicroAppId).Delete(&models.MicroAppLang{}).Error; err != nil {
-				return err
-			}
-		}
-
-		// 删除应用
-		if err := tx.Where("id IN ?", param.Ids).Delete(&models.MicroApp{}).Error; err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	if err != nil {
+	if err := global.Db.Transaction(func(tx *gorm.DB) error {
+		return deleteMicroApps(tx, param.Ids)
+	}); err != nil {
 		apiReturn.ErrorDatabase(c, err.Error())
 		return
 	}
 
 	apiReturn.Success(c)
+}
+
+// deleteMicroApps 在事务内批量删除微应用及其多语言数据。
+// 多语言数据通过一次 IN 查询批量删除，避免逐条删除带来的 N 次 SQL。
+func deleteMicroApps(tx *gorm.DB, ids []uint) error {
+	// 收集待删除应用的 microAppId
+	var microAppIds []string
+	if err := tx.Model(&models.MicroApp{}).
+		Where("id IN ?", ids).
+		Pluck("micro_app_id", &microAppIds).Error; err != nil {
+		return err
+	}
+
+	// 批量删除多语言数据（单条 SQL）
+	if len(microAppIds) > 0 {
+		if err := tx.Where("micro_app_id IN ?", microAppIds).
+			Delete(&models.MicroAppLang{}).Error; err != nil {
+			return err
+		}
+	}
+
+	// 删除应用
+	return tx.Where("id IN ?", ids).Delete(&models.MicroApp{}).Error
 }
 
 // UpdateStatus 更新微应用状态
