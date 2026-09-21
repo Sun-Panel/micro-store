@@ -34,6 +34,14 @@ export function getInfo<T>(id: number) {
   })
 }
 
+/** 获取当前开发者标识（用于编辑页唯一标识前缀展示） */
+export function getAuthorKeyPrefix<T>() {
+  return post<T>({
+    url: '/admin/customCode/getAuthorKeyPrefix',
+    data: {},
+  })
+}
+
 export function edit<T>(info: CustomCode.EditReq) {
   return post<T>({
     url: '/admin/customCode/edit',

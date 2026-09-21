@@ -118,7 +118,7 @@ onMounted(() => {
           />
         </NLayoutSider>
         <NLayout class="h-[calc(100vh-60px)] dark:bg-slate-900 bg-slate-100 ">
-          <router-view class=" h-[calc(100vh-60px)] p-[20px] bg-slate-100 dark:bg-slate-900" />
+          <router-view class=" min-h-full p-[20px] bg-slate-100 dark:bg-slate-900" />
           <!-- <RouterView v-slot="{ Component, route }">
             <component :is="Component" :key="route.fullPath" />
           </RouterView> -->

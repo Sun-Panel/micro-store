@@ -103,20 +103,21 @@ func (a *CustomCodeApi) Get(c *gin.Context) {
 	}
 
 	resp := customCodeApiStructs.CustomCodeDetailResp{
-		Id:          info.ID,
-		Title:       info.Title,
-		Description: info.Description,
-		Keywords:    info.Keywords,
-		IsOriginal:  info.IsOriginal,
-		SourceNote:  info.SourceNote,
-		Versions:    info.Versions,
-		CodeTypes:   info.CodeTypes,
-		Blocks:      respBlocks,
-		AuthorId:    info.AuthorId,
-		AuthorName:  models.GetAuthorName(global.Db, info.AuthorId),
+		Id:                  info.ID,
+		Title:               info.Title,
+		Description:         info.Description,
+		Keywords:            info.Keywords,
+		IsOriginal:          info.IsOriginal,
+		SourceNote:          info.SourceNote,
+		Versions:            info.Versions,
+		CodeTypes:           info.CodeTypes,
+		Blocks:              respBlocks,
+		AuthorId:            info.AuthorId,
+		AuthorName:          models.GetAuthorName(global.Db, info.AuthorId),
+		UniqueKey:           info.UniqueKey,
 		AuthorRewardContent: authorRewardContent,
-		ReadCount:   info.ReadCount,
-		PublishedAt: info.PublishedAt,
+		ReadCount:           info.ReadCount,
+		PublishedAt:         info.PublishedAt,
 	}
 
 	apiReturn.SuccessData(c, resp)

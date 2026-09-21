@@ -75,6 +75,7 @@ declare namespace CustomCode {
         codeTypes: number[]
         authorId: number
         authorName?: string
+        uniqueKey?: string
         status: number
         readCount: number
         publishedAt?: string
@@ -93,6 +94,8 @@ declare namespace CustomCode {
         sourceNote: string
         versions: number[]
         blocks: Block[]
+        /** 唯一标识后缀（开发者标识-后缀 中的后缀；留空自动生成） */
+        customName?: string
         /** true 提交审核，false 保存草稿 */
         submit: boolean
     }
@@ -112,6 +115,10 @@ declare namespace CustomCode {
         publishedAt?: string
         authorId: number
         authorName?: string
+        /** 作者开发者标识（唯一标识前缀，固定不可改） */
+        developerName?: string
+        /** 完整唯一标识：开发者标识-后缀 */
+        uniqueKey?: string
         /** 待审核时不可编辑，需先撤回 */
         canEdit: boolean
         reviewStatus?: number | null
@@ -131,6 +138,7 @@ declare namespace CustomCode {
         blocks: Block[]
         authorId: number
         authorName?: string
+        uniqueKey?: string
         authorRewardContent?: string
         readCount: number
         publishedAt?: string

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -62,6 +63,7 @@ type CustomCode struct {
 	PublishedAt     *time.Time `gorm:"type:datetime" json:"publishedAt"`       // 作者发布/修改时间
 	CurrentReviewId uint       `gorm:"type:int(11)" json:"currentReviewId"`    // 当前生效的快照ID
 	OfflineReason   string     `gorm:"type:varchar(500)" json:"offlineReason"` // 下架原因
+	UniqueKey       string     `gorm:"type:varchar(120)" json:"uniqueKey"`     // 自定义代码唯一标识：开发者标识-后缀
 }
 
 // CustomCodeListItem 列表项（附带作者展示名）
@@ -112,24 +114,65 @@ func (m *CustomCode) Create(db *gorm.DB, item *CustomCode) error {
 // BackfillCustomCodeDefaults 回填历史数据的默认值
 // 迁移前已存在的行 versions / code_types 可能为空，默认补上 v2 与空类型
 func BackfillCustomCodeDefaults(db *gorm.DB) {
-	db.Model(&CustomCode{}).
-		Where("versions IS NULL OR versions = ''").
-		Update("versions", "[2]")
-	db.Model(&CustomCode{}).
-		Where("code_types IS NULL OR code_types = ''").
-		Update("code_types", "[]")
+	// 每个操作使用独立会话（NewDB 彻底隔离语句），避免复用同一 *gorm.DB 语句导致
+	// WHERE 条件 / 表名跨操作累积、错乱（例如 GetDeveloperName 的 developer 表泄漏到 custom_code 的更新）
+	backfillColumn(db, &CustomCode{}, "versions", "[2]")
+	backfillColumn(db, &CustomCode{}, "code_types", "[]")
+	backfillColumn(db, &CustomCodeReview{}, "versions", "[2]")
+	backfillColumn(db, &CustomCodeReview{}, "code_types", "[]")
 
-	db.Model(&CustomCodeReview{}).
-		Where("versions IS NULL OR versions = ''").
-		Update("versions", "[2]")
-	db.Model(&CustomCodeReview{}).
-		Where("code_types IS NULL OR code_types = ''").
-		Update("code_types", "[]")
-
-	// 历史代码片块 only_id 为空时，用主键生成稳定唯一标识（b + id）
-	db.Model(&CustomCodeBlock{}).
+	// 历史代码片块 only_id 为空时，用主键生成稳定唯一标识（b + id）；单条批量更新即可，避免按行循环
+	if err := db.Session(&gorm.Session{NewDB: true}).Table("custom_code_block").
 		Where("only_id IS NULL OR only_id = ''").
-		Update("only_id", gorm.Expr("CONCAT('b', id)"))
+		Update("only_id", gorm.Expr("CONCAT('b', id)")).Error; err != nil {
+		fmt.Printf("[backfill] 回填 only_id 失败: %v\n", err)
+	}
+
+	// 历史自定义代码回填唯一标识并建立整表唯一索引
+	backfillCustomCodeUniqueKeys(db)
+}
+
+// backfillColumn 对指定表指定列做历史空值回填（空或 ” 时写入默认值），失败仅记录不阻断启动
+func backfillColumn(db *gorm.DB, model interface{}, column, value string) {
+	if err := db.Session(&gorm.Session{NewDB: true}).Model(model).
+		Where(column+" IS NULL OR "+column+" = ''").
+		Update(column, value).Error; err != nil {
+		fmt.Printf("[backfill] 回填 %s 失败: %v\n", column, err)
+	}
+}
+
+// backfillCustomCodeUniqueKeys 历史自定义代码回填唯一标识（开发者标识-<id>），并幂等建立整表唯一索引
+// 用单条 UPDATE ... LEFT JOIN developer 一次完成，避免按行循环查询开发者表（N+1）与逐行更新
+func backfillCustomCodeUniqueKeys(db *gorm.DB) {
+	// 逻辑等价于 GetDeveloperName：有 developer 记录取 developer_name，否则回退 u<author_id>
+	// 仅处理未软删除的行（与 GORM 软删除过滤一致）；一条语句搞定全部空值行
+	if err := db.Session(&gorm.Session{NewDB: true}).
+		Exec(`UPDATE custom_code cc
+			LEFT JOIN developer d ON d.user_id = cc.author_id
+			SET cc.unique_key = CONCAT(COALESCE(NULLIF(d.developer_name, ''), CONCAT('u', cc.author_id)), '-', cc.id)
+			WHERE (cc.unique_key IS NULL OR cc.unique_key = '') AND cc.deleted_at IS NULL`).Error; err != nil {
+		fmt.Printf("[backfill] 回填 unique_key 失败: %v\n", err)
+	}
+	// 回填后再建唯一索引。MySQL 不支持 CREATE UNIQUE INDEX IF NOT EXISTS，
+	// 故先查 information_schema 判断索引是否已存在；已存在则跳过，避免反复打印 Duplicate key name 报错
+	if !uniqueIndexExists(db, "custom_code", "uq_custom_code_unique_key") {
+		if err := db.Session(&gorm.Session{NewDB: true}).
+			Exec("CREATE UNIQUE INDEX uq_custom_code_unique_key ON custom_code (unique_key)").Error; err != nil {
+			fmt.Printf("[backfill] 创建唯一索引失败: %v\n", err)
+		}
+	}
+}
+
+// uniqueIndexExists 判断指定表是否已存在某索引（MySQL 通过 information_schema.STATISTICS 查询）
+func uniqueIndexExists(db *gorm.DB, table, indexName string) bool {
+	var count int64
+	if err := db.Session(&gorm.Session{NewDB: true}).
+		Raw("SELECT COUNT(1) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?", table, indexName).
+		Scan(&count).Error; err != nil {
+		// 查询失败不阻断启动，回退为“不存在”，尝试建索引（失败也仅记录日志）
+		return false
+	}
+	return count > 0
 }
 
 // GetAuthorName 获取作者展示名：开发者名优先，其次开发者标识，最后用户名
@@ -150,6 +193,15 @@ func GetAuthorName(db *gorm.DB, userId uint) string {
 	}
 
 	return ""
+}
+
+// GetDeveloperName 获取开发者标识（纯英文，多词用-分割）；无开发者记录则回退 u<id>
+func GetDeveloperName(db *gorm.DB, userId uint) string {
+	var dev Developer
+	if err := db.Where("user_id = ?", userId).First(&dev).Error; err == nil && dev.DeveloperName != "" {
+		return dev.DeveloperName
+	}
+	return fmt.Sprintf("u%d", userId)
 }
 
 // 根据ID获取
@@ -195,7 +247,7 @@ func (m *CustomCode) GetOnlineList(db *gorm.DB, opts CustomCodeQueryOptions) ([]
 
 	// 列表不需要正文，避免传输大字段
 	var list []CustomCodeListItem
-	err := query.Select("custom_code.id, custom_code.title, custom_code.description, custom_code.keywords, custom_code.is_original, custom_code.source_note, custom_code.versions, custom_code.code_types, custom_code.author_id, custom_code.status, custom_code.read_count, custom_code.published_at, custom_code.created_at").
+	err := query.Select("custom_code.id, custom_code.title, custom_code.description, custom_code.keywords, custom_code.is_original, custom_code.source_note, custom_code.versions, custom_code.code_types, custom_code.author_id, custom_code.status, custom_code.read_count, custom_code.published_at, custom_code.unique_key, custom_code.created_at").
 		Order(order).
 		Offset((page - 1) * limit).Limit(limit).
 		Scan(&list).Error
@@ -223,7 +275,7 @@ func (m *CustomCode) GetListByAuthorId(db *gorm.DB, authorId uint, page, limit i
 	}
 
 	var list []CustomCodeListItem
-	err := query.Select("custom_code.id, custom_code.title, custom_code.description, custom_code.keywords, custom_code.is_original, custom_code.source_note, custom_code.versions, custom_code.code_types, custom_code.author_id, custom_code.status, custom_code.read_count, custom_code.published_at, custom_code.created_at").
+	err := query.Select("custom_code.id, custom_code.title, custom_code.description, custom_code.keywords, custom_code.is_original, custom_code.source_note, custom_code.versions, custom_code.code_types, custom_code.author_id, custom_code.status, custom_code.read_count, custom_code.published_at, custom_code.unique_key, custom_code.created_at").
 		Order("custom_code.id DESC").
 		Offset((page - 1) * limit).Limit(limit).
 		Scan(&list).Error

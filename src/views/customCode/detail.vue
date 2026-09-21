@@ -50,13 +50,16 @@ function publishedAtUnix(): number {
   return Number.isNaN(t) ? 0 : Math.floor(t / 1000)
 }
 
+// 是否配置了赞赏信息（作者未填写则不显示赞赏按钮）
+const hasReward = computed(() => !!(detail.value?.authorRewardContent || '').trim())
+
 // 每个块单独构造复制元信息（含唯一标识，用于跨项目粘贴去重）
 function copyMetaFor(block: CustomCode.Block): {
   title: string
   author: string
   updateTime: string
   url: string
-  id: number
+  uniqueKey?: string
   onlyId: string
   updateTimeUnix: number
 } {
@@ -65,7 +68,7 @@ function copyMetaFor(block: CustomCode.Block): {
     author: detail.value?.authorName ?? '',
     updateTime: formatUpdateTime(detail.value?.publishedAt),
     url: `${getCurrentBaseUrlRoot()}/customCode/${id.value}`,
-    id: id.value,
+    uniqueKey: detail.value?.uniqueKey,
     onlyId: block.onlyId ?? '',
     updateTimeUnix: publishedAtUnix(),
   }
@@ -179,7 +182,7 @@ onMounted(() => {
           <NButton @click="router.push({ name: 'CustomCodeList' })">
             返回列表
           </NButton>
-          <NButton @click="showReward = true">
+          <NButton v-if="hasReward" @click="showReward = true">
             <template #icon>
               <SvgIconOnline icon="ph:heart" />
             </template>

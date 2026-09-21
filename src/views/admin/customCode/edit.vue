@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
 import type { FormInst, FormRules } from 'naive-ui'
 import {
   NAlert,
@@ -11,25 +10,29 @@ import {
   NCheckboxGroup,
   NCollapse,
   NCollapseItem,
-  NDynamicTags,
   NForm,
   NFormItem,
+  NIcon,
   NImage,
   NImageGroup,
   NInput,
+  NInputGroup,
+  NInputGroupLabel,
   NModal,
   NRadio,
   NRadioGroup,
   NSpace,
   NSwitch,
   NTag,
+  NTooltip,
   useMessage,
 } from 'naive-ui'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { edit, getAuthorKeyPrefix, getInfo, uploadPreviewImage, withdraw } from '@/api/admin/customCode'
 import { CodeBlock } from '@/components/common'
-import { uploadPreviewImage, edit, getInfo, withdraw } from '@/api/admin/customCode'
-import { apiRespErrMsg, getCurrentBaseUrlRoot } from '@/utils/cmn'
 import { router } from '@/router'
+import { apiRespErrMsg, getCurrentBaseUrlRoot } from '@/utils/cmn'
 import { genOnlyId, isValidOnlyId } from '@/utils/customCodeSnippet'
 
 // 块本地状态：_uid 供 NCollapse 作为稳定的展开标识
@@ -49,6 +52,15 @@ const message = useMessage()
 const id = ref<number>(Number(route.query.id ?? 0))
 const info = ref<CustomCode.Info>()
 const saving = ref(false)
+
+// 唯一标识固定前缀（作者开发者标识），新建时从接口拉取，编辑时取自详情
+const authorKeyPrefix = ref('')
+
+// 从完整唯一标识中剥离后缀（去掉前缀 + 连接符）
+function stripCustomName(uniqueKey: string, prefix: string): string {
+  const p = `${prefix}-`
+  return uniqueKey.startsWith(p) ? uniqueKey.slice(p.length) : uniqueKey
+}
 
 // 待审核期间只读，需先撤回
 const readonly = computed(() => info.value?.canEdit === false)
@@ -106,6 +118,8 @@ const model = ref<EditForm>({
   keywords: [],
   isOriginal: true,
   sourceNote: '',
+  // 唯一标识后缀（开发者标识-后缀 中的后缀；留空自动生成）
+  customName: '',
   // 默认选中 v2
   versions: [2],
   blocks: [createBlock(true)],
@@ -128,7 +142,7 @@ const rules: FormRules = {
   versions: {
     validator: () => {
       if (!model.value.versions.length)
-        return new Error('请至少选择一个适用版本')
+        return '请至少选择一个适用版本'
       return true
     },
     trigger: 'change',
@@ -136,7 +150,16 @@ const rules: FormRules = {
   sourceNote: {
     validator: () => {
       if (!model.value.isOriginal && !model.value.sourceNote.trim())
-        return new Error('非原创必须填写来源说明')
+        return '非原创必须填写来源说明'
+      return true
+    },
+    trigger: 'blur',
+  },
+  customName: {
+    validator: () => {
+      const v = model.value.customName?.trim() ?? ''
+      if (v && !/^[\w-]{1,40}$/.test(v))
+        return '唯一标识后缀仅允许字母、数字、- 和 _，长度 1-40'
       return true
     },
     trigger: 'blur',
@@ -320,6 +343,7 @@ async function loadInfo() {
       keywords: data.keywords ?? [],
       isOriginal: data.isOriginal,
       sourceNote: data.sourceNote ?? '',
+      customName: '',
       versions: data.versions?.length ? data.versions : [2],
       blocks: data.blocks?.length
         ? data.blocks.map((block) => {
@@ -338,6 +362,12 @@ async function loadInfo() {
       submit: false,
     }
 
+    // 唯一标识前缀固定为作者开发者标识；后缀从完整标识中剥离回填
+    authorKeyPrefix.value = data.developerName ?? ''
+    model.value.customName = data.uniqueKey
+      ? stripCustomName(data.uniqueKey, authorKeyPrefix.value)
+      : ''
+
     // 进入页面默认全部收缩
     expandedNames.value = []
   }
@@ -347,8 +377,18 @@ async function loadInfo() {
 }
 
 onMounted(() => {
-  if (id.value)
+  if (id.value) {
     loadInfo()
+  }
+  else {
+    // 新建：拉取当前开发者标识作为唯一标识固定前缀
+    getAuthorKeyPrefix<{ developerName: string }>()
+      .then(({ data }) => {
+        if (data?.developerName)
+          authorKeyPrefix.value = data.developerName
+      })
+      .catch(() => { })
+  }
 })
 </script>
 
@@ -385,137 +425,206 @@ onMounted(() => {
       {{ info.reviewNote || '请查看审核意见并修改后重新提交' }}
     </NAlert>
 
-    <NCard size="small" class="mb-5">
+    <!-- 基础信息 -->
+    <NCard size="small" class="mb-5" title="基础信息">
       <NForm ref="formRef" :model="model" :rules="rules" :disabled="readonly">
-        <NFormItem path="title" label="标题">
-          <NInput v-model:value="model.title" :maxlength="100" show-count placeholder="最多100个字符" />
-        </NFormItem>
+        <!-- 标题与唯一标识同一行，唯一标识放在标题之后 -->
+        <div class="flex flex-col gap-3 md:flex-row">
+          <NFormItem path="title" label="标题" class="flex-1">
+            <NInput v-model:value="model.title" :maxlength="100" show-count placeholder="最多100个字符" />
+          </NFormItem>
 
-        <NFormItem path="description" label="说明">
-          <NInput v-model:value="model.description" :maxlength="500" type="textarea" show-count placeholder="最多500个字符" />
-        </NFormItem>
+          <NFormItem label="唯一标识" class="flex-1">
+            <template #label>
+              <div class="flex items-center gap-2">
+                <span>唯一标识</span>
 
-        <NFormItem label="关键词">
+                <NTooltip trigger="click" placement="top">
+                  <template #trigger>
+                    <NIcon size="18" class="cursor-pointer text-slate-400 hover:text-slate-600">
+                      <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                        <path d="M12 11v5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <circle cx="12" cy="7.5" r="1.2" fill="currentColor" />
+                      </svg>
+                    </NIcon>
+                  </template>
+                  唯一标识是作为本自定义代码的唯一标识，请勿频繁修改。后期Sun-Panel会使用唯一标识作为自定义代码是否已装入的凭据。避免重复添加。
+                </NTooltip>
+
+                <div class="text-[12px] text-slate-400">
+                  完整标识：{{ authorKeyPrefix }}-{{ model.customName || '（自动生成）' }}
+                </div>
+              </div>
+            </template>
+            <div class="flex w-full flex-col gap-1">
+              <div class="flex items-center gap-2">
+                <NInputGroup>
+                  <NInputGroupLabel>{{ authorKeyPrefix || '我' }}-</NInputGroupLabel>
+                  <NInput v-model:value="model.customName" :maxlength="40" placeholder="留空自动生成" :disabled="readonly" />
+                </NInputGroup>
+              </div>
+            </div>
+          </NFormItem>
+        </div>
+
+        <!-- <NFormItem label="关键词">
           <NDynamicTags v-model:value="model.keywords" :max="10" />
-        </NFormItem>
+        </NFormItem> -->
 
-        <NFormItem label="是否原创">
-          <NSwitch v-model:value="model.isOriginal" />
-        </NFormItem>
+        <div class="flex flex-col gap-3 md:flex-row">
+          <NFormItem path="versions" label="适用客户端版本" class="flex-1">
+            <NCheckboxGroup v-model:value="model.versions">
+              <NSpace>
+                <NCheckbox v-for="item in versionOptions" :key="item.value" :value="item.value" :label="item.label" />
+              </NSpace>
+            </NCheckboxGroup>
+          </NFormItem>
+
+          <NFormItem label="是否原创" class="flex-1">
+            <NSwitch v-model:value="model.isOriginal" />
+          </NFormItem>
+        </div>
 
         <NFormItem v-if="!model.isOriginal" path="sourceNote" label="来源说明">
           <NInput v-model:value="model.sourceNote" placeholder="可以是地址，也可以是其他说明" />
         </NFormItem>
 
-        <NFormItem path="versions" label="适用客户端版本">
-          <NCheckboxGroup v-model:value="model.versions">
-            <NSpace>
-              <NCheckbox v-for="item in versionOptions" :key="item.value" :value="item.value" :label="item.label" />
-            </NSpace>
-          </NCheckboxGroup>
+        <NFormItem path="description" label="说明">
+          <template #label>
+            <div class="flex items-center gap-2">
+              <span>说明</span>
+              <div class="text-xs text-gray-500">
+                说明里不可以写代码，代码请在下方「自定义代码片段」中创建
+              </div>
+            </div>
+          </template>
+          <NInput
+            v-model:value="model.description" :maxlength="500" type="textarea" show-count
+            placeholder="最多500个字符"
+          />
         </NFormItem>
       </NForm>
+    </NCard>
 
-      <div class="mb-[10px] flex items-center">
-      <span class="font-bold">代码片段（{{ model.blocks.length }}/10）</span>
-      <NButton size="tiny" class="ml-auto" @click="toggleExpandAll">
-        {{ expandedNames.length >= model.blocks.length && model.blocks.length > 0 ? '全部收起' : '全部展开' }}
-      </NButton>
-    </div>
+    <!-- 自定义代码片段 -->
+    <NCard size="small" class="mb-5" title="自定义代码片段">
+      <template #header>
+        <div class="flex items-center">
+          <span class="font-bold">代码片段（{{ model.blocks.length }}/10）</span>
+          <NButton size="tiny" class="ml-auto" @click="toggleExpandAll">
+            {{ expandedNames.length >= model.blocks.length && model.blocks.length > 0 ? '全部收起' : '全部展开' }}
+          </NButton>
+        </div>
+      </template>
+      <!-- <div class="mb-[10px] flex items-center">
+        <span class="font-bold">代码片段（{{ model.blocks.length }}/10）</span>
+        <NButton size="tiny" class="ml-auto" @click="toggleExpandAll">
+          {{ expandedNames.length >= model.blocks.length && model.blocks.length > 0 ? '全部收起' : '全部展开' }}
+        </NButton>
+      </div> -->
 
-    <NCollapse v-model:expanded-names="expandedNames" class="mb-[20px]">
-      <NCollapseItem
-        v-for="(block, index) in model.blocks"
-        :key="block._uid"
-        :name="block._uid"
-        :title="`${codeTypeLabelMap[block.codeType] ?? block.codeType}-代码片段: ${block.title || '未命名'}`"
-      >
-        <template #header-extra>
-          <!-- header-extra 的点击会连带触发折叠，这里阻止冒泡 -->
-          <div @click.stop>
-            <NSpace :size="6">
-              <NButton size="tiny" :disabled="index === 0 || readonly" @click="moveBlock(index, -1)">
-                上移
-              </NButton>
-              <NButton size="tiny" :disabled="index === model.blocks.length - 1 || readonly" @click="moveBlock(index, 1)">
-                下移
-              </NButton>
-              <NButton size="tiny" type="error" :disabled="readonly" @click="removeBlock(index)">
-                删除
-              </NButton>
-            </NSpace>
-          </div>
-        </template>
-        <NForm :disabled="readonly">
-          <NFormItem label="代码类型">
-            <NRadioGroup v-model:value="block.codeType">
-              <NSpace>
-                <NRadio v-for="item in codeTypeOptions" :key="item.value" :value="item.value">
-                  {{ item.label }}
-                </NRadio>
+      <NCollapse v-model:expanded-names="expandedNames" class="mb-[20px]">
+        <NCollapseItem
+          v-for="(block, index) in model.blocks" :key="block._uid" :name="block._uid"
+          :title="`${codeTypeLabelMap[block.codeType] ?? block.codeType}-代码片段: ${block.title || '未命名'}`"
+        >
+          <template #header-extra>
+            <!-- header-extra 的点击会连带触发折叠，这里阻止冒泡 -->
+            <div @click.stop>
+              <NSpace :size="6">
+                <NButton size="tiny" :disabled="index === 0 || readonly" @click="moveBlock(index, -1)">
+                  上移
+                </NButton>
+                <NButton
+                  size="tiny" :disabled="index === model.blocks.length - 1 || readonly"
+                  @click="moveBlock(index, 1)"
+                >
+                  下移
+                </NButton>
+                <NButton size="tiny" type="error" :disabled="readonly" @click="removeBlock(index)">
+                  删除
+                </NButton>
               </NSpace>
-            </NRadioGroup>
-          </NFormItem>
-
-          <NFormItem label="片段标题">
-            <NInput v-model:value="block.title" :maxlength="100" placeholder="标题与说明至少填写一个" />
-          </NFormItem>
-
-          <NFormItem label="唯一标识">
-            <div class="flex w-full items-center gap-2">
-              <NInput v-model:value="block.onlyId" :maxlength="40" placeholder="用于跨项目粘贴去重，可自定义" />
-              <NButton size="tiny" type="default" @click="block.onlyId = genOnlyId()">
-                重新生成
-              </NButton>
             </div>
-          </NFormItem>
+          </template>
+          <NCard size="small">
+            <NForm :disabled="readonly">
+              <NFormItem label="代码类型">
+                <NRadioGroup v-model:value="block.codeType">
+                  <NSpace>
+                    <NRadio v-for="item in codeTypeOptions" :key="item.value" :value="item.value">
+                      {{ item.label }}
+                    </NRadio>
+                  </NSpace>
+                </NRadioGroup>
+              </NFormItem>
 
-          <NFormItem label="说明">
-            <NInput v-model:value="block.note" type="textarea" :rows="3" placeholder="多行说明，与标题至少填写一个" />
-          </NFormItem>
+              <NFormItem label="片段标题">
+                <NInput v-model:value="block.title" :maxlength="100" placeholder="标题与说明至少填写一个" />
+              </NFormItem>
 
-          <NFormItem label="预览图（≤512K，最多5张）">
-            <div>
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/gif,image/webp"
-                :disabled="readonly || block.images.length >= 5"
-                @change="handlePickImage($event, block)"
-              >
-              <div v-if="block.images.length" class="mt-[8px]">
-                <NImageGroup>
-                  <div class="flex flex-wrap gap-[8px]">
-                    <div v-for="(url, imgIndex) in block.images" :key="url" class="flex flex-col items-start gap-[4px]">
-                      <NImage :src="url" width="100" />
-                      <NButton size="tiny" type="error" :disabled="readonly" @click="removeImage(block, imgIndex)">
-                        移除
+              <NFormItem label="唯一标识">
+                <div class="flex w-full items-center gap-2">
+                  <NInput v-model:value="block.onlyId" :maxlength="40" placeholder="用于跨项目粘贴去重，可自定义" />
+                  <NButton size="tiny" type="default" @click="block.onlyId = genOnlyId()">
+                    重新生成
+                  </NButton>
+                </div>
+              </NFormItem>
+
+              <NFormItem label="说明">
+                <NInput v-model:value="block.note" type="textarea" :rows="3" placeholder="多行说明，与标题至少填写一个" />
+              </NFormItem>
+
+              <NFormItem label="代码">
+                <template #label>
+                  <div class="flex items-center gap-2">
+                    <span>代码</span>
+                    <div class="left-auto">
+                      <NButton size="small" :disabled="!block.code.trim()" @click="openPreview(block)">
+                        预览代码
                       </NButton>
                     </div>
                   </div>
-                </NImageGroup>
-              </div>
-            </div>
-          </NFormItem>
+                </template>
+                <NInput v-model:value="block.code" type="textarea" :rows="6" placeholder="粘贴代码，支持预览高亮" />
+              </NFormItem>
 
-          <NFormItem label="代码">
-            <NInput v-model:value="block.code" type="textarea" :rows="6" placeholder="粘贴代码，支持预览高亮" />
-          </NFormItem>
-        </NForm>
+              <NFormItem label="预览图（≤512K，最多5张）">
+                <div>
+                  <input
+                    type="file" accept="image/png,image/jpeg,image/gif,image/webp"
+                    :disabled="readonly || block.images.length >= 5" @change="handlePickImage($event, block)"
+                  >
+                  <div v-if="block.images.length" class="mt-[8px]">
+                    <NImageGroup>
+                      <div class="flex flex-wrap gap-[8px]">
+                        <div
+                          v-for="(url, imgIndex) in block.images" :key="url"
+                          class="flex flex-col items-start gap-[4px]"
+                        >
+                          <NImage :src="url" width="100" />
+                          <NButton size="tiny" type="error" :disabled="readonly" @click="removeImage(block, imgIndex)">
+                            移除
+                          </NButton>
+                        </div>
+                      </div>
+                    </NImageGroup>
+                  </div>
+                </div>
+              </NFormItem>
+            </NForm>
+          </NCard>
+        </NCollapseItem>
+      </NCollapse>
 
-        <NButton size="small" :disabled="!block.code.trim()" @click="openPreview(block)">
-          预览
+      <NSpace class="mb-[20px]">
+        <NButton :disabled="readonly" type="success" size="small" @click="addBlock">
+          添加代码片段
         </NButton>
-      </NCollapseItem>
-    </NCollapse>
-
-    <NSpace class="mb-[20px]">
-      <NButton :disabled="readonly" @click="addBlock">
-        添加代码片段
-      </NButton>
-    </NSpace>
+      </NSpace>
     </NCard>
-
-    
 
     <NSpace>
       <NButton :disabled="readonly" :loading="saving" @click="submit(false)">
@@ -529,7 +638,7 @@ onMounted(() => {
     <NModal v-model:show="previewVisible" preset="card" style="width: 720px;" title="代码预览" :mask-closable="true">
       <div v-if="previewBlock">
         <div class="mb-[8px]">
-         {{ codeTypeLabelMap[previewBlock.codeType] ?? previewBlock.codeType }}代码片段: {{ previewBlock.title || '未命名' }}
+          {{ codeTypeLabelMap[previewBlock.codeType] ?? previewBlock.codeType }}代码片段: {{ previewBlock.title || '未命名' }}
         </div>
         <CodeBlock :code="previewBlock.code" :code-type="previewBlock.codeType" :default-collapsed="false" />
       </div>

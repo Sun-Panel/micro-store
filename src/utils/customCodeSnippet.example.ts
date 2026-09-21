@@ -18,7 +18,7 @@ import { cleanSnippetCode, parseSnippet } from './customCodeSnippet'
 
 /** 其他项目里「自定义板块」的代码块结构（按需替换字段名） */
 export interface OtherProjectBlock {
-  /** 唯一标识（对应本商店 {id}-{onlyId} 中的 onlyId） */
+  /** 唯一标识（对应本商店 {key}-{onlyId} 中的 onlyId） */
   onlyId: string
   /** 代码类型：JS / CSS / FOOTER（与来源标记保持一致；FOOTER 即页脚） */
   codeType: SnipType
@@ -26,7 +26,8 @@ export interface OtherProjectBlock {
   code: string
   /** 可选：保留来源信息，方便展示 */
   source?: {
-    id: number
+    /** 来源自定义代码唯一标识（开发者标识-后缀） */
+    key: string
     title?: string
     updateTime?: number
   }
@@ -68,7 +69,7 @@ export function applyPastedSnippet(
       ...next[idx],
       codeType: parsed.type,
       code: cleanCode,
-      source: { id: parsed.id, updateTime: parsed.updateTime },
+      source: { key: parsed.key, updateTime: parsed.updateTime },
     }
     return {
       matched: true,
@@ -84,7 +85,7 @@ export function applyPastedSnippet(
     onlyId: parsed.onlyId,
     codeType: parsed.type,
     code: cleanCode,
-    source: { id: parsed.id, updateTime: parsed.updateTime },
+    source: { key: parsed.key, updateTime: parsed.updateTime },
   })
   return {
     matched: true,

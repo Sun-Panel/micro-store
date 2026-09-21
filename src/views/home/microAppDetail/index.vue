@@ -116,6 +116,11 @@ const categoryName = computed(() => {
   return category?.label || `ID: ${microAppInfo.value.categoryId}`
 })
 
+// 是否配置了赞赏信息（开发者未填写则不显示赞赏按钮）
+const hasReward = computed(() =>
+  !!(microAppInfo.value?.developer?.rewardContent || '').trim(),
+)
+
 // ==================== 版本处理 ====================
 // 已审核通过的版本列表（提取为 computed 避免模板中重复 filter）
 const approvedVersionList = computed(() => {
@@ -444,6 +449,7 @@ onUnmounted(() => {
                 </NButton>
 
                 <NButton
+                  v-if="hasReward"
                   size="large"
                   @click="showReward = true"
                 >

@@ -232,6 +232,7 @@ func (a *CustomCodeApi) GetMyList(c *gin.Context) {
 			CodeTypes:   item.CodeTypes,
 			AuthorId:    item.AuthorId,
 			AuthorName:  item.AuthorName,
+			UniqueKey:   item.UniqueKey,
 			Status:      item.Status,
 			ReadCount:   item.ReadCount,
 			PublishedAt: item.PublishedAt,
@@ -269,20 +270,22 @@ func (a *CustomCodeApi) GetInfo(c *gin.Context) {
 	}
 
 	resp := customCodeApiStructs.CustomCodeInfoResp{
-		Id:          info.ID,
-		Title:       info.Title,
-		Description: info.Description,
-		Keywords:    info.Keywords,
-		IsOriginal:  info.IsOriginal,
-		SourceNote:  info.SourceNote,
-		Versions:    info.Versions,
-		CodeTypes:   info.CodeTypes,
-		Status:      info.Status,
-		ReadCount:   info.ReadCount,
-		PublishedAt: info.PublishedAt,
-		AuthorId:    info.AuthorId,
-		AuthorName:  models.GetAuthorName(global.Db, info.AuthorId),
-		CanEdit:     true,
+		Id:            info.ID,
+		Title:         info.Title,
+		Description:   info.Description,
+		Keywords:      info.Keywords,
+		IsOriginal:    info.IsOriginal,
+		SourceNote:    info.SourceNote,
+		Versions:      info.Versions,
+		CodeTypes:     info.CodeTypes,
+		Status:        info.Status,
+		ReadCount:     info.ReadCount,
+		PublishedAt:   info.PublishedAt,
+		AuthorId:      info.AuthorId,
+		AuthorName:    models.GetAuthorName(global.Db, info.AuthorId),
+		DeveloperName: models.GetDeveloperName(global.Db, info.AuthorId),
+		UniqueKey:     info.UniqueKey,
+		CanEdit:       true,
 	}
 
 	mBlock := &models.CustomCodeBlock{}
@@ -320,6 +323,40 @@ func (a *CustomCodeApi) GetInfo(c *gin.Context) {
 	apiReturn.SuccessData(c, resp)
 }
 
+// GetAuthorKeyPrefix 作者：获取当前开发者标识（用于编辑页固定前缀展示）
+func (a *CustomCodeApi) GetAuthorKeyPrefix(c *gin.Context) {
+	userInfo, _ := base.GetCurrentUserInfo(c)
+	apiReturn.SuccessData(c, gin.H{"developerName": models.GetDeveloperName(global.Db, userInfo.ID)})
+}
+
+var reCustomCodeName = regexp.MustCompile(`^[A-Za-z0-9_-]{1,40}$`)
+
+// isValidCustomCodeName 校验唯一标识后缀：字母/数字/-/_，1-40 位，不含中文
+func isValidCustomCodeName(s string) bool {
+	return reCustomCodeName.MatchString(s)
+}
+
+// genCustomCodeName 自动生成不重复的后缀（不含前缀）
+func genCustomCodeName(developerName string) string {
+	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
+	for i := 0; i < 10; i++ {
+		b := make([]byte, 6)
+		if _, err := rand.Read(b); err != nil {
+			break
+		}
+		for j := range b {
+			b[j] = charset[int(b[j])%len(charset)]
+		}
+		candidate := developerName + "-" + string(b)
+		var cnt int64
+		global.Db.Model(&models.CustomCode{}).Where("unique_key = ?", candidate).Count(&cnt)
+		if cnt == 0 {
+			return string(b)
+		}
+	}
+	return fmt.Sprintf("%d", time.Now().UnixNano())
+}
+
 // Edit 新增/保存草稿/提交审核（含块）
 func (a *CustomCodeApi) Edit(c *gin.Context) {
 	req := customCodeApiStructs.CustomCodeEditReq{}
@@ -352,6 +389,23 @@ func (a *CustomCodeApi) Edit(c *gin.Context) {
 		SourceNote:  req.SourceNote,
 		Versions:    req.Versions,
 		CodeTypes:   codeTypes,
+	}
+
+	// 自定义代码唯一标识：开发者标识-后缀（前缀固定，后缀可改；整表唯一）
+	developerName := models.GetDeveloperName(global.Db, userInfo.ID)
+	customName := strings.TrimSpace(req.CustomName)
+	if customName == "" {
+		customName = genCustomCodeName(developerName)
+	} else if !isValidCustomCodeName(customName) {
+		apiReturn.Error(c, "唯一标识后缀仅允许字母、数字、- 和 _，长度 1-40")
+		return
+	}
+	uniqueKey := developerName + "-" + customName
+	var dupKey int64
+	global.Db.Model(&models.CustomCode{}).Where("unique_key = ? AND id <> ?", uniqueKey, req.Id).Count(&dupKey)
+	if dupKey > 0 {
+		apiReturn.Error(c, "唯一标识已存在，请更换后缀")
+		return
 	}
 
 	// 审核模式：作者受信任 + 安全扫描通过 -> 自动审核，否则人工（均在提交时计算）
@@ -392,6 +446,7 @@ func (a *CustomCodeApi) Edit(c *gin.Context) {
 		main := models.CustomCode{
 			CustomCodeBaseInfo: baseInfo,
 			AuthorId:           userInfo.ID,
+			UniqueKey:          uniqueKey,
 			Status:             mainStatus,
 		}
 		if err := (&models.CustomCode{}).Create(global.Db, &main); err != nil {
@@ -452,6 +507,12 @@ func (a *CustomCodeApi) Edit(c *gin.Context) {
 	// 待审核期间不可编辑
 	if pending, err := mReview.GetPendingByCustomCodeId(global.Db, main.ID); err == nil && pending.ID != 0 {
 		apiReturn.Error(c, "审核中不可修改，请先撤回审核")
+		return
+	}
+
+	// 同步唯一标识：前缀固定为作者开发者标识，仅后缀可改
+	if err := global.Db.Model(&models.CustomCode{}).Where("id = ?", req.Id).Update("unique_key", uniqueKey).Error; err != nil {
+		apiReturn.ErrorDatabase(c, err.Error())
 		return
 	}
 

@@ -18,8 +18,8 @@ interface Props {
     author: string
     updateTime: string
     url: string
-    /** 自定义代码帖子 id */
-    id?: number
+    /** 自定义代码唯一标识（开发者标识-后缀） */
+    uniqueKey?: string
     /** 块唯一标识 */
     onlyId?: string
     /** 片段更新时间（Unix 秒） */
@@ -64,7 +64,7 @@ async function handleCopy() {
     author: props.copyMeta?.author ?? '',
     updateTime: props.copyMeta?.updateTime ?? '',
     url: props.copyMeta?.url ?? '',
-    id: props.copyMeta?.id,
+    uniqueKey: props.copyMeta?.uniqueKey,
     onlyId: props.copyMeta?.onlyId,
     updateTimeUnix: props.copyMeta?.updateTimeUnix,
   })

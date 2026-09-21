@@ -2,17 +2,17 @@
  * 自定义代码片段「复制标识」的封装与解析（跨项目复用）
  *
  * 标记格式（以 JS / CSS 为例，页脚类型用 <!-- -->）：
- *   /* ====START===={type}===={id}-{onlyId}===={updateTime}==== *\/
+ *   /* ====START===={type}===={key}-{onlyId}===={updateTime}==== *\/
  *   <源码（含来源注释头，JS 可能被包 IIFE）>
- *   /* ====END===={type}===={id}-{onlyId}===={updateTime}==== *\/
+ *   /* ====END===={type}===={key}-{onlyId}===={updateTime}==== *\/
  *
  * 字段说明：
  *   type      - 代码类型：JS / CSS / FOOTER(页脚)
- *   id        - 自定义代码帖子 id
+ *   key       - 自定义代码唯一标识（开发者标识-后缀，可能含 -，故按最后一个 - 切分）
  *   onlyId    - 块唯一标识（仅含字母/数字/下划线，不含 -，避免与连接符冲突）
  *   updateTime- 片段更新时间（Unix 秒），用于判断是否过期，不参与去重
  *
- * 去重依据：{id}-{onlyId}（同一帖子内唯一）。复制时包裹头尾，
+ * 去重依据：{key}-{onlyId}（同一自定义代码内唯一）。复制时包裹头尾，
  * 粘贴时解析头尾提取 onlyId，已存在则更新、不存在则新增。
  */
 
@@ -24,8 +24,8 @@ export type SnipType = 'JS' | 'CSS' | 'FOOTER'
 export interface SnippetMarkerMeta {
   /** JS / CSS / FOOTER */
   type: SnipType
-  /** 自定义代码帖子 id */
-  id: number
+  /** 自定义代码唯一标识（开发者标识-后缀，可能含 -） */
+  key: string
   /** 块唯一标识（不含 -） */
   onlyId: string
   /** 片段更新时间（Unix 秒） */
@@ -62,11 +62,11 @@ function commentWrap(inner: string, type: SnipType): string {
 /** 生成头/尾标记行 */
 export function buildSnippetMarkers(
   type: SnipType,
-  id: number,
+  key: string,
   onlyId: string,
   updateTime: number,
 ): { start: string; end: string } {
-  const body = `${id}-${onlyId}`
+  const body = `${key}-${onlyId}`
   const inner = (token: 'START' | 'END') =>
     `${SNIPPET_SEP}${token}${SNIPPET_SEP}${type}${SNIPPET_SEP}${body}${SNIPPET_SEP}${updateTime}${SNIPPET_SEP}`
   return {
@@ -92,18 +92,20 @@ function parseMarkerLine(line: string): { token: 'START' | 'END'; meta: SnippetM
   const type = parts[0] as SnipType
   if (type !== 'JS' && type !== 'CSS' && type !== 'FOOTER')
     return null
-  const idOnlyId = parts[1].split('-')
-  if (idOnlyId.length !== 2)
+  // 唯一标识可能含 -，按最后一个 - 切分（onlyId 不含 -）
+  const idOnlyId = parts[1]
+  const dash = idOnlyId.lastIndexOf('-')
+  if (dash <= 0)
     return null
-  const id = Number(idOnlyId[0])
-  const onlyId = idOnlyId[1]
+  const key = idOnlyId.slice(0, dash)
+  const onlyId = idOnlyId.slice(dash + 1)
   const updateTime = Number(parts[2])
-  if (!Number.isFinite(id) || !Number.isFinite(updateTime) || !isValidOnlyId(onlyId))
+  if (!Number.isFinite(updateTime) || !isValidOnlyId(onlyId))
     return null
 
   return {
     token: sm[1] as 'START' | 'END',
-    meta: { type, id, onlyId, updateTime },
+    meta: { type, key, onlyId, updateTime },
   }
 }
 
@@ -124,7 +126,7 @@ export function parseSnippet(text: string): ParsedSnippet | null {
     }
     else if (r.token === 'END' && startMeta && startIdx >= 0) {
       // 校验 END 与 START 元信息一致，避免代码体内误含标记行被误判为结尾
-      if (r.meta.id === startMeta.id && r.meta.onlyId === startMeta.onlyId
+      if (r.meta.key === startMeta.key && r.meta.onlyId === startMeta.onlyId
         && r.meta.type === startMeta.type && r.meta.updateTime === startMeta.updateTime) {
         const code = lines.slice(startIdx + 1, i).join('\n')
         return { ...startMeta, code }

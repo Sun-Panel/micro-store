@@ -14,50 +14,54 @@ const content = ref('')
 const loading = ref(false)
 const saving = ref(false)
 
-// 自定义图片上传：复用项目的 /api/file/uploadImg（字段 imgfile，响应 data.imageUrl）
-function uploadHandler(
-  _event: Event,
-  files: File[],
-  success: (md: string) => void,
-  failure: (msg: string) => void,
-) {
-  const file = files[0]
-  if (!file) {
-    failure('请选择图片')
-    return
-  }
-  const formData = new FormData()
-  formData.append('imgfile', file)
-
-  const xhr = new XMLHttpRequest()
-  xhr.open('POST', '/api/file/uploadImg')
-  xhr.setRequestHeader('token', authStore.token || '')
-  xhr.onload = () => {
-    if (xhr.status === 200) {
-      try {
-        const res = JSON.parse(xhr.responseText)
-        if (res.code === 0 && res.data?.imageUrl)
-          success(`![](${res.data.imageUrl})`)
-        else
-          failure(res.message || '上传失败')
-      }
-      catch {
-        failure('上传解析失败')
-      }
-    }
-    else {
-      failure('上传失败')
-    }
-  }
-  xhr.onerror = () => failure('上传失败')
-  xhr.send(formData)
-}
-
+// 图片上传：复用项目的 /api/file/uploadImg（字段 imgfile，响应 data.imageUrl）
+// 注意：vditor 3.x 的 upload 契约为 url + format 适配响应，旧版
+// (event, files, success, failure) 的 handler 写法已失效，会导致上传静默失败。
+// 工具栏使用与默认一致的结构，仅移除录音（record）按钮。
 const vditorOptions = {
   cache: { enable: false },
   height: 460,
+  toolbar: [
+    'emoji', 'headings', 'bold', 'italic', 'strike', 'link', '|',
+    'list', 'ordered-list', 'check', 'outdent', 'indent', '|',
+    'quote', 'line', 'code', 'inline-code', 'insert-before', 'insert-after', '|',
+    'upload', 'table', '|',
+    'undo', 'redo', '|',
+    'fullscreen', 'edit-mode',
+    { name: 'more', toolbar: ['both', 'code-theme', 'content-theme', 'export', 'outline', 'preview', 'devtools', 'info', 'help'] },
+  ],
   upload: {
-    handler: uploadHandler,
+    url: '/api/file/uploadImg',
+    fieldName: 'imgfile',
+    max: 500 * 1024, // 500KB，上传尺寸限制
+    multiple: false,
+    // 动态注入登录 token（后端通过 token 请求头鉴权）
+    setHeaders: () => ({ token: authStore.token || '' }),
+    // 将后端返回 {code, data:{imageUrl}} 适配为 vditor 期望的 {code, data:{succMap}}
+    format: (files: File[], responseText: string) => {
+      try {
+        const res = JSON.parse(responseText)
+        if (res.code === 0 && res.data?.imageUrl) {
+          const name = files?.[0]?.name || 'image'
+          return JSON.stringify({
+            code: 0,
+            data: { succMap: { [name]: res.data.imageUrl }, errFiles: [] },
+          })
+        }
+        return JSON.stringify({
+          code: 1,
+          msg: res.msg || '上传失败',
+          data: { succMap: {}, errFiles: [] },
+        })
+      }
+      catch {
+        return JSON.stringify({
+          code: 1,
+          msg: '上传失败',
+          data: { succMap: {}, errFiles: [] },
+        })
+      }
+    },
   },
 }
 

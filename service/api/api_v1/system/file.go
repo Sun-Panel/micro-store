@@ -44,14 +44,14 @@ func (a *FileApi) UploadImg(c *gin.Context) {
 			".svg",
 			".ico",
 		},
-		MaxSize: 1024 * 1024 * 5, // 5MB
+		MaxSize: 500 * 1024, // 500KB
 		SaveDir: fildDir,
 	})
 
 	if err != nil {
 		switch err {
 		case file.ErrUploadExceedMaxSize:
-			apiReturn.Error(c, "文件尺寸不能大于5M")
+			apiReturn.Error(c, "文件尺寸不能大于500KB")
 			return
 		case file.ErrUploadExtensionNameNotAllowed:
 			apiReturn.ErrorByCode(c, 1301)

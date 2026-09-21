@@ -15,8 +15,8 @@ export interface CopyCodeMeta {
   author: string
   updateTime: string
   url: string
-  /** 自定义代码帖子 id（用于复制标识） */
-  id?: number
+  /** 自定义代码唯一标识（开发者标识-后缀，用于复制标识） */
+  uniqueKey?: string
   /** 块唯一标识（用于复制标识） */
   onlyId?: string
   /** 片段更新时间（Unix 秒，用于复制标识） */
@@ -135,10 +135,10 @@ export function buildCopyText(code: string, kind: CodeKind, meta: CopyCodeMeta):
 
   let text = `${buildCommentHeader(kind, meta)}\n${body}`
 
-  // 包裹复制标识头尾（提供 id / onlyId 时生效），用于跨项目粘贴去重
-  if (meta.id && meta.onlyId) {
+  // 包裹复制标识头尾（提供 uniqueKey / onlyId 时生效），用于跨项目粘贴去重
+  if (meta.uniqueKey && meta.onlyId) {
     const type = KIND_MARKER_TYPE[kind as Exclude<CodeKind, 'other'>]
-    const { start, end } = buildSnippetMarkers(type, meta.id, meta.onlyId, meta.updateTimeUnix ?? 0)
+    const { start, end } = buildSnippetMarkers(type, meta.uniqueKey, meta.onlyId, meta.updateTimeUnix ?? 0)
     text = `${start}\n${text}\n${end}`
   }
 

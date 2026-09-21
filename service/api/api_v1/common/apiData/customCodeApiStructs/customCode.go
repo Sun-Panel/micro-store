@@ -13,7 +13,7 @@ type CustomCodeBlockReq struct {
 	Note     string               `json:"note"`     // 块说明（纯文本）
 	Code     string               `json:"code"`     // 代码片段（必填）
 	Images   datatype.StringArray `json:"images"`   // 预览图
-	OnlyId   string               `json:"onlyId"`  // 块唯一标识（可空，由服务端生成；开发者可改）
+	OnlyId   string               `json:"onlyId"`   // 块唯一标识（可空，由服务端生成；开发者可改）
 }
 
 // CustomCodeBlockResp 代码片块（返回用）
@@ -30,15 +30,16 @@ type CustomCodeBlockResp struct {
 
 // CustomCodeEditReq 新增/编辑（保存草稿或提交审核）
 type CustomCodeEditReq struct {
-	Id          uint                  `json:"id"` // 0 表示新增
-	Title       string                `json:"title"`
-	Description string                `json:"description"`
-	Keywords    datatype.StringArray  `json:"keywords"`
-	IsOriginal  bool                  `json:"isOriginal"`
-	SourceNote  string                `json:"sourceNote"`
-	Versions    datatype.IntArray     `json:"versions"` // 适用客户端版本：1-v1 2-v2
-	Blocks      []CustomCodeBlockReq  `json:"blocks"`   // 代码片块（1~10）
-	Submit      bool                  `json:"submit"`   // true-提交审核 false-保存草稿
+	Id          uint                 `json:"id"` // 0 表示新增
+	Title       string               `json:"title"`
+	Description string               `json:"description"`
+	Keywords    datatype.StringArray `json:"keywords"`
+	IsOriginal  bool                 `json:"isOriginal"`
+	SourceNote  string               `json:"sourceNote"`
+	Versions    datatype.IntArray    `json:"versions"`   // 适用客户端版本：1-v1 2-v2
+	Blocks      []CustomCodeBlockReq `json:"blocks"`     // 代码片块（1~10）
+	Submit      bool                 `json:"submit"`     // true-提交审核 false-保存草稿
+	CustomName  string               `json:"customName"` // 唯一标识后缀（开发者标识-后缀 中的后缀；留空自动生成）
 }
 
 // CustomCodeIdReq 按ID操作的通用请求
@@ -81,6 +82,7 @@ type CustomCodeListItemResp struct {
 	CodeTypes   datatype.IntArray    `json:"codeTypes"`
 	AuthorId    uint                 `json:"authorId"`
 	AuthorName  string               `json:"authorName"`
+	UniqueKey   string               `json:"uniqueKey"`
 	Status      int                  `json:"status"`
 	ReadCount   int                  `json:"readCount"`
 	PublishedAt *time.Time           `json:"publishedAt"`
@@ -92,20 +94,22 @@ type CustomCodeListItemResp struct {
 
 // CustomCodeInfoResp 编辑/详情信息
 type CustomCodeInfoResp struct {
-	Id          uint                   `json:"id"`
-	Title       string                 `json:"title"`
-	Description string                 `json:"description"`
-	Keywords    datatype.StringArray   `json:"keywords"`
-	IsOriginal  bool                   `json:"isOriginal"`
-	SourceNote  string                 `json:"sourceNote"`
-	Versions    datatype.IntArray      `json:"versions"`
-	CodeTypes   datatype.IntArray      `json:"codeTypes"`
-	Blocks      []CustomCodeBlockResp  `json:"blocks"`
-	Status      int                    `json:"status"`
-	ReadCount   int                    `json:"readCount"`
-	PublishedAt *time.Time             `json:"publishedAt"`
-	AuthorId    uint                   `json:"authorId"`
-	AuthorName  string                 `json:"authorName"`
+	Id            uint                  `json:"id"`
+	Title         string                `json:"title"`
+	Description   string                `json:"description"`
+	Keywords      datatype.StringArray  `json:"keywords"`
+	IsOriginal    bool                  `json:"isOriginal"`
+	SourceNote    string                `json:"sourceNote"`
+	Versions      datatype.IntArray     `json:"versions"`
+	CodeTypes     datatype.IntArray     `json:"codeTypes"`
+	Blocks        []CustomCodeBlockResp `json:"blocks"`
+	Status        int                   `json:"status"`
+	ReadCount     int                   `json:"readCount"`
+	PublishedAt   *time.Time            `json:"publishedAt"`
+	AuthorId      uint                  `json:"authorId"`
+	AuthorName    string                `json:"authorName"`
+	DeveloperName string                `json:"developerName"` // 作者开发者标识（唯一标识前缀，固定不可改）
+	UniqueKey     string                `json:"uniqueKey"`     // 完整唯一标识：开发者标识-后缀
 
 	CanEdit         bool   `json:"canEdit"`
 	ReviewStatus    *int   `json:"reviewStatus"`
@@ -115,18 +119,19 @@ type CustomCodeInfoResp struct {
 
 // CustomCodeDetailResp 前台详情
 type CustomCodeDetailResp struct {
-	Id          uint                  `json:"id"`
-	Title       string                `json:"title"`
-	Description string                `json:"description"`
-	Keywords    datatype.StringArray  `json:"keywords"`
-	IsOriginal  bool                  `json:"isOriginal"`
-	SourceNote  string                `json:"sourceNote"`
-	Versions    datatype.IntArray     `json:"versions"`
-	CodeTypes   datatype.IntArray     `json:"codeTypes"`
-	Blocks      []CustomCodeBlockResp `json:"blocks"`
-	AuthorId    uint                  `json:"authorId"`
-	AuthorName  string                `json:"authorName"`
-	AuthorRewardContent string        `json:"authorRewardContent"`
-	ReadCount   int                   `json:"readCount"`
-	PublishedAt *time.Time            `json:"publishedAt"`
+	Id                  uint                  `json:"id"`
+	Title               string                `json:"title"`
+	Description         string                `json:"description"`
+	Keywords            datatype.StringArray  `json:"keywords"`
+	IsOriginal          bool                  `json:"isOriginal"`
+	SourceNote          string                `json:"sourceNote"`
+	Versions            datatype.IntArray     `json:"versions"`
+	CodeTypes           datatype.IntArray     `json:"codeTypes"`
+	Blocks              []CustomCodeBlockResp `json:"blocks"`
+	AuthorId            uint                  `json:"authorId"`
+	AuthorName          string                `json:"authorName"`
+	UniqueKey           string                `json:"uniqueKey"`
+	AuthorRewardContent string                `json:"authorRewardContent"`
+	ReadCount           int                   `json:"readCount"`
+	PublishedAt         *time.Time            `json:"publishedAt"`
 }

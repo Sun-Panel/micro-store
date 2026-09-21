@@ -17,6 +17,7 @@ func InitCustomCodeRouter(router *gin.RouterGroup) {
 	{
 		author.POST("/getMyList", customCodeApi.GetMyList)
 		author.POST("/getInfo", customCodeApi.GetInfo)
+		author.POST("/getAuthorKeyPrefix", customCodeApi.GetAuthorKeyPrefix)
 		author.POST("/edit", customCodeApi.Edit)
 		author.POST("/withdraw", customCodeApi.Withdraw)
 		author.POST("/offline", customCodeApi.Offline)
