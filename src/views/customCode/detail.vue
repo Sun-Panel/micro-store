@@ -5,8 +5,8 @@ import { useRoute } from 'vue-router'
 import { get } from '@/api/system/customCode'
 import { CodeBlock, MarkdownRender, SvgIconOnline } from '@/components/common'
 import { router } from '@/router'
-import { getCurrentBaseUrlRoot } from '@/utils/cmn'
 import { useAppStore } from '@/store/modules/app'
+import { getCurrentBaseUrlRoot } from '@/utils/cmn'
 
 const route = useRoute()
 const loading = ref(false)
@@ -128,7 +128,7 @@ onMounted(() => {
           以下内容由用户自行发布，第三方 JS / CSS 可能影响面板安全与稳定性，请自行判断后再使用。
         </NAlert>
 
-        <p class="text-slate-600 mb-[12px]">
+        <p class="mb-2">
           {{ detail.description }}
         </p>
 
@@ -182,7 +182,7 @@ onMounted(() => {
           <NButton @click="router.push({ name: 'CustomCodeList' })">
             返回列表
           </NButton>
-          <NButton v-if="hasReward" @click="showReward = true">
+          <NButton v-if="hasReward" type="error" @click="showReward = true">
             <template #icon>
               <SvgIconOnline icon="ph:heart" />
             </template>

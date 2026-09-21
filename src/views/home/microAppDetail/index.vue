@@ -451,6 +451,7 @@ onUnmounted(() => {
                 <NButton
                   v-if="hasReward"
                   size="large"
+                  type="error"
                   @click="showReward = true"
                 >
                   <template #icon>

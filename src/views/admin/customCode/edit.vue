@@ -560,18 +560,38 @@ onMounted(() => {
                 </NRadioGroup>
               </NFormItem>
 
-              <NFormItem label="片段标题">
-                <NInput v-model:value="block.title" :maxlength="100" placeholder="标题与说明至少填写一个" />
-              </NFormItem>
+              <!-- 片段标题与唯一标识同一行 -->
+              <div class="flex flex-col gap-3 md:flex-row">
+                <NFormItem label="片段标题" class="flex-1">
+                  <NInput v-model:value="block.title" :maxlength="100" placeholder="标题与说明至少填写一个" />
+                </NFormItem>
 
-              <NFormItem label="唯一标识">
-                <div class="flex w-full items-center gap-2">
-                  <NInput v-model:value="block.onlyId" :maxlength="40" placeholder="用于跨项目粘贴去重，可自定义" />
-                  <NButton size="tiny" type="default" @click="block.onlyId = genOnlyId()">
-                    重新生成
-                  </NButton>
-                </div>
-              </NFormItem>
+                <NFormItem label="唯一标识" class="flex-1">
+                  <template #label>
+                    <div class="flex items-center gap-2">
+                      <span>唯一标识</span>
+                      <NTooltip trigger="click" placement="top">
+                        <template #trigger>
+                          <NIcon size="18" class="cursor-pointer text-slate-400 hover:text-slate-600">
+                            <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                              <path d="M12 11v5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                              <circle cx="12" cy="7.5" r="1.2" fill="currentColor" />
+                            </svg>
+                          </NIcon>
+                        </template>
+                        唯一标识用于跨项目粘贴去重，可自定义，请勿频繁修改。
+                      </NTooltip>
+                    </div>
+                  </template>
+                  <div class="flex w-full items-center gap-2">
+                    <NInput v-model:value="block.onlyId" :maxlength="40" placeholder="用于跨项目粘贴去重，可自定义" />
+                    <NButton size="tiny" type="default" @click="block.onlyId = genOnlyId()">
+                      重新生成
+                    </NButton>
+                  </div>
+                </NFormItem>
+              </div>
 
               <NFormItem label="说明">
                 <NInput v-model:value="block.note" type="textarea" :rows="3" placeholder="多行说明，与标题至少填写一个" />
@@ -582,13 +602,13 @@ onMounted(() => {
                   <div class="flex items-center gap-2">
                     <span>代码</span>
                     <div class="left-auto">
-                      <NButton size="small" :disabled="!block.code.trim()" @click="openPreview(block)">
+                      <NButton size="tiny" :disabled="!block.code.trim()" @click="openPreview(block)">
                         预览代码
                       </NButton>
                     </div>
                   </div>
                 </template>
-                <NInput v-model:value="block.code" type="textarea" :rows="6" placeholder="粘贴代码，支持预览高亮" />
+                <NInput v-model:value="block.code" type="textarea" :rows="6" placeholder="将代码粘贴到这里" />
               </NFormItem>
 
               <NFormItem label="预览图（≤512K，最多5张）">
