@@ -131,6 +131,7 @@ declare namespace CustomCode {
         blocks: Block[]
         authorId: number
         authorName?: string
+        authorRewardContent?: string
         readCount: number
         publishedAt?: string
     }

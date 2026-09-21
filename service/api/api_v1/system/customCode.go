@@ -95,6 +95,13 @@ func (a *CustomCodeApi) Get(c *gin.Context) {
 		})
 	}
 
+	// 作者赞赏信息（Markdown）：按作者 user_id 查出开发者表的 reward_content
+	var authorDeveloper models.Developer
+	authorRewardContent := ""
+	if err := global.Db.Where("user_id = ?", info.AuthorId).First(&authorDeveloper).Error; err == nil {
+		authorRewardContent = authorDeveloper.RewardContent
+	}
+
 	resp := customCodeApiStructs.CustomCodeDetailResp{
 		Id:          info.ID,
 		Title:       info.Title,
@@ -107,6 +114,7 @@ func (a *CustomCodeApi) Get(c *gin.Context) {
 		Blocks:      respBlocks,
 		AuthorId:    info.AuthorId,
 		AuthorName:  models.GetAuthorName(global.Db, info.AuthorId),
+		AuthorRewardContent: authorRewardContent,
 		ReadCount:   info.ReadCount,
 		PublishedAt: info.PublishedAt,
 	}

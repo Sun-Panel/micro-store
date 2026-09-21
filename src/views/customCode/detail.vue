@@ -1,15 +1,20 @@
 <script setup lang="ts">
-import { NAlert, NButton, NCard, NImage, NImageGroup, NSpace, NSpin, NTag } from 'naive-ui'
+import { NAlert, NButton, NCard, NImage, NImageGroup, NModal, NSpace, NSpin, NTag } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { get } from '@/api/system/customCode'
-import { CodeBlock } from '@/components/common'
+import { CodeBlock, MarkdownRender, SvgIconOnline } from '@/components/common'
 import { router } from '@/router'
 import { getCurrentBaseUrlRoot } from '@/utils/cmn'
+import { useAppStore } from '@/store/modules/app'
 
 const route = useRoute()
 const loading = ref(false)
 const detail = ref<CustomCode.Detail>()
+const appStore = useAppStore()
+// 赞赏弹窗
+const showReward = ref(false)
+const markdownMode = computed(() => (appStore.theme === 'dark' ? 'dark' : 'light'))
 
 // 全部展开 / 收起
 const expandAll = ref(false)
@@ -174,6 +179,12 @@ onMounted(() => {
           <NButton @click="router.push({ name: 'CustomCodeList' })">
             返回列表
           </NButton>
+          <NButton @click="showReward = true">
+            <template #icon>
+              <SvgIconOnline icon="ph:heart" />
+            </template>
+            赞赏
+          </NButton>
         </NSpace>
       </template>
       <NAlert v-else-if="!loading" type="error">
@@ -181,6 +192,24 @@ onMounted(() => {
       </NAlert>
     </NSpin>
   </div>
+
+  <!-- 赞赏弹窗 -->
+  <NModal
+    v-model:show="showReward"
+    preset="card"
+    title="赞赏作者"
+    style="max-width: 640px;"
+  >
+    <div v-if="detail?.authorRewardContent" class="appreciate-content">
+      <MarkdownRender
+        :content="detail.authorRewardContent"
+        :mode="markdownMode"
+      />
+    </div>
+    <div v-else class="py-8 text-center text-slate-400 dark:text-slate-500">
+      作者暂未设置赞赏信息
+    </div>
+  </NModal>
 </template>
 
 <style scoped>

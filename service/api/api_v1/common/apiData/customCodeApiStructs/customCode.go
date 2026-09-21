@@ -126,6 +126,7 @@ type CustomCodeDetailResp struct {
 	Blocks      []CustomCodeBlockResp `json:"blocks"`
 	AuthorId    uint                  `json:"authorId"`
 	AuthorName  string                `json:"authorName"`
+	AuthorRewardContent string        `json:"authorRewardContent"`
 	ReadCount   int                   `json:"readCount"`
 	PublishedAt *time.Time            `json:"publishedAt"`
 }

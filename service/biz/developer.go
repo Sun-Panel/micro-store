@@ -142,13 +142,18 @@ func (s *DeveloperService) BatchGetByDeveloperNames(db *gorm.DB, developerNames 
 
 // UpdateDeveloperInfo 更新开发者信息（业务层，包含业务规则校验）
 func (s *DeveloperService) UpdateDeveloperInfo(db *gorm.DB, id uint, updateFields models.DeveloperUpdateFields) error {
+	// 获取当前开发者信息（用于冷却期校验与缓存失效）
+	developer, err := s.GetDeveloperInfo(db, id)
+	if err != nil {
+		return err
+	}
+	// 更新后始终清除开发者缓存。
+	// 注意：原逻辑仅在修改 Name 时失效缓存，导致仅修改其它字段（如赞赏信息 rewardContent）
+	// 时缓存不刷新，详情页仍展示旧值。这里改为每次更新都失效。
+	defer s.invalidateCache(developer.DeveloperName)
+
 	// 如果要修改 Name，检查冷却期（180天）
 	if updateFields.Name != nil {
-		developer, err := s.GetDeveloperInfo(db, id)
-		if err != nil {
-			return err
-		}
-
 		// 如果有上次更新时间，检查是否满180天
 		if developer.NameUpdatedAt != nil {
 			daysSinceUpdate := time.Since(*developer.NameUpdatedAt).Hours() / 24
@@ -159,9 +164,6 @@ func (s *DeveloperService) UpdateDeveloperInfo(db *gorm.DB, id uint, updateField
 				})
 			}
 		}
-
-		// 更新后清除缓存
-		defer s.invalidateCache(developer.DeveloperName)
 	}
 
 	// 调用 Model 层执行数据库操作

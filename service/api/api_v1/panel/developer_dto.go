@@ -4,12 +4,13 @@ package panel
 
 // DeveloperRegisterReq 开发者注册请求
 type DeveloperRegisterReq struct {
-	DeveloperName string `json:"developerName" binding:"required"`
-	ContactMail   string `json:"contactMail"`
-	PaymentName   string `json:"paymentName"`
-	PaymentQrcode string `json:"paymentQrcode"`
-	PaymentMethod string `json:"paymentMethod"`
-	Name          string `json:"name"`
+	DeveloperName string  `json:"developerName" binding:"required"`
+	ContactMail   string  `json:"contactMail"`
+	PaymentName   string  `json:"paymentName"`
+	PaymentQrcode string  `json:"paymentQrcode"`
+	PaymentMethod string  `json:"paymentMethod"`
+	Name          string  `json:"name"`
+	RewardContent *string `json:"rewardContent"`
 }
 
 // DeveloperUpdateReq 更新开发者信息请求

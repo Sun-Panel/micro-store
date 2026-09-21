@@ -190,6 +190,9 @@ func (a *DeveloperApi) Update(c *gin.Context) {
 		name := param.Name
 		updateFields.Name = &name
 	}
+	if param.RewardContent != nil {
+		updateFields.RewardContent = param.RewardContent
+	}
 	bizService := biz.DeveloperService{}
 	err = bizService.UpdateDeveloperInfo(global.Db, info.ID, updateFields)
 	if err != nil {

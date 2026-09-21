@@ -23,6 +23,7 @@ type Developer struct {
 	PaymentName   string     `gorm:"type:varchar(50)" json:"paymentName"`                        // 收款人真实姓名
 	PaymentQrcode string     `gorm:"type:varchar(500)" json:"paymentQrcode"`                     // 收款二维码图片URL
 	PaymentMethod string     `gorm:"type:varchar(200)" json:"paymentMethod"`                     // 收款方式描述
+	RewardContent string     `gorm:"type:text" json:"rewardContent"`                              // 赞赏信息（Markdown）
 	Status        int        `gorm:"type:tinyint(1);default:1" json:"status"`                    // 状态：0-禁用 1-正常
 	NameUpdatedAt *time.Time `gorm:"type:timestamp" json:"nameUpdatedAt"`                        // Name 上次修改时间
 
@@ -185,6 +186,7 @@ type DeveloperUpdateFields struct {
 	PaymentMethod *string // 收款方式描述
 	Name          *string // 开发者名称
 	Status        *int
+	RewardContent *string // 赞赏信息（Markdown）
 }
 
 // UpdateInfo 更新开发者信息（仅数据库操作，业务校验由 biz 层负责）
@@ -221,6 +223,9 @@ func (m *Developer) UpdateInfo(db *gorm.DB, id uint, updateFields DeveloperUpdat
 	}
 	if updateFields.Status != nil {
 		updateData["status"] = *updateFields.Status
+	}
+	if updateFields.RewardContent != nil {
+		updateData["reward_content"] = *updateFields.RewardContent
 	}
 
 	if len(updateData) == 0 {

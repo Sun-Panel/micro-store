@@ -58,6 +58,7 @@ const ADMIN_MENU_CONFIG: AdminMenuItem[] = [
     children: [
       { label: '我的微应用', key: 'AdminMyMicroApp' },
       { label: '开发者信息', key: 'AdminDeveloperInfo' },
+      { label: '赞赏信息', key: 'AdminAppreciation' },
       { label: '我的自定义代码', key: 'AdminCustomCodeMyList' },
     ],
   },

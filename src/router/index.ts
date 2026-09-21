@@ -156,6 +156,11 @@ const adminRouter = {
       component: () => import('@/views/admin/developerCenter/developer_info.vue'),
     },
     {
+      path: '/admin/developerCenter/appreciation',
+      name: 'AdminAppreciation',
+      component: () => import('@/views/admin/developerCenter/appreciation/index.vue'),
+    },
+    {
       path: '/admin/developerCenter/myMicroApp/detail/:id',
       name: 'AdminMyMicroAppDetail',
       component: () => import('@/views/admin/developerCenter/myMicroApp/detail/index.vue'),

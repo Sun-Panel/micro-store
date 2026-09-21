@@ -1,11 +1,12 @@
 <script lang="ts" setup>
 import moment from 'moment'
-import { NButton, NEllipsis, NImage, NImageGroup, NTooltip, useMessage } from 'naive-ui'
+import { NButton, NEllipsis, NImage, NImageGroup, NModal, NTooltip, useMessage } from 'naive-ui'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getEnabledList as getCategoryList } from '@/api/admin/microAppCategory'
 import { getInfo, getInfoByMicroAppId, getVersionList } from '@/api/microApp'
-import { SvgIconOnline } from '@/components/common'
+import { MarkdownRender, SvgIconOnline } from '@/components/common'
+import { useAppStore } from '@/store/modules/app'
 import { microAppChargeTypeMap, microAppThirdChargeTypeMap, MicroAppVersionStatus } from '@/enums/panel'
 import { isIframe } from '@/utils/cmn'
 import { getAppDescByLang, getAppNameByLang, getBrowserLang, getCurrentLang, getLangMapFromAppInfo } from '@/utils/functions/lang'
@@ -24,6 +25,10 @@ function dateFormat(timeString?: string) {
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
+const appStore = useAppStore()
+// 赞赏弹窗
+const showReward = ref(false)
+const markdownMode = computed(() => (appStore.theme === 'dark' ? 'dark' : 'light'))
 const { sendInstallApp } = useIframe()
 const { getHomePath } = useRouterHelper('v1')
 const { getAppButtonStatus } = useAppInstallStatus()
@@ -437,6 +442,16 @@ onUnmounted(() => {
                 >
                   覆盖安装
                 </NButton>
+
+                <NButton
+                  size="large"
+                  @click="showReward = true"
+                >
+                  <template #icon>
+                    <SvgIconOnline icon="ph:heart" />
+                  </template>
+                  赞赏
+                </NButton>
               </div>
               <div v-else class="text-sm text-slate-400 dark:text-slate-500 italic">
                 暂无可用版本
@@ -666,6 +681,24 @@ onUnmounted(() => {
       </div>
     </div>
   </div>
+
+  <!-- 赞赏弹窗 -->
+  <NModal
+    v-model:show="showReward"
+    preset="card"
+    title="赞赏作者"
+    style="max-width: 640px;"
+  >
+    <div v-if="microAppInfo?.developer?.rewardContent" class="appreciate-content">
+      <MarkdownRender
+        :content="microAppInfo.developer.rewardContent"
+        :mode="markdownMode"
+      />
+    </div>
+    <div v-else class="py-8 text-center text-slate-400 dark:text-slate-500">
+      作者暂未设置赞赏信息
+    </div>
+  </NModal>
 </template>
 
 <style scoped>

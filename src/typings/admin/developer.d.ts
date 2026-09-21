@@ -18,6 +18,7 @@ declare namespace Developer {
     paymentName: string
     paymentQrcode: string
     paymentMethod: string
+    rewardContent?: string
     status: number
     createTime: string
     updateTime: string
@@ -68,10 +69,12 @@ declare namespace Developer {
   // 更新请求（前台）
   interface UpdateMyInfoRequest {
     developerName: string
+    name?: string
     contactMail?: string
     paymentName?: string
     paymentQrcode?: string
     paymentMethod?: string
+    rewardContent?: string
   }
 
   // 检查是否是开发者响应

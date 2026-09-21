@@ -81,6 +81,7 @@ declare namespace MicroApp {
     name: string
     developerName: string
     avatar?: string
+    rewardContent?: string
   }
 
   // 微应用信息
